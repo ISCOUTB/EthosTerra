@@ -1,0 +1,38 @@
+# Ignorar artefactos de compilación locales
+**/node_modules
+**/.next
+**/target
+**/dist
+**/*.log
+
+# Ignorar archivos de git
+**/.git
+**/.gitignore
+**/.github
+
+# No necesitamos el JRE de Windows ni el .exe que viene en el repo wpsUI
+wpsUI/src/wps/jre
+wpsUI/src/wps/*.exe
+
+# Ignorar logs del simulador (se recrea en Docker)
+wpsUI/src/wps/logs
+
+# Ignorar artefactos de build de Electron/Windows
+wpsUI/out
+wpsUI/.next
+wpsUI/main
+
+# Archivos innecesarios para la imagen Docker
+**/*.md
+**/*.bat
+**/*.sh
+**/*.ps1
+**/*.nsi
+**/INFORME.md
+**/README.md
+**/CHANGELOG.md
+**/.dockerignore
+**/Dockerfile
+**/docker-compose.yml
+**/.vscode
+**/.idea

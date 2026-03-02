@@ -1,0 +1,18 @@
+services:
+  wellprodsim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - WPS_JAR_PATH=/app/wps-simulator.jar
+      - WPS_LOGS_PATH=/app/src/wps/logs
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/simulator/app-path"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
