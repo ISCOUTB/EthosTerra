@@ -8,15 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends maven && rm -rf
 
 WORKDIR /build
 
-# ---- Copiar SOLO los pom.xml primero (mejora caché de Docker) ----
-COPY KernelBESA/pom.xml    ./KernelBESA/pom.xml
-COPY LocalBESA/pom.xml     ./LocalBESA/pom.xml
-COPY RemoteBESA/pom.xml    ./RemoteBESA/pom.xml
-COPY RationalBESA/pom.xml  ./RationalBESA/pom.xml
-COPY BDIBESA/pom.xml       ./BDIBESA/pom.xml
-COPY eBDIBESA/pom.xml      ./eBDIBESA/pom.xml
-COPY wpsSimulator/pom.xml  ./wpsSimulator/pom.xml
-
 # ---- Copiar fuentes de todos los repos ----
 COPY KernelBESA/    ./KernelBESA/
 COPY LocalBESA/     ./LocalBESA/
@@ -28,9 +19,9 @@ COPY wpsSimulator/  ./wpsSimulator/
 
 # ---- Compilar e instalar cada módulo BESA en ~/.m2 (orden de dependencias) ----
 RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
-RUN cd RationalBESA && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 RUN cd LocalBESA    && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 RUN cd RemoteBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+RUN cd RationalBESA && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 RUN cd BDIBESA      && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 RUN cd eBDIBESA     && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 

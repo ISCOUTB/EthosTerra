@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+      - "8000:8000"
     environment:
       - WPS_JAR_PATH=/app/wps-simulator.jar
       - WPS_LOGS_PATH=/app/src/wps/logs
