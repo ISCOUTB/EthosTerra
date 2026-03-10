@@ -11,11 +11,16 @@
 # El directorio data/logs se monta como volumen Docker
 data/logs/*.csv
 data/logs/*.log
+data/experiments_log.txt
 # Conservar la estructura del directorio
 !data/logs/.gitkeep
 
 # --- Build artifacts Java ---
 **/target/
+**/build/
+*.jar
+*.war
+*.ear
 !**/.mvn/wrapper/maven-wrapper.jar
 
 # --- Build artifacts Node.js / Next.js ---
@@ -23,13 +28,17 @@ data/logs/*.log
 **/.next/
 **/out/
 **/dist/
+.npm
+.eslintcache
 
 # --- IDEs ---
 .idea/
 *.iml
 *.iws
 *.ipr
-.vscode/settings.json
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
 
 # --- Sistemas operativos ---
 .DS_Store
@@ -38,5 +47,12 @@ desktop.ini
 
 # --- Docker ---
 # El override de dev no se commitea si tiene configuraciones locales
-# (descomenta si quieres ignorarlo)
-# docker-compose.override.yml
+docker-compose.override.yml
+.docker-build-cache/
+
+# --- Otros ---
+temp/
+tmp/
+*.swp
+*.bak
+dump.rdb
