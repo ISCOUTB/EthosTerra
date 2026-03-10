@@ -145,6 +145,7 @@ Script inyectado en el `<body>` que, si `window.electronAPI` no existe (entorno 
 | `GET /api/simulator/file?action=fileExists`                     | ✅     | `{"exists":true}`                                                                                     |
 | `GET /api/simulator/app-path`                                   | ✅     | `{"path":"/app"}`                                                                                     |
 | Simulación E2E completa (1 agente × 1 año)                      | ✅     | 137 granjas, 274 tierras asignadas, completa en ~183 segundos                                         |
+| Experimento 1 (Varianza de Personalidad) completo               | ✅     | 4 corridas (R1-R4) registradas al 100% en `experiment_results.json`                                   |
 | CSV generado con métricas del campesino                         | ✅     | Timestamp, HappinessSadness, money, health, currentSeason…                                            |
 | WebSocket Java en puerto 8000 (`/wpsViewer`)                    | ✅     | Se inicia automáticamente al arrancar la simulación                                                   |
 | Mapa Google Maps con 400 polígonos de tierras                   | ✅     | Carga `mediumworld.json` desde `/public`                                                              |

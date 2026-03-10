@@ -6,7 +6,13 @@
 .env
 .env.local
 .env.*.local
-.github/
+
+# --- Archivos de configuración de agentes IA/Copilot ---
+# Mantener localmente para desarrollo, NO commitear al repo público
+.github/skills/
+.github/copilot/
+*.instructions.md
+
 # --- Datos de experimentos (generados en tiempo de ejecución) ---
 # El directorio data/logs se monta como volumen Docker
 data/logs/*.csv
@@ -22,6 +28,10 @@ data/experiments_log.txt
 *.war
 *.ear
 !**/.mvn/wrapper/maven-wrapper.jar
+INFORME.md
+experimentos_resultados.md
+data/experimentos_resultados.md
+data/experiment_results.json
 
 # --- Build artifacts Node.js / Next.js ---
 **/node_modules/
