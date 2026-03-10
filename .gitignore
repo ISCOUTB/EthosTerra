@@ -1,0 +1,42 @@
+# ============================================================
+# .gitignore raíz — WellProdSim monorepo
+# ============================================================
+
+# --- Variables de entorno (NUNCA commitear secretos) ---
+.env
+.env.local
+.env.*.local
+.github/
+# --- Datos de experimentos (generados en tiempo de ejecución) ---
+# El directorio data/logs se monta como volumen Docker
+data/logs/*.csv
+data/logs/*.log
+# Conservar la estructura del directorio
+!data/logs/.gitkeep
+
+# --- Build artifacts Java ---
+**/target/
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# --- Build artifacts Node.js / Next.js ---
+**/node_modules/
+**/.next/
+**/out/
+**/dist/
+
+# --- IDEs ---
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/settings.json
+
+# --- Sistemas operativos ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Docker ---
+# El override de dev no se commitea si tiene configuraciones locales
+# (descomenta si quieres ignorarlo)
+# docker-compose.override.yml
