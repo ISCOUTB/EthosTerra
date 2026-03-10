@@ -5,15 +5,29 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-      - "8000:8000"
+      - "8000:8000"  # WebSocket server de ViewerLens (Undertow) — wpsSimulator/ViewerLens/Server/WebsocketServer.java
+    env_file: .env
     environment:
-      - WPS_JAR_PATH=/app/wps-simulator.jar
-      - WPS_LOGS_PATH=/app/src/wps/logs
-      - NODE_ENV=production
+      # Limitar heap de JVM: evita OOM Kill cuando la malla tiene >150 agentes
+      # (sobreescribe el valor del .env si se definen ahí)
+      - JAVA_TOOL_OPTIONS=-Xmx2g -Xms512m
+      # HOSTNAME ya está fijado en el Dockerfile a 0.0.0.0
+    volumes:
+      # Persistir logs y CSV de experimentos en el host
+      # Los datos sobreviven a `docker compose down`
+      - ./data/logs:/app/src/wps/logs
+    deploy:
+      resources:
+        limits:
+          # Java (2g heap) + Node.js + SO overhead ~3.5 GB en pico
+          memory: 4g
+          # Evitar que la simulación monopolice el host durante experimentos largos
+          cpus: "2.0"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/simulator/app-path"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/simulator/app-path"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+

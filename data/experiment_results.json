@@ -1,0 +1,37 @@
+﻿{
+    "E1_R1_M1500K_Pers0":  {
+                               "label":  "Exp1 - Money=1.5M Varianza=Baja(personality=0)",
+                               "args":  "-agents 5 -money 1500000 -personality 0 -emotions 1 -land 2 -years 5",
+                               "agents":  5,
+                               "avgMoney":  14741402,
+                               "minMoney":  0,
+                               "maxMoney":  0,
+                               "avgBiomasa":  0,
+                               "minBiomasa":  0,
+                               "maxBiomasa":  0,
+                               "nota":  "Run inicial pre-script; biomasa=0 (no hubo fila de cosecha al final)"
+                           },
+    "E2_R3_M3000K_EmYes":  {
+                               "label":  "Exp2 - Money=3.0M CON Emociones",
+                               "args":  "-agents 5 -money 3000000 -personality 0 -tools 20 -seeds 50 -years 5 -mode single -env local -world 400 -emotions 1 -land 2",
+                               "agents":  5,
+                               "avgMoney":  7188082,
+                               "minMoney":  0,
+                               "maxMoney":  0,
+                               "avgBiomasa":  16186.4,
+                               "minBiomasa":  0,
+                               "maxBiomasa":  0,
+                               "nota":  "Capturado manualmente post-fix; min/max requieren re-run para precisiÃ³n"
+                           },
+    "E1_R2_M1500K_Pers04":  {
+                                "label":  "Exp1 - Money=1.5M Varianza=Alta(personality=0.4)",
+                                "args":  "-agents 5 -money 1500000 -personality 0.4 -tools 20 -seeds 50 -years 5 -mode single -env local -world 400 -emotions 1 -land 2",
+                                "agents":  5,
+                                "avgMoney":  10087826,
+                                "minMoney":  9476881,
+                                "maxMoney":  11013739,
+                                "avgBiomasa":  21607.2,
+                                "minBiomasa":  21113,
+                                "maxBiomasa":  21975
+                            }
+}
