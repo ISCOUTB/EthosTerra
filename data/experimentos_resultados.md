@@ -1,7 +1,7 @@
-# Resultados de Experimentos — WPS Simulator
+# Resultados de Experimentos — EthosTerra Simulator
 
 **Fecha de ejecución:** 2025  
-**Simulador:** WPS (World Peasant Simulator) — Sistema Multi-Agente BDI (BESA Framework)  
+**Simulador:** EthosTerra (anteriormente WPS) — Sistema Multi-Agente BDI (BESA Framework)  
 **Plataforma:** Docker · API REST Next.js (puerto 3000) · Java JAR
 
 ---

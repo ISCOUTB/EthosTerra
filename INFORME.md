@@ -1,7 +1,7 @@
-﻿# Informe técnico — Dockerización de WellProdSim
+﻿# Informe técnico — Proyecto EthosTerra
 
-**Fecha de última actualización:** 2 de marzo de 2026  
-**Proyecto:** WellProdSim — UTB / ISCOUTB  
+**Fecha de última actualización:** 10 de marzo de 2026  
+**Proyecto:** EthosTerra (WellProdSim) — UTB / ISCOUTB  
 **Alcance:** Clonado, análisis, adaptación, contenerización y corrección integral del ecosistema
 
 ---

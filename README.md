@@ -1,6 +1,6 @@
-# WellProdSim — Simulador Social de Productividad y Bienestar para Familias Campesinas
+# EthosTerra — Simulador Social de Productividad y Bienestar para Familias Campesinas
 
-WellProdSim es una plataforma de simulación multi-agente desarrollada por el grupo **SIDRePUJ / ISCOUTB (UTB)**. Modela el comportamiento de familias campesinas colombianas mediante agentes BDI (Belief-Desire-Intention) con componentes emocionales, simulando decisiones agrícolas, económicas y de bienestar a lo largo del tiempo.
+EthosTerra (anteriormente WellProdSim) es una plataforma de simulación multi-agente desarrollada por el grupo **SIDRePUJ / ISCOUTB (UTB)**. Modela el comportamiento de familias campesinas colombianas mediante agentes BDI (Belief-Desire-Intention) con componentes emocionales, simulando decisiones agrícolas, económicas y de bienestar a lo largo del tiempo.
 
 ---
 
