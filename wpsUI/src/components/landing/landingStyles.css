@@ -1,0 +1,70 @@
+#backgroundContainer div {
+  position: absolute;
+  filter: blur(50px);
+  opacity: 0.8;
+  -webkit-filter: blur(300px);
+}
+
+header .one {
+  border-radius: 100%;
+  width: 1000px;
+  height: 1000px;
+  background-color: #2768F6;
+  left: -300px;
+  top: -600px;
+  z-index: 3;
+  animation: fly 12s linear infinite;
+  transform: rotate(0) translate(80px) rotate(0);
+}
+
+#two {
+  border-radius: 100%;
+  width: 500px;
+  height: 500px;
+  bottom: -80px;
+  right: -10px;
+  background-color: #464364;
+  animation: flyPlus 10s linear infinite;
+  -webkit-animation: flyPlus 10s linear infinite;
+  transform: rotate(0) translate(200px) rotate(0);
+  -webkit-transform: rotate(0) translate(200px) rotate(0);
+  -moz-transform: rotate(0) translate(200px) rotate(0);
+  -ms-transform: rotate(0) translate(200px) rotate(0);
+  -o-transform: rotate(0) translate(200px) rotate(0);
+}
+
+#three {
+  border-radius: 100%;
+  width: 1000px;
+  height: 1000px;
+  margin: auto;
+  bottom: 0;
+  right: -300px;
+  background-color: #90e0ff;
+  animation: flyPlus 15s linear infinite;
+  -webkit-animation: flyPlus 15s linear infinite;
+  transform: rotate(0) translate(200px) rotate(0);
+  -webkit-transform: rotate(0) translate(200px) rotate(0);
+  -moz-transform: rotate(0) translate(200px) rotate(0);
+  -ms-transform: rotate(0) translate(200px) rotate(0);
+  -o-transform: rotate(0) translate(200px) rotate(0);
+}
+
+@keyframes fly {
+  100% {
+    transform: rotate(2turn) translate(200px) rotate(-2turn);
+    -webkit-transform: rotate(2turn) translate(200px) rotate(-2turn);
+    -moz-transform: rotate(2turn) translate(200px) rotate(-2turn);
+    -ms-transform: rotate(2turn) translate(200px) rotate(-2turn);
+    -o-transform: rotate(2turn) translate(200px) rotate(-2turn);
+  }
+}
+@keyframes flyPlus {
+  100% {
+    transform: rotate(-2turn) translate(200px) rotate(2turn);
+    -webkit-transform: rotate(-2turn) translate(200px) rotate(2turn);
+    -moz-transform: rotate(-2turn) translate(200px) rotate(2turn);
+    -ms-transform: rotate(-2turn) translate(200px) rotate(2turn);
+    -o-transform: rotate(-2turn) translate(200px) rotate(2turn);
+  }
+}

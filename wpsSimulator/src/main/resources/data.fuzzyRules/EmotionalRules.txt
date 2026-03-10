@@ -1,0 +1,3 @@
+if HappinessSadness is Happy then EmotionalState is Positive
+if HappinessSadness is Sad then EmotionalState is Negative
+if HappinessSadness is Neutral then EmotionalState is Neutral

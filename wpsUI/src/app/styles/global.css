@@ -1,0 +1,116 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap");
+@import url("https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta de colores modo claro */
+    --background: 214, 17%, 8%;
+    --foreground: 0, 0%, 100%;
+    --card: 210, 14%, 11%;
+    --card-foreground: 0, 0%, 100%;
+    --popover: 210, 14%, 11%;
+    --popover-foreground: 0, 0%, 100%;
+    --primary: 221.2, 83.2%, 53.3%;
+    --primary-foreground: 210, 40%, 98%;
+    --secondary: 210, 14%, 15%;
+    --secondary-foreground: 0, 0%, 100%;
+    --muted: 210, 14%, 15%;
+    --muted-foreground: 217.9, 10.6%, 64.9%;
+    --accent: 210, 14%, 15%;
+    --accent-foreground: 0, 0%, 100%;
+    --destructive: 0, 84.2%, 60.2%;
+    --destructive-foreground: 210, 40%, 98%;
+    --border: 214, 14%, 18%;
+    --input: 214, 14%, 18%;
+    --ring: 221.2, 83.2%, 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Paleta de colores modo oscuro */
+    --background: 222.2, 84%, 4.9%;
+    --foreground: 210, 40%, 98%;
+    --card: 222.2, 84%, 4.9%;
+    --card-foreground: 210, 40%, 98%;
+    --popover: 222.2, 84%, 4.9%;
+    --popover-foreground: 210, 40%, 98%;
+    --primary: 217.2, 91.2%, 59.8%;
+    --primary-foreground: 222.2, 47.4%, 11.2%;
+    --secondary: 217.2, 32.6%, 17.5%;
+    --secondary-foreground: 210, 40%, 98%;
+    --muted: 217.2, 32.6%, 17.5%;
+    --muted-foreground: 215, 20.2%, 65.1%;
+    --accent: 217.2, 32.6%, 17.5%;
+    --accent-foreground: 210, 40%, 98%;
+    --destructive: 0, 62.8%, 30.6%;
+    --destructive-foreground: 210, 40%, 98%;
+    --border: 217.2, 32.6%, 17.5%;
+    --input: 217.2, 32.6%, 17.5%;
+    --ring: 224.3, 76.3%, 48%;
+  }
+}
+
+/* Tipografías personalizadas */
+.font-clash {
+  font-family: "Clash Display", sans-serif;
+}
+
+.font-archivo {
+  font-family: "Archivo", sans-serif;
+}
+
+/* Clases globales de utilidades y componentes */
+
+.analytics-container {
+  @apply min-h-screen bg-[#0f1417] text-[hsl(0,0%,100%)] transition-all duration-300 ease-in-out font-archivo;
+}
+
+.analytics-card {
+  @apply bg-[#171c1f] text-[hsl(0,0%,100%)] shadow-lg transition-all duration-300;
+  border: 1px solid hsl(214, 14%, 18%);
+  border-radius: 0.5rem;
+}
+
+/* Custom scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+/* Animaciones */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+/* Estados de foco */
+.focus-ring {
+  @apply focus-visible:ring-2 focus-visible:ring-[hsl(221.2,83.2%,53.3%)] focus-visible:ring-offset-2 focus-visible:outline-none;
+}
