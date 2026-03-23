@@ -15,7 +15,14 @@
 package org.wpsim.SimulationControl.Util;
 
 public class SimulationParams {
-    public String mode;
+    /** Container alias used as the BESA container name and RabbitMQ routing key. */
+    public String mode = "single";
+    /**
+     * Node role: {@code primary} creates services + peasants (default),
+     * {@code worker} creates only peasants (for distributed deployments).
+     * Inferred from mode if not supplied explicitly.
+     */
+    public String role = null;
     public String env;
     public int money = -1;
     public int land = -1;

@@ -67,8 +67,7 @@ import type { ParameterType } from "@/lib/parameter-config";
 
 import { TimeSeriesAnalysis } from "@/components/analytics/analysis/time-series-analysis";
 import { AgentDetailView } from "@/components/analytics/agent/agent-detail-view";
-import { DistributionAnalysis } from "@/components/analytics/analysis/distribution-analysis"; // Añade esta línea
-import { icon } from "leaflet";
+import { DistributionAnalysis } from "@/components/analytics/analysis/distribution-analysis";
 const floatVariables = [
   { key: "HappinessSadness", color: "#DA4453" },
   { key: "HopefulUncertainty", color: "#967ADC" },
@@ -599,7 +598,7 @@ const calculateAgentWellbeing = (agentStateData: AgentState): number => {
       const loadAgents = async () => {
         try {
           console.log("Cargando agentes desde CSV...");
-          const response = await window.electronAPI.readCsv();
+          const response = await fetch("/api/simulator/csv").then((r) => r.json());
           if (!response.success || !response.data) {
             throw new Error(response.error || "Error al leer el archivo CSV");
           }
@@ -1281,7 +1280,7 @@ const normalizeValue = (value: number): number => {
         <div className="mt-auto flex justify-center p-4">
           <Image
             src="/images/logo.svg"
-            alt="WellProdSimulator"
+            alt="EthosTerra"
             width={400}
             height={300}
             className="object-contain"

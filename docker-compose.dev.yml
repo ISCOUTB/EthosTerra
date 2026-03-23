@@ -1,0 +1,54 @@
+services:
+  # ── Simulación + UI en modo desarrollo ─────────────────────────────────────
+  # next dev con hot-reload: edita wpsUI/src/** y el navegador se actualiza solo.
+  # Para cambios en Java: docker compose -f docker-compose.dev.yml build wellprodsim-dev
+  wellprodsim-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"   # Next.js dev (UI)
+      - "8000:8000"   # WebSocket ViewerLens (Undertow)
+      - "5005:5005"   # Java remote debug → attach IntelliJ/VSCode
+    volumes:
+      # Hot reload de la UI: cambios en src/ se reflejan sin rebuild
+      - ./wpsUI/src:/app/src
+      - ./wpsUI/public:/app/public
+      # package.json montado para que el CMD detecte nuevas deps sin rebuild
+      - ./wpsUI/package.json:/app/package.json
+      # node_modules en volumen nombrado: persiste entre reinicios y rebuilds
+      # Agregar un paquete: edita package.json → docker compose restart wellprodsim-dev
+      - node_modules_dev:/app/node_modules
+      # Logs del simulador persistidos en el host
+      - ./data/logs:/app/logs
+    environment:
+      - WPS_JAR_PATH=/app/wps-simulator.jar
+      - WPS_LOGS_PATH=/app/logs
+      - NODE_ENV=development
+      - RABBITMQ_HOST=rabbitmq
+      # Activa debug remoto en cada proceso Java que se lance desde Next.js
+      - JAVA_TOOL_OPTIONS=-Xmx2g -Xms512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── RabbitMQ (igual que prod) ───────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  # Persiste node_modules entre reinicios; se puebla en el primer arranque.
+  # Al agregar deps: edita package.json → docker compose restart wellprodsim-dev
+  node_modules_dev:

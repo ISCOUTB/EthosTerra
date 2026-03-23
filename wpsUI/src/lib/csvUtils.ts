@@ -7,7 +7,7 @@ export interface CSVData {
 
 export const fetchCSVData = async (): Promise<CSVData[]> => {
   try {
-    const response = await window.electronAPI.readCsv();
+    const response = await fetch("/api/simulator/csv").then((r) => r.json());
     if (!response.success || !response.data) {
       throw new Error(response.error || "Error al leer el archivo CSV");
     }

@@ -29,7 +29,7 @@ const TeamSection = ({
               everyone
             </h2>
             <p className="text-gray-400 font-archivo text-sm sm:text-base max-w-2xl mx-auto">
-              We are the team behind WellProdSimulator, committed to developing
+              We are the team behind EthosTerra, committed to developing
               tools that model social welfare. We believe in the power of shared
               knowledge and in simulation as a means to understand and improve
               our environment. If you have questions, ideas or proposals, do not

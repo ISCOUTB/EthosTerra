@@ -221,6 +221,16 @@ public final class wpsConfig {
     }
 
 
+    public String loadWorldFile(String world) {
+        // Try filesystem first (e.g. web/mediumworld.json from volume mount)
+        String result = loadFile("web/" + world + ".json");
+        if (result == null) {
+            // Fall back to JAR resource path (e.g. web/data/world.100.json)
+            result = loadFile("web/data/world." + world + ".json");
+        }
+        return result;
+    }
+
     public String loadFile(String fileName) {
         InputStream inputStream = null;
         try {
@@ -332,7 +342,9 @@ public final class wpsConfig {
 
     public Double getDoubleProperty(String property) {
         try {
-            return Double.parseDouble(properties.getProperty(property));
+            String value = properties.getProperty(property);
+            if (value == null) return 0.0;
+            return Double.parseDouble(value);
         } catch (NumberFormatException e) {
             return 0.0;
         }
@@ -340,7 +352,9 @@ public final class wpsConfig {
 
     public int getIntProperty(String property) {
         try {
-            return Integer.parseInt(properties.getProperty(property));
+            String value = properties.getProperty(property);
+            if (value == null) return 0;
+            return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             return 0;
         }

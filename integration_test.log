@@ -1,0 +1,430 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.50kB 0.0s done
+#1 DONE 0.0s
+
+#2 [container-a internal] load build definition from Dockerfile
+#2 transferring dockerfile: 6.79kB done
+#2 DONE 0.0s
+
+#3 [container-a internal] load metadata for docker.io/library/node:20-slim
+#3 ...
+
+#4 [auth] library/eclipse-temurin:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#5 [auth] library/node:pull token for registry-1.docker.io
+#5 DONE 0.0s
+
+#6 [container-a internal] load metadata for docker.io/library/eclipse-temurin:21-jre-jammy
+#6 DONE 1.0s
+
+#7 [container-c internal] load metadata for docker.io/library/eclipse-temurin:21-jdk-jammy
+#7 DONE 1.0s
+
+#3 [container-a internal] load metadata for docker.io/library/node:20-slim
+#3 DONE 1.7s
+
+#8 [container-b internal] load .dockerignore
+#8 transferring context: 710B done
+#8 DONE 0.0s
+
+#9 [container-b java-build  1/26] FROM docker.io/library/eclipse-temurin:21-jdk-jammy@sha256:db76cc1ec33597273b26359c23ff1fc8d83a570ead897ce694e9d314e0014032
+#9 resolve docker.io/library/eclipse-temurin:21-jdk-jammy@sha256:db76cc1ec33597273b26359c23ff1fc8d83a570ead897ce694e9d314e0014032 0.1s done
+#9 DONE 0.1s
+
+#10 [container-a webapp  1/19] FROM docker.io/library/eclipse-temurin:21-jre-jammy@sha256:9124935fec241982824f1992fefab73f14701c3cc54a3e18cdb4bf6ce11d9a12
+#10 resolve docker.io/library/eclipse-temurin:21-jre-jammy@sha256:9124935fec241982824f1992fefab73f14701c3cc54a3e18cdb4bf6ce11d9a12 0.1s done
+#10 DONE 0.1s
+
+#11 [container-c] FROM docker.io/library/node:20-slim@sha256:17281e8d1dc4d671976c6b89a12f47a44c2f390b63a989e2e327631041f544fd
+#11 resolve docker.io/library/node:20-slim@sha256:17281e8d1dc4d671976c6b89a12f47a44c2f390b63a989e2e327631041f544fd 0.1s done
+#11 DONE 0.1s
+
+#12 [container-a internal] load build context
+#12 transferring context: 61.05kB 0.1s done
+#12 transferring context: 61.05kB 0.1s done
+#12 DONE 0.1s
+
+#13 [container-a java-build 20/26] RUN cd LocalBESA    && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#13 CACHED
+
+#14 [container-a java-build 12/26] COPY KernelBESA/    ./KernelBESA/
+#14 CACHED
+
+#15 [container-a java-build  4/26] COPY KernelBESA/pom.xml    ./KernelBESA/pom.xml
+#15 CACHED
+
+#16 [container-a webapp 13/19] RUN ln -s /app/src/wps/logs /app/logs
+#16 CACHED
+
+#17 [container-a java-build 17/26] COPY eBDIBESA/      ./eBDIBESA/
+#17 CACHED
+
+#18 [container-a java-build 22/26] RUN cd RationalBESA && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#18 CACHED
+
+#19 [container-a java-build  2/26] RUN apt-get update && apt-get install -y --no-install-recommends maven && rm -rf /var/lib/apt/lists/*
+#19 CACHED
+
+#20 [container-a java-build 15/26] COPY RationalBESA/  ./RationalBESA/
+#20 CACHED
+
+#21 [container-a java-build 19/26] RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#21 CACHED
+
+#22 [container-a java-build 18/26] COPY wpsSimulator/  ./wpsSimulator/
+#22 CACHED
+
+#23 [container-a webapp 10/19] COPY wpsUI/src/ ./src/
+#23 CACHED
+
+#24 [container-a webapp  7/19] WORKDIR /app
+#24 CACHED
+
+#25 [container-a java-build  3/26] WORKDIR /build
+#25 CACHED
+
+#26 [container-a java-build  6/26] COPY RemoteBESA/pom.xml    ./RemoteBESA/pom.xml
+#26 CACHED
+
+#27 [container-a java-build  8/26] COPY BDIBESA/pom.xml       ./BDIBESA/pom.xml
+#27 CACHED
+
+#28 [container-a webapp  6/19] RUN groupadd -r wpsuser && useradd -r -g wpsuser -d /app -s /sbin/nologin wpsuser
+#28 CACHED
+
+#29 [container-a java-build 26/26] RUN jar tf /build/wpsSimulator/target/wps-simulator-3.6.0.jar | head -5 &&     jar xf /build/wpsSimulator/target/wps-simulator-3.6.0.jar META-INF/MANIFEST.MF &&     cat META-INF/MANIFEST.MF &&     jar tf /build/wpsSimulator/target/wps-simulator-3.6.0.jar | grep -c "BESA/" &&     echo "=== JAR verification passed ==="
+#29 CACHED
+
+#30 [container-a webapp  9/19] COPY wpsUI/package.json wpsUI/tsconfig.json wpsUI/next.config.mjs wpsUI/tailwind.config.ts wpsUI/postcss.config.mjs ./
+#30 CACHED
+
+#31 [container-a webapp 12/19] RUN mkdir -p /app/src/wps/logs
+#31 CACHED
+
+#32 [container-a webapp  5/19] RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm     && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx     && node --version && npm --version && npx --version
+#32 CACHED
+
+#33 [container-a webapp  8/19] COPY --from=java-build     /build/wpsSimulator/target/wps-simulator-3.6.0.jar     /app/wps-simulator.jar
+#33 CACHED
+
+#34 [container-a webapp  4/19] COPY --from=node:20-slim /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+#34 CACHED
+
+#35 [container-a java-build 13/26] COPY LocalBESA/     ./LocalBESA/
+#35 CACHED
+
+#36 [container-a java-build 14/26] COPY RemoteBESA/    ./RemoteBESA/
+#36 CACHED
+
+#37 [container-a java-build 23/26] RUN cd BDIBESA      && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#37 CACHED
+
+#38 [container-a java-build  5/26] COPY LocalBESA/pom.xml     ./LocalBESA/pom.xml
+#38 CACHED
+
+#39 [container-a java-build 21/26] RUN cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#39 CACHED
+
+#40 [container-a java-build 24/26] RUN cd eBDIBESA     && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#40 CACHED
+
+#41 [container-a java-build 10/26] COPY wpsSimulator/pom.xml  ./wpsSimulator/pom.xml
+#41 CACHED
+
+#42 [container-a java-build 25/26] RUN cd wpsSimulator && mvn package -q -DskipTests     -Dmaven.javadoc.skip=true -Dmaven.source.skip=true     -P docker
+#42 CACHED
+
+#43 [container-a java-build 11/26] RUN cd KernelBESA   && mvn install -N -q -DskipTests     && cd ../LocalBESA    && mvn install -N -q -DskipTests     && cd ../RemoteBESA   && mvn install -N -q -DskipTests     && cd ../RationalBESA && mvn install -N -q -DskipTests     && cd ../BDIBESA      && mvn install -N -q -DskipTests     && cd ../eBDIBESA     && mvn install -N -q -DskipTests     && cd ../wpsSimulator && mvn dependency:go-offline -q -P docker
+#43 CACHED
+
+#44 [container-a java-build 16/26] COPY BDIBESA/       ./BDIBESA/
+#44 CACHED
+
+#45 [container-a webapp 11/19] COPY wpsUI/public/ ./public/
+#45 CACHED
+
+#46 [container-a webapp  2/19] RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+#46 CACHED
+
+#47 [container-a webapp  3/19] COPY --from=node:20-slim /usr/local/bin/node /usr/local/bin/node
+#47 CACHED
+
+#48 [container-a java-build  7/26] COPY RationalBESA/pom.xml  ./RationalBESA/pom.xml
+#48 CACHED
+
+#49 [container-a java-build  9/26] COPY eBDIBESA/pom.xml      ./eBDIBESA/pom.xml
+#49 CACHED
+
+#50 [container-a webapp 14/19] RUN npm pkg delete dependencies.wellprodsim dependencies.WellProdSim 2>/dev/null; true
+#50 CACHED
+
+#51 [container-a webapp 15/19] RUN npm install --ignore-scripts --no-optional
+#51 0.403 npm warn config optional Use `--omit=optional` to exclude optional dependencies, or
+#51 0.403 npm warn config `--include=optional` to include them.
+#51 0.403 npm warn config
+#51 0.403 npm warn config       Default value does install optional deps unless otherwise omitted.
+#51 57.16 npm warn deprecated are-we-there-yet@3.0.1: This package is no longer supported.
+#51 57.25 npm warn deprecated npmlog@6.0.2: This package is no longer supported.
+#51 57.30 npm warn deprecated @npmcli/move-file@2.0.1: This functionality has been moved to @npmcli/fs
+#51 57.46 npm warn deprecated gauge@4.0.4: This package is no longer supported.
+#51 57.85 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#51 57.98 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+#51 59.00 npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+#51 59.03 npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+#51 59.37 npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 60.18 npm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 66.26 npm warn deprecated glob@8.1.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 68.57 npm warn deprecated glob@10.3.10: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 68.75 npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 71.25 npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+#51 138.3 npm warn deprecated next@14.2.15: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
+#51 138.8 
+#51 138.8 added 944 packages, and audited 945 packages in 2m
+#51 138.8 
+#51 138.8 216 packages are looking for funding
+#51 138.8   run `npm fund` for details
+#51 139.1 
+#51 139.1 23 vulnerabilities (2 low, 1 moderate, 19 high, 1 critical)
+#51 139.1 
+#51 139.1 To address issues that do not require attention, run:
+#51 139.1   npm audit fix
+#51 139.1 
+#51 139.1 To address all issues (including breaking changes), run:
+#51 139.1   npm audit fix --force
+#51 139.1 
+#51 139.1 Run `npm audit` for details.
+#51 DONE 140.1s
+
+#51 [container-c webapp 15/19] RUN npm install --ignore-scripts --no-optional
+#51 DONE 140.1s
+
+#52 [container-c webapp 16/19] RUN npx next build
+#52 1.733 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#52 1.734 This information is used to shape Next.js' roadmap and prioritize features.
+#52 1.734 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#52 1.734 https://nextjs.org/telemetry
+#52 1.734 
+#52 1.813   Ôû▓ Next.js 14.2.15
+#52 1.813 
+#52 1.882    Creating an optimized production build ...
+#52 2.369    Downloading swc package @next/swc-linux-x64-gnu...
+#52 7.970    Downloading swc package @next/swc-linux-x64-musl...
+#52 37.15  Ô£ô Compiled successfully
+#52 37.15    Skipping validation of types
+#52 37.15    Linting ...
+#52 37.47    Collecting page data ...
+#52 39.44    Generating static pages (0/12) ...
+#52 40.11    Generating static pages (3/12) 
+#52 40.11    Generating static pages (6/12) 
+#52 40.11    Generating static pages (9/12) 
+#52 40.11  Ô£ô Generating static pages (12/12)
+#52 40.36    Finalizing page optimization ...
+#52 40.36    Collecting build traces ...
+#52 55.23 
+#52 55.23 Route (app)                              Size     First Load JS
+#52 55.23 Ôöî Ôùï /                                    32.3 kB         120 kB
+#52 55.23 Ôö£ Ôùï /_not-found                          876 B          88.7 kB
+#52 55.23 Ôö£ ãÆ /api/simulator                       0 B                0 B
+#52 55.23 Ôö£ ãÆ /api/simulator/app-path              0 B                0 B
+#52 55.23 Ôö£ ãÆ /api/simulator/csv                   0 B                0 B
+#52 55.23 Ôö£ ãÆ /api/simulator/file                  0 B                0 B
+#52 55.23 Ôö£ Ôùï /pages/analytics                     31.8 kB         296 kB
+#52 55.23 Ôö£ Ôùï /pages/contact                       21.8 kB         163 kB
+#52 55.23 Ôö£ Ôùï /pages/dataExport                    4.88 kB         148 kB
+#52 55.23 Ôö£ Ôùï /pages/settings                      4.34 kB         163 kB
+#52 55.23 Ôöö Ôùï /pages/simulador                     47.3 kB         338 kB
+#52 55.23 + First Load JS shared by all            87.8 kB
+#52 55.23   Ôö£ chunks/117-82bebd18304c2013.js       31.8 kB
+#52 55.23   Ôö£ chunks/fd9d1056-33dbbf1723128ec3.js  53.6 kB
+#52 55.23   Ôöö other shared chunks (total)          2.44 kB
+#52 55.23 
+#52 55.23 
+#52 55.23 Ôùï  (Static)   prerendered as static content
+#52 55.23 ãÆ  (Dynamic)  server-rendered on demand
+#52 55.23 
+#52 DONE 55.7s
+
+#52 [container-c webapp 16/19] RUN npx next build
+#52 DONE 55.7s
+
+#53 [container-a webapp 17/19] RUN cp -r /app/public /app/.next/standalone/public &&     cp -r /app/.next/static /app/.next/standalone/.next/static
+#53 DONE 0.4s
+
+#53 [container-a webapp 17/19] RUN cp -r /app/public /app/.next/standalone/public &&     cp -r /app/.next/static /app/.next/standalone/.next/static
+#53 DONE 0.4s
+
+#54 [container-b webapp 18/19] RUN cp /app/wps-simulator.jar /app/.next/standalone/wps-simulator.jar
+#54 DONE 0.5s
+
+#54 [container-c webapp 18/19] RUN cp /app/wps-simulator.jar /app/.next/standalone/wps-simulator.jar
+#54 DONE 0.5s
+
+#55 [container-a webapp 19/19] RUN chown -R wpsuser:wpsuser /app/.next /app/src /app/logs /app/wps-simulator.jar
+#55 DONE 8.1s
+
+#55 [container-b webapp 19/19] RUN chown -R wpsuser:wpsuser /app/.next /app/src /app/logs /app/wps-simulator.jar
+#55 DONE 8.1s
+
+#56 [container-c] exporting to image
+#56 exporting layers
+#56 ...
+
+#57 [container-a] exporting to image
+#57 ...
+
+#58 [container-b] exporting to image
+#58 ...
+
+#56 [container-c] exporting to image
+#56 exporting layers 39.2s done
+#56 exporting manifest sha256:3642b2c81183496080307c279911ba7073b25d40989cf3d7b2140caa5a22e5ef 0.0s done
+#56 exporting config sha256:0a05fc3a16f4569da9e9cd6894ffde76f90a0ebc5801983f71dc087f8d687ab0 0.0s done
+#56 exporting attestation manifest sha256:667e09c4626c70280b72d6049e285986b1afde325f5cdb0c4860c6457fba9705 0.1s done
+#56 exporting manifest list sha256:34fa829f96fa41c115bc05e47b72f53267ce6908d731756141d1dfd0a4ff60e9
+#56 exporting manifest list sha256:34fa829f96fa41c115bc05e47b72f53267ce6908d731756141d1dfd0a4ff60e9 0.0s done
+#56 naming to docker.io/library/ethosterra-container-c:latest done
+#56 unpacking to docker.io/library/ethosterra-container-c:latest
+#56 ...
+
+#58 [container-b] exporting to image
+#58 exporting layers 39.2s done
+#58 exporting manifest sha256:b0c91f53ce4d17a859db3881ec662c65c8976a837206ffb99849f0e69f3f0a7f 0.0s done
+#58 exporting config sha256:eadc16630498a1312856343babb26cd26dab2d0cdd771630e6d3d23789018cc6 0.0s done
+#58 exporting attestation manifest sha256:f777634696dc4690bec687284bf23b0d1cc2107744ff0c40e105374a5b8902e6 0.1s done
+#58 exporting manifest list sha256:a045c40495c5484a68d54a710b641d65578d04fd08e2b76cde2e1106601fb4cf 0.0s done
+#58 naming to docker.io/library/ethosterra-container-b:latest 0.0s done
+#58 unpacking to docker.io/library/ethosterra-container-b:latest
+#58 ...
+
+#57 [container-a] exporting to image
+#57 exporting layers 39.2s done
+#57 exporting manifest sha256:900650c8c940f6a06f4a540f3b70930ee7f01cb995f66925fc3cc8a82e84f51d 0.0s done
+#57 exporting config sha256:70780f735d60e2f28f32c05cc1a40299e05195f88e95970963b7b5946ce52aaf 0.0s done
+#57 exporting attestation manifest sha256:71c0eb52961c2345d4e5a2ac2a43c239d708f90e6f42b0d4e2bfa7896584ada8 0.1s done
+#57 exporting manifest list sha256:0cee0d2564a94849188cd7a4e67b7339ba655439377cb04207f524ca8f7ecd96 0.0s done
+#57 naming to docker.io/library/ethosterra-container-a:latest 0.0s done
+#57 unpacking to docker.io/library/ethosterra-container-a:latest
+#57 ...
+
+#58 [container-b] exporting to image
+#58 unpacking to docker.io/library/ethosterra-container-b:latest 29.1s done
+#58 DONE 68.6s
+
+#57 [container-a] exporting to image
+#57 unpacking to docker.io/library/ethosterra-container-a:latest 29.2s done
+#57 DONE 68.8s
+
+#56 [container-c] exporting to image
+#56 unpacking to docker.io/library/ethosterra-container-c:latest 29.1s done
+#56 DONE 68.7s
+
+#59 [container-b] resolving provenance for metadata file
+#59 DONE 0.1s
+
+#60 [container-c] resolving provenance for metadata file
+#60 DONE 0.1s
+
+#61 [container-a] resolving provenance for metadata file
+#61 DONE 0.0s
+ ethosterra-container-c  Built
+ ethosterra-container-a  Built
+ ethosterra-container-b  Built
+ Container ethosterra-rabbitmq-1  Running
+ Container ethosterra-container-c-1  Recreate
+ Container ethosterra-container-a-1  Recreate
+ Container ethosterra-container-b-1  Recreate
+ Container ethosterra-container-a-1  Recreated
+ Container ethosterra-container-b-1  Recreated
+ Container ethosterra-container-c-1  Recreated
+Attaching to container-a-1, container-b-1, container-c-1, rabbitmq-1
+container-c-1  | BESA.Config.ConfigExceptionBESA: [ExceptionBESA:BESA.Log.ConfigLog:<init>:32]: Error reading the configuration file: No se pudo encontrar confbesa.xml ni dentro del JAR ni en el sistema de archivos
+container-c-1  | java.lang.reflect.InvocationTargetException
+container-c-1  | 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(Unknown Source)
+container-c-1  | 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Unknown Source)
+container-c-1  | 	at java.base/java.lang.reflect.Constructor.newInstance(Unknown Source)
+container-c-1  | 	at BESA.Kernel.System.SystemFactoryBESA.build(SystemFactoryBESA.java:51)
+container-c-1  | 	at BESA.Kernel.System.SystemFactoryBESA.createRemoteAdmBESA(SystemFactoryBESA.java:21)
+container-c-1  | 	at BESA.Kernel.System.AdmBESA.environmentCase(AdmBESA.java:184)
+container-c-1  | 	at BESA.Kernel.System.AdmBESA.createSingletonInstance(AdmBESA.java:172)
+container-c-1  | 	at BESA.Kernel.System.AdmBESA.getInstance(AdmBESA.java:117)
+container-c-1  | 	at org.wpsim.BesaTesting.MainTest.main(MainTest.java:21)
+container-c-1  | Caused by: java.lang.NullPointerException: Cannot invoke "BESA.Log.ConfigLog.isTrace()" because "this.configLog" is null
+container-c-1  | 	at BESA.Log.TerminalReportBESA.<init>(TerminalReportBESA.java:68)
+container-c-1  | 	at BESA.Log.ReportBESA.createInstance(ReportBESA.java:63)
+container-c-1  | 	at BESA.Log.ReportBESA.getInstance(ReportBESA.java:82)
+container-c-1  | 	at BESA.Log.ReportBESA.trace(ReportBESA.java:103)
+container-c-1  | 	at BESA.Remote.DistributedInitBESA.initWithMulticast(DistributedInitBESA.java:94)
+container-c-1  | 	at BESA.Remote.DistributedInitBESA.<init>(DistributedInitBESA.java:64)
+container-c-1  | 	at BESA.Remote.RemoteAdmBESA.<init>(RemoteAdmBESA.java:176)
+container-c-1  | 	... 9 more
+container-c-1  | BESA.Config.ConfigExceptionBESA: [ExceptionBESA:BESA.Log.ConfigLog:<init>:32]: Error reading the configuration file: No se pudo encontrar confbesa.xml ni dentro del JAR ni en el sistema de archivos
+container-c-1  | Exception in thread "main" java.lang.NullPointerException: Cannot invoke "BESA.Log.ConfigLog.isTrace()" because "this.configLog" is null
+container-c-1  | 	at BESA.Log.TerminalReportBESA.<init>(TerminalReportBESA.java:68)
+container-c-1  | 	at BESA.Log.ReportBESA.createInstance(ReportBESA.java:63)
+container-c-1  | 	at BESA.Log.ReportBESA.getInstance(ReportBESA.java:82)
+container-c-1  | 	at BESA.Log.ReportBESA.error(ReportBESA.java:191)
+container-c-1  | 	at BESA.Kernel.System.AdmBESA.getInstance(AdmBESA.java:119)
+container-c-1  | 	at org.wpsim.BesaTesting.MainTest.main(MainTest.java:21)
+container-a-1  | BESA.Config.ConfigExceptionBESA: [ExceptionBESA:BESA.Log.ConfigLog:<init>:32]: Error reading the configuration file: No se pudo encontrar confbesa.xml ni dentro del JAR ni en el sistema de archivos
+container-a-1  | java.lang.reflect.InvocationTargetException
+container-a-1  | 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(Unknown Source)
+container-a-1  | 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Unknown Source)
+container-a-1  | 	at java.base/java.lang.reflect.Constructor.newInstance(Unknown Source)
+container-a-1  | 	at BESA.Kernel.System.SystemFactoryBESA.build(SystemFactoryBESA.java:51)
+container-a-1  | 	at BESA.Kernel.System.SystemFactoryBESA.createRemoteAdmBESA(SystemFactoryBESA.java:21)
+container-a-1  | 	at BESA.Kernel.System.AdmBESA.environmentCase(AdmBESA.java:184)
+container-a-1  | 	at BESA.Kernel.System.AdmBESA.createSingletonInstance(AdmBESA.java:172)
+container-a-1  | 	at BESA.Kernel.System.AdmBESA.getInstance(AdmBESA.java:117)
+container-a-1  | 	at org.wpsim.BesaTesting.MainTest.main(MainTest.java:21)
+container-a-1  | Caused by: java.lang.NullPointerException: Cannot invoke "BESA.Log.ConfigLog.isTrace()" because "this.configLog" is null
+container-a-1  | 	at BESA.Log.TerminalReportBESA.<init>(TerminalReportBESA.java:68)
+container-a-1  | 	at BESA.Log.ReportBESA.createInstance(ReportBESA.java:63)
+container-a-1  | 	at BESA.Log.ReportBESA.getInstance(ReportBESA.java:82)
+container-a-1  | 	at BESA.Log.ReportBESA.trace(ReportBESA.java:103)
+container-a-1  | 	at BESA.Remote.DistributedInitBESA.initWithMulticast(DistributedInitBESA.java:94)
+container-a-1  | 	at BESA.Remote.DistributedInitBESA.<init>(DistributedInitBESA.java:64)
+container-a-1  | 	at BESA.Remote.RemoteAdmBESA.<init>(RemoteAdmBESA.java:176)
+container-a-1  | 	... 9 more
+container-a-1  | BESA.Config.ConfigExceptionBESA: [ExceptionBESA:BESA.Log.ConfigLog:<init>:32]: Error reading the configuration file: No se pudo encontrar confbesa.xml ni dentro del JAR ni en el sistema de archivos
+container-a-1  | Exception in thread "main" java.lang.NullPointerException: Cannot invoke "BESA.Log.ConfigLog.isTrace()" because "this.configLog" is null
+container-a-1  | 	at BESA.Log.TerminalReportBESA.<init>(TerminalReportBESA.java:68)
+container-b-1  | BESA.Config.ConfigExceptionBESA: [ExceptionBESA:BESA.Log.ConfigLog:<init>:32]: Error reading the configuration file: No se pudo encontrar confbesa.xml ni dentro del JAR ni en el sistema de archivos
+container-a-1  | 	at BESA.Log.ReportBESA.createInstance(ReportBESA.java:63)
+container-a-1  | 	at BESA.Log.ReportBESA.getInstance(ReportBESA.java:82)
+container-a-1  | 	at BESA.Log.ReportBESA.error(ReportBESA.java:191)
+container-a-1  | 	at BESA.Kernel.System.AdmBESA.getInstance(AdmBESA.java:119)
+container-a-1  | 	at org.wpsim.BesaTesting.MainTest.main(MainTest.java:21)
+container-b-1  | java.lang.reflect.InvocationTargetException
+container-b-1  | 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(Unknown Source)
+container-b-1  | 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Unknown Source)
+container-b-1  | 	at java.base/java.lang.reflect.Constructor.newInstance(Unknown Source)
+container-b-1  | 	at BESA.Kernel.System.SystemFactoryBESA.build(SystemFactoryBESA.java:51)
+container-b-1  | 	at BESA.Kernel.System.SystemFactoryBESA.createRemoteAdmBESA(SystemFactoryBESA.java:21)
+container-b-1  | 	at BESA.Kernel.System.AdmBESA.environmentCase(AdmBESA.java:184)
+container-b-1  | 	at BESA.Kernel.System.AdmBESA.createSingletonInstance(AdmBESA.java:172)
+container-b-1  | 	at BESA.Kernel.System.AdmBESA.getInstance(AdmBESA.java:117)
+container-b-1  | 	at org.wpsim.BesaTesting.MainTest.main(MainTest.java:21)
+container-b-1  | Caused by: java.lang.NullPointerException: Cannot invoke "BESA.Log.ConfigLog.isTrace()" because "this.configLog" is null
+container-b-1  | 	at BESA.Log.TerminalReportBESA.<init>(TerminalReportBESA.java:68)
+container-b-1  | 	at BESA.Log.ReportBESA.createInstance(ReportBESA.java:63)
+container-b-1  | 	at BESA.Log.ReportBESA.getInstance(ReportBESA.java:82)
+container-b-1  | 	at BESA.Log.ReportBESA.trace(ReportBESA.java:103)
+container-b-1  | 	at BESA.Remote.DistributedInitBESA.initWithMulticast(DistributedInitBESA.java:94)
+container-b-1  | 	at BESA.Remote.DistributedInitBESA.<init>(DistributedInitBESA.java:64)
+container-b-1  | 	at BESA.Remote.RemoteAdmBESA.<init>(RemoteAdmBESA.java:176)
+container-b-1  | 	... 9 more
+container-b-1  | BESA.Config.ConfigExceptionBESA: [ExceptionBESA:BESA.Log.ConfigLog:<init>:32]: Error reading the configuration file: No se pudo encontrar confbesa.xml ni dentro del JAR ni en el sistema de archivos
+container-b-1  | Exception in thread "main" java.lang.NullPointerException: Cannot invoke "BESA.Log.ConfigLog.isTrace()" because "this.configLog" is null
+container-b-1  | 	at BESA.Log.TerminalReportBESA.<init>(TerminalReportBESA.java:68)
+container-b-1  | 	at BESA.Log.ReportBESA.createInstance(ReportBESA.java:63)
+container-b-1  | 	at BESA.Log.ReportBESA.getInstance(ReportBESA.java:82)
+container-b-1  | 	at BESA.Log.ReportBESA.error(ReportBESA.java:191)
+container-b-1  | 	at BESA.Kernel.System.AdmBESA.getInstance(AdmBESA.java:119)
+container-b-1  | 	at org.wpsim.BesaTesting.MainTest.main(MainTest.java:21)
+
+[Kcontainer-c-1 exited with code 1
+
+[Kcontainer-b-1 exited with code 1
+
+[Kcontainer-a-1 exited with code 1

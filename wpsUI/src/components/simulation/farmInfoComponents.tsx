@@ -51,39 +51,24 @@ export default function FarmInfoComponent() {
             const jsonData = JSON.parse(data)
             const { name, state } = jsonData
             const parsedState = JSON.parse(state)
-
-            setFarmData((prevFarmData) =>
-              prevFarmData.map((farm) =>
-                farm.id === name
-                  ? {
-                      ...farm,
-                      count: parsedState.tools,
-                      life: parsedState.health,
-                      amount: parsedState.money,
-                      date: parsedState.internalCurrentDate,
-                      farmId: parsedState.peasantFamilyLandAlias,
-                    }
-                  : farm,
-              ),
-            )
+            const updated = {
+              count: parsedState.tools,
+              life: parsedState.health,
+              amount: parsedState.money,
+              date: parsedState.internalCurrentDate,
+              farmId: parsedState.peasantFamilyLandAlias,
+            }
+            setFarmData((prev) => {
+              const exists = prev.some((f) => f.id === name)
+              if (exists) {
+                return prev.map((f) => f.id === name ? { ...f, ...updated } : f)
+              }
+              return [...prev, { id: name, ...updated }]
+            })
           } catch (error) {}
           break
         case "q=":
-          const number = Number.parseInt(data, 10)
-          setFarmData(() => {
-            const newFarmData = []
-            for (let i = 1; i <= number; i++) {
-              newFarmData.push({
-                id: `MAS_500PeasantFamily${i}`,
-                count: 0,
-                life: 0,
-                amount: 0,
-                date: "",
-                farmId: "",
-              })
-            }
-            return newFarmData
-          })
+          setFarmData([])
           break
         case "d=":
           const date = data

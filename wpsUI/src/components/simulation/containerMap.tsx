@@ -141,22 +141,40 @@ const SimulationMap: React.FC = () => {
       let data = event.data.substring(2);
       switch (prefix) {
         case "q=":
-          let number = parseInt(data, 10);
           requestAnimationFrame(() => {
             setIsSimulationActive(true);
-            setAgentData(() => {
-              const newAgentData = [];
-              for (let i = 1; i <= number; i++) {
-                newAgentData.push({
-                  name_agent: `MAS_500_PeasantFamily${i}`,
-                  lands: [],
-                });
-              }
-              return newAgentData;
-            });
+            setAgentData([]);
           });
           break;
-        case "e= ":
+        case "j=":
+          try {
+            let jsonData = JSON.parse(data);
+            const { name, state } = jsonData;
+            const parsedState = JSON.parse(state);
+            const lands_number = parsedState.assignedLands.length;
+            const newLands = [];
+            for (let j = 0; j < lands_number; j++) {
+              const land_name = parsedState.assignedLands[j].landName;
+              const land_name_short = land_name.split("_")[1];
+              newLands.push({
+                name: "land_" + land_name_short,
+                current_season: parsedState.assignedLands[j].currentSeason,
+              });
+            }
+            setAgentData((prev) => {
+              const exists = prev.some((a) => a.name_agent === name);
+              if (exists) {
+                return prev.map((a) =>
+                  a.name_agent === name ? { ...a, lands: newLands } : a
+                );
+              }
+              return [...prev, { name_agent: name, lands: newLands }];
+            });
+          } catch (error) {
+            console.error(error);
+          }
+          break;
+        case "e=":
           if (data === "end") {
             setIsSimulationActive(false);
             setSpecificLandNames([]);
@@ -168,52 +186,6 @@ const SimulationMap: React.FC = () => {
   };
 
   useEffect(() => {
-    const connectWebSocket2 = () => {
-      const url = "ws://localhost:8000/wpsViewer";
-      socketRef.current = new WebSocket(url);
-
-      socketRef.current.onerror = function (event) {
-        console.error("Error en la conexión a la dirección: " + url);
-        setTimeout(connectWebSocket, 2000);
-      };
-
-      socketRef.current.onmessage = function (event) {
-        let prefix = event.data.substring(0, 2);
-        let data = event.data.substring(2);
-        switch (prefix) {
-          case "j=":
-            try {
-              let jsonData = JSON.parse(data);
-              const { name, state } = jsonData;
-              const parsedState = JSON.parse(state);
-              if (agentData !== null) {
-                const lands_number = parsedState.assignedLands.length;
-                //console.log(lands_number);
-                for (let i = 0; i < agentData.length; i++) {
-                  if (agentData[i].name_agent === name) {
-                    agentData[i].lands = [];
-                    for (let j = 0; j < lands_number; j++) {
-                      const land_name = parsedState.assignedLands[j].landName;
-                      //tomar los primeros digitos hasta que encuentre el segundo _
-                      const land_name_short = land_name.split("_")[1];
-                      agentData[i].lands.push({
-                        name: "land_" + land_name_short,
-                        current_season:
-                          parsedState.assignedLands[j].currentSeason,
-                      });
-                    }
-                  }
-                }
-              }
-            } catch (error) {
-              console.error(error);
-            }
-            break;
-        }
-      };
-    };
-    connectWebSocket2();
-
     if (isSimulationActive) {
       const interval = setInterval(() => {
         const landNames: string[] = [];
@@ -228,7 +200,6 @@ const SimulationMap: React.FC = () => {
         setSpecificSeason(seasonNames);
       }, 1000);
 
-      // Limpiar el intervalo cuando el componente se desmonta o la simulación termina
       return () => clearInterval(interval);
     }
   }, [agentData, isSimulationActive]);

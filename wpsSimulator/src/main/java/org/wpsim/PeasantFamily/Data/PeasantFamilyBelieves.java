@@ -115,7 +115,7 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
         }
 
         if (params.training == 1) {
-            this.trainingLevel = wpsStart.config.getDoubleProperty("trainingLevel");
+            this.trainingLevel = wpsStart.config.getDoubleProperty("pfagent.trainingLevel");
         } else {
             this.trainingLevel = 0.4;
         }

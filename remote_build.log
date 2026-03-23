@@ -1,0 +1,224 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 558B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 6.79kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/eclipse-temurin:21-jdk-jammy
+#3 DONE 0.5s
+
+#4 [internal] load metadata for docker.io/library/node:20-slim
+#4 DONE 0.5s
+
+#5 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-jammy
+#5 DONE 0.5s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 710B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 DONE 0.0s
+
+#8 [java-build  1/26] FROM docker.io/library/eclipse-temurin:21-jdk-jammy@sha256:db76cc1ec33597273b26359c23ff1fc8d83a570ead897ce694e9d314e0014032
+#8 resolve docker.io/library/eclipse-temurin:21-jdk-jammy@sha256:db76cc1ec33597273b26359c23ff1fc8d83a570ead897ce694e9d314e0014032 0.1s done
+#8 DONE 0.1s
+
+#9 [webapp  1/19] FROM docker.io/library/eclipse-temurin:21-jre-jammy@sha256:9124935fec241982824f1992fefab73f14701c3cc54a3e18cdb4bf6ce11d9a12
+#9 resolve docker.io/library/eclipse-temurin:21-jre-jammy@sha256:9124935fec241982824f1992fefab73f14701c3cc54a3e18cdb4bf6ce11d9a12 0.1s done
+#9 DONE 0.1s
+
+#10 FROM docker.io/library/node:20-slim@sha256:17281e8d1dc4d671976c6b89a12f47a44c2f390b63a989e2e327631041f544fd
+#10 resolve docker.io/library/node:20-slim@sha256:17281e8d1dc4d671976c6b89a12f47a44c2f390b63a989e2e327631041f544fd 0.1s done
+#10 DONE 0.1s
+
+#11 [webapp  4/19] COPY --from=node:20-slim /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+#11 CACHED
+
+#12 [webapp  5/19] RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm     && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx     && node --version && npm --version && npx --version
+#12 CACHED
+
+#13 [webapp  6/19] RUN groupadd -r wpsuser && useradd -r -g wpsuser -d /app -s /sbin/nologin wpsuser
+#13 CACHED
+
+#14 [webapp  2/19] RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [webapp  3/19] COPY --from=node:20-slim /usr/local/bin/node /usr/local/bin/node
+#15 CACHED
+
+#16 [webapp  7/19] WORKDIR /app
+#16 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 76.32kB 0.1s done
+#7 DONE 0.1s
+
+#17 [java-build  4/26] COPY KernelBESA/pom.xml    ./KernelBESA/pom.xml
+#17 CACHED
+
+#18 [java-build 10/26] COPY wpsSimulator/pom.xml  ./wpsSimulator/pom.xml
+#18 CACHED
+
+#19 [java-build  8/26] COPY BDIBESA/pom.xml       ./BDIBESA/pom.xml
+#19 CACHED
+
+#20 [java-build  2/26] RUN apt-get update && apt-get install -y --no-install-recommends maven && rm -rf /var/lib/apt/lists/*
+#20 CACHED
+
+#21 [java-build  3/26] WORKDIR /build
+#21 CACHED
+
+#22 [java-build  5/26] COPY LocalBESA/pom.xml     ./LocalBESA/pom.xml
+#22 CACHED
+
+#23 [java-build  6/26] COPY RemoteBESA/pom.xml    ./RemoteBESA/pom.xml
+#23 CACHED
+
+#24 [java-build  7/26] COPY RationalBESA/pom.xml  ./RationalBESA/pom.xml
+#24 CACHED
+
+#25 [java-build  9/26] COPY eBDIBESA/pom.xml      ./eBDIBESA/pom.xml
+#25 CACHED
+
+#26 [java-build 11/26] RUN cd KernelBESA   && mvn install -N -q -DskipTests     && cd ../LocalBESA    && mvn install -N -q -DskipTests     && cd ../RemoteBESA   && mvn install -N -q -DskipTests     && cd ../RationalBESA && mvn install -N -q -DskipTests     && cd ../BDIBESA      && mvn install -N -q -DskipTests     && cd ../eBDIBESA     && mvn install -N -q -DskipTests     && cd ../wpsSimulator && mvn dependency:go-offline -q -P docker
+#26 CACHED
+
+#27 [java-build 12/26] COPY KernelBESA/    ./KernelBESA/
+#27 DONE 0.1s
+
+#28 [java-build 13/26] COPY LocalBESA/     ./LocalBESA/
+#28 DONE 0.1s
+
+#29 [java-build 14/26] COPY RemoteBESA/    ./RemoteBESA/
+#29 DONE 0.1s
+
+#30 [java-build 15/26] COPY RationalBESA/  ./RationalBESA/
+#30 DONE 0.2s
+
+#31 [java-build 16/26] COPY BDIBESA/       ./BDIBESA/
+#31 DONE 0.1s
+
+#32 [java-build 17/26] COPY eBDIBESA/      ./eBDIBESA/
+#32 DONE 0.1s
+
+#33 [java-build 18/26] COPY wpsSimulator/  ./wpsSimulator/
+#33 DONE 0.2s
+
+#34 [java-build 19/26] RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#34 DONE 3.1s
+
+#35 [java-build 20/26] RUN cd LocalBESA    && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#35 DONE 4.1s
+
+#36 [java-build 21/26] RUN cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#36 1.559 [[1;34mINFO[m] Scanning for projects...
+#36 1.631 [[1;34mINFO[m] 
+#36 1.631 [[1;34mINFO[m] [1m-------------------< [0;36mio.github.iscoutb:remote-besa[0;1m >--------------------[m
+#36 1.634 [[1;34mINFO[m] [1mBuilding RemoteBESA 3.6.0[m
+#36 1.636 [[1;34mINFO[m] [1m--------------------------------[ jar ]---------------------------------[m
+#36 1.853 [[1;34mINFO[m] 
+#36 1.853 [[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:2.6:resources[m [1m(default-resources)[m @ [36mremote-besa[0;1m ---[m
+#36 2.051 [[1;34mINFO[m] Using 'UTF-8' encoding to copy filtered resources.
+#36 2.054 [[1;34mINFO[m] skip non existing resourceDirectory /build/RemoteBESA/src/main/resources
+#36 2.058 [[1;34mINFO[m] 
+#36 2.059 [[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.11.0:compile[m [1m(default-compile)[m @ [36mremote-besa[0;1m ---[m
+#36 2.261 [[1;34mINFO[m] Changes detected - recompiling the module! :source
+#36 2.264 [[1;34mINFO[m] Compiling 28 source files with javac [debug target 21] to target/classes
+#36 3.266 [[1;34mINFO[m] /build/RemoteBESA/src/main/java/BESA/Remote/PongThread.java: Some input files use or override a deprecated API.
+#36 3.266 [[1;34mINFO[m] /build/RemoteBESA/src/main/java/BESA/Remote/PongThread.java: Recompile with -Xlint:deprecation for details.
+#36 3.267 [[1;34mINFO[m] /build/RemoteBESA/src/main/java/BESA/Remote/PongThread.java: Some input files use unchecked or unsafe operations.
+#36 3.268 [[1;34mINFO[m] /build/RemoteBESA/src/main/java/BESA/Remote/PongThread.java: Recompile with -Xlint:unchecked for details.
+#36 3.270 [[1;34mINFO[m] -------------------------------------------------------------
+#36 3.273 [[1;31mERROR[m] COMPILATION ERROR : 
+#36 3.273 [[1;34mINFO[m] -------------------------------------------------------------
+#36 3.273 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/Directory/RemoteAdmHandlerBESA.java:[75,42] cannot find symbol
+#36 3.274   symbol:   method getRmiPort()
+#36 3.274   location: variable configBESA of type BESA.Config.ConfigBESA
+#36 3.274 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/RemoteAdmBESA.java:[176,89] cannot find symbol
+#36 3.275   symbol:   method getRmiPort()
+#36 3.275   location: variable configBESA of type BESA.Config.ConfigBESA
+#36 3.275 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/RemoteAdmBESA.java:[176,114] cannot find symbol
+#36 3.275   symbol:   method getMcaddress()
+#36 3.275   location: variable configBESA of type BESA.Config.ConfigBESA
+#36 3.276 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/RemoteAdmBESA.java:[176,141] cannot find symbol
+#36 3.276   symbol:   method getMcport()
+#36 3.276   location: variable configBESA of type BESA.Config.ConfigBESA
+#36 3.277 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/DistributedInitBESA.java:[237,53] cannot find symbol
+#36 3.277   symbol:   method getRMITimeout()
+#36 3.277   location: class BESA.Config.ConfigBESA
+#36 3.277 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/DistributedInitBESA.java:[240,53] cannot find symbol
+#36 3.277   symbol:   method getRMITimeout()
+#36 3.278   location: class BESA.Config.ConfigBESA
+#36 3.278 [[1;34mINFO[m] 6 errors 
+#36 3.278 [[1;34mINFO[m] -------------------------------------------------------------
+#36 3.279 [[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+#36 3.280 [[1;34mINFO[m] [1;31mBUILD FAILURE[m
+#36 3.280 [[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+#36 3.282 [[1;34mINFO[m] Total time:  1.739 s
+#36 3.282 [[1;34mINFO[m] Finished at: 2026-03-22T06:01:44Z
+#36 3.283 [[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+#36 3.285 [[1;31mERROR[m] Failed to execute goal [32morg.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile[m [1m(default-compile)[m on project [36mremote-besa[m: [1;31mCompilation failure[m: Compilation failure: 
+#36 3.286 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/Directory/RemoteAdmHandlerBESA.java:[75,42] cannot find symbol
+#36 3.288 [[1;31mERROR[m]   symbol:   method getRmiPort()
+#36 3.288 [[1;31mERROR[m]   location: variable configBESA of type BESA.Config.ConfigBESA
+#36 3.289 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/RemoteAdmBESA.java:[176,89] cannot find symbol
+#36 3.290 [[1;31mERROR[m]   symbol:   method getRmiPort()
+#36 3.291 [[1;31mERROR[m]   location: variable configBESA of type BESA.Config.ConfigBESA
+#36 3.292 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/RemoteAdmBESA.java:[176,114] cannot find symbol
+#36 3.293 [[1;31mERROR[m]   symbol:   method getMcaddress()
+#36 3.294 [[1;31mERROR[m]   location: variable configBESA of type BESA.Config.ConfigBESA
+#36 3.295 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/RemoteAdmBESA.java:[176,141] cannot find symbol
+#36 3.296 [[1;31mERROR[m]   symbol:   method getMcport()
+#36 3.296 [[1;31mERROR[m]   location: variable configBESA of type BESA.Config.ConfigBESA
+#36 3.296 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/DistributedInitBESA.java:[237,53] cannot find symbol
+#36 3.297 [[1;31mERROR[m]   symbol:   method getRMITimeout()
+#36 3.298 [[1;31mERROR[m]   location: class BESA.Config.ConfigBESA
+#36 3.298 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/DistributedInitBESA.java:[240,53] cannot find symbol
+#36 3.298 [[1;31mERROR[m]   symbol:   method getRMITimeout()
+#36 3.299 [[1;31mERROR[m]   location: class BESA.Config.ConfigBESA
+#36 3.299 [[1;31mERROR[m] -> [1m[Help 1][m
+#36 3.300 [[1;31mERROR[m] 
+#36 3.301 [[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+#36 3.301 [[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+#36 3.301 [[1;31mERROR[m] 
+#36 3.301 [[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+#36 3.301 [[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+#36 ERROR: process "/bin/sh -c cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true" did not complete successfully: exit code: 1
+------
+ > [java-build 21/26] RUN cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true:
+3.298 [[1;31mERROR[m] /build/RemoteBESA/src/main/java/BESA/Remote/DistributedInitBESA.java:[240,53] cannot find symbol
+3.298 [[1;31mERROR[m]   symbol:   method getRMITimeout()
+3.299 [[1;31mERROR[m]   location: class BESA.Config.ConfigBESA
+3.299 [[1;31mERROR[m] -> [1m[Help 1][m
+3.300 [[1;31mERROR[m] 
+3.301 [[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+3.301 [[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+3.301 [[1;31mERROR[m] 
+3.301 [[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+3.301 [[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+------
+Dockerfile:44
+
+--------------------
+
+  42 |     RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+  43 |     RUN cd LocalBESA    && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+  44 | >>> RUN cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+  45 |     RUN cd RationalBESA && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+  46 |     RUN cd BDIBESA      && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+--------------------
+
+failed to solve: process "/bin/sh -c cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true" did not complete successfully: exit code: 1
+
+
+
+View build details: docker-desktop://dashboard/build/default/default/pu09s4vwctajpe7p4l2k49gz8
+

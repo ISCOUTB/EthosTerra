@@ -13,55 +13,72 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { InfoIcon, HelpCircle } from "lucide-react";
+import { 
+  InfoIcon, 
+  HelpCircle, 
+  Terminal, 
+  Rocket, 
+  Users, 
+  Coins, 
+  Wallet, 
+  Landmark, 
+  Sprout, 
+  Trees, 
+  Tractor, 
+  Brain, 
+  Network,
+  Droplets,
+  GraduationCap,
+  HeartPulse
+} from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-interface ConfigOptionProps {
-  id?: string;
+// --- Componentes Auxiliares Visuales ---
+
+interface VisualCardProps {
   title: string;
   description: string;
-  tooltipInfo: string;
-  children: React.ReactNode;
+  icon: React.ReactNode;
+  isSelected: boolean;
+  onClick: () => void;
+  colorClass?: string;
 }
 
-const ConfigOption = ({
-  id,
-  title,
-  description,
-  tooltipInfo,
-  children,
-}: ConfigOptionProps) => (
+const VisualCard = ({ title, description, icon, isSelected, onClick, colorClass = "border-primary" }: VisualCardProps) => (
   <motion.div
-    id={id}
-    className="bg-[#181c20] text-[#ffffff] p-6 rounded-lg border border-[#272d34]"
-    whileHover={{ scale: 1.02 }}
-    transition={{ type: "spring", stiffness: 300 }}
+    whileHover={{ scale: 1.03 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    className={cn(
+      "cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center text-center gap-3",
+      isSelected 
+        ? `bg-[#1a232b] ${colorClass} shadow-[0_0_15px_rgba(59,130,246,0.15)]` 
+        : "bg-[#14181c] border-[#272d34] hover:border-gray-500 opacity-70 hover:opacity-100"
+    )}
   >
-    <div className="flex items-center gap-2 mb-2">
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <InfoIcon className="h-4 w-4 text-[hsl(217.9,10.6%,64.9%)] cursor-help" />
-        </TooltipTrigger>
-        <TooltipContent>
-          <p className="max-w-xs">{tooltipInfo}</p>
-        </TooltipContent>
-      </Tooltip>
+    <div className={cn("p-3 rounded-full", isSelected ? "bg-primary/20 text-primary" : "bg-gray-800 text-gray-400")}>
+      {icon}
     </div>
-    <p className="text-sm text-[hsl(217.9,10.6%,64.9%)] mb-4">{description}</p>
-    {children}
+    <div>
+      <h4 className="font-bold text-sm text-white mb-1">{title}</h4>
+      <p className="text-xs text-gray-400 leading-tight">{description}</p>
+    </div>
   </motion.div>
 );
 
 export default function SimulatorConfigPage() {
-  const [agents, setAgents] = useState(2);
-  const [money, setMoney] = useState(75000);
-  const [land, setLand] = useState(2);
+  const [agents, setAgents] = useState(50);
+  const [money, setMoney] = useState(1500000);
+  const [land, setLand] = useState(6);
   const [personality, setPersonality] = useState(0);
   const [tools, setTools] = useState(20);
   const [seeds, setSeeds] = useState(50);
   const [water, setWater] = useState(0);
-  const [irrigation, setIrrigation] = useState(0);
-  const [emotions, setEmotions] = useState(0);
+  const [irrigation, setIrrigation] = useState(false);
+  const [emotions, setEmotions] = useState(false);
+  const [training, setTraining] = useState(false);
   const [years, setYears] = useState(2);
   const [showTourButton, setShowTourButton] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -92,10 +109,11 @@ export default function SimulatorConfigPage() {
       tools,
       seeds,
       water,
-      irrigation,
-      emotions,
+      irrigation: irrigation ? 1 : 0,
+      emotions: emotions ? 1 : 0,
+      training: training ? 1 : 0,
       years,
-      world: 400,
+      world: "mediumworld",
     };
     return Object.entries(argsObj).flatMap(([key, value]) => [
       `-${key}`,
@@ -107,25 +125,19 @@ export default function SimulatorConfigPage() {
     setIsStarting(true);
     setStartError(null);
     try {
-      const appPath = await window.electronAPI.getAppPath();
-      // Usar template literal en lugar de path.join (evita problemas del polyfill en browser)
-      const csvPath = `${appPath}/src/wps/logs/wpsSimulator.csv`;
-      if (await window.electronAPI.fileExists(csvPath)) {
-        await window.electronAPI.deleteFile(csvPath);
-      }
-      const args = buildArgs();
-      const exePath = `${appPath}/src/wps/wpsSimulator-1.0.exe`;
-      await window.electronAPI.executeExe(exePath, args);
+      await fetch("/api/simulator/csv", { method: "DELETE" });
+      const res = await fetch("/api/simulator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ args: buildArgs() }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Error al iniciar la simulación");
       return true;
     } catch (error: any) {
-      if (!error.message?.includes("Unrecognized option")) {
-        const msg = error.message || "Error desconocido al iniciar la simulación";
-        console.error("[WPS] Error iniciando simulación:", msg);
-        setStartError(msg);
-      } else {
-        // "Unrecognized option" es esperado en Linux — Java arrancó correctamente
-        return true;
-      }
+      const msg = error.message || "Error desconocido al iniciar la simulación";
+      console.error("[EthosTerra] Error iniciando simulación:", msg);
+      setStartError(msg);
       return false;
     } finally {
       setIsStarting(false);
@@ -139,181 +151,182 @@ export default function SimulatorConfigPage() {
     }
   };
 
+  // Comando simulado para la terminal
+  const buildTerminalCommand = () => {
+    const args = buildArgs().join(" ");
+    return `>_ java -jar wps-simulator.jar ${args}`;
+  };
+
   const handleStartTour = () => {
     import("@/components/drive/tour.js").then(({ startSettingsTour }) => {
       startSettingsTour(true);
     });
   };
 
+  // Lógica dinámica de iconos
+  const getMoneyIcon = () => {
+    if (money < 1000000) return <Coins className="w-6 h-6 text-yellow-500" />;
+    if (money < 5000000) return <Wallet className="w-6 h-6 text-green-400" />;
+    return <Landmark className="w-6 h-6 text-emerald-300" />;
+  };
+
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-[#111418] text-[#ffffff] py-12 px-4 sm:px-6 lg:px-8 font-archivo">
-        <div className="max-w-6xl mx-auto">
-          <motion.h1
-            className="text-4xl font-extrabold text-center mb-12 p-4 rounded-lg font-clash"
-            style={{ backgroundColor: "#004d66" }}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            WellProdSimulator Configuration
-          </motion.h1>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ConfigOption
-              id="config-agents"
-              title="Agents"
-              description="Number of peasant agents participating in the simulation."
-              tooltipInfo="Agents represent individual farmers..."
+      <div className="min-h-screen bg-[#0f1417] text-[#ffffff] py-8 pl-20 lg:pl-24 pr-4 sm:pr-6 lg:pr-8 font-archivo pb-32">
+        <div className="max-w-5xl mx-auto space-y-8">
+          
+          <div className="flex flex-col items-center justify-center text-center space-y-3 mb-8">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-full mb-2"
             >
-              <Slider
-                value={[agents]}
-                onValueChange={(v) => setAgents(v[0])}
-                min={1}
-                max={1000}
-                step={1}
-                className="mt-2"
-              />
-              <p className="text-sm mt-2">Current Agents: {agents}</p>
-            </ConfigOption>
+              <Rocket className="w-8 h-8" />
+            </motion.div>
+            <h1 className="text-4xl font-extrabold font-clash tracking-tight text-white">
+              Diseño del Experimento
+            </h1>
+            <p className="text-gray-400 max-w-xl text-sm">
+              Configura las condiciones iniciales del ecosistema, la demografía y los recursos. Observa cómo el sistema parametriza el motor BESA en tiempo real.
+            </p>
+          </div>
 
-            <ConfigOption
-              id="config-money"
-              title="Money"
-              description="Initial amount of money each agent starts with."
-              tooltipInfo="Starting capital for each agent..."
-            >
-              <Input
-                type="number"
-                placeholder={String(money)}
-                onChange={(e) => setMoney(Number(e.target.value))}
-                className="mt-2"
+          {/* 1. Ecosistema y Parcelas (Tarjetas Visuales) */}
+          <section className="bg-[#171c1f] p-6 rounded-2xl border border-[#272d34] shadow-lg">
+            <h2 className="text-xl font-semibold mb-4 text-white flex items-center gap-2">
+              <Trees className="w-5 h-5 text-green-400" /> Entorno Agrícola (Parcelas por familia)
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <VisualCard 
+                title="Subsistencia (2)" 
+                description="Baja carga de trabajo, pero alto riesgo de quiebra ante crisis."
+                icon={<Sprout className="w-6 h-6" />}
+                isSelected={land === 2}
+                onClick={() => setLand(2)}
+                colorClass="border-orange-500/50"
               />
-            </ConfigOption>
+              <VisualCard 
+                title="Óptimo (6)" 
+                description="Equilibrio recomendado entre producción y capacidad de gestión."
+                icon={<Trees className="w-6 h-6" />}
+                isSelected={land === 6}
+                onClick={() => setLand(6)}
+                colorClass="border-green-500/60"
+              />
+              <VisualCard 
+                title="Latifundio (12)" 
+                description="Alta demanda laboral, riesgo de abandono de parcelas."
+                icon={<Tractor className="w-6 h-6" />}
+                isSelected={land === 12}
+                onClick={() => setLand(12)}
+                colorClass="border-red-500/50"
+              />
+            </div>
+          </section>
 
-            <ConfigOption
-              id="config-land"
-              title="Land"
-              description="Number of farmland plots available."
-              tooltipInfo="Total land plots in the simulation..."
-            >
-              <Slider
-                value={[land]}
-                onValueChange={(v) => {
-                  const allowed = [2, 6, 12];
-                  const nearest = allowed.reduce((p, c) =>
-                    Math.abs(c - v[0]) < Math.abs(p - v[0]) ? c : p,
-                  );
-                  setLand(nearest);
-                }}
-                min={2}
-                max={12}
-                step={4}
-                className="mt-2"
-              />
-              <p className="text-sm mt-2">Current Lands: {land}</p>
-            </ConfigOption>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 2. Demografía y Capital */}
+            <section className="bg-[#171c1f] p-6 rounded-2xl border border-[#272d34] shadow-lg space-y-8">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-400" /> Sociedad y Recursos
+              </h2>
+              
+              {/* Agentes Slider */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-gray-300 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" /> Familias (Agentes)
+                  </Label>
+                  <span className="font-mono bg-black px-2 py-1 rounded text-primary text-sm">{agents}</span>
+                </div>
+                <Slider value={[agents]} onValueChange={(v) => setAgents(v[0])} min={1} max={500} step={1} />
+              </div>
 
-            <ConfigOption
-              id="config-personality"
-              title="Personality"
-              description="Index representing each agent's personality traits."
-              tooltipInfo="Affects how agents make decisions..."
-            >
-              <Input
-                type="number"
-                placeholder={String(personality)}
-                onChange={(e) => setPersonality(Number(e.target.value))}
-                className="mt-2"
-              />
-            </ConfigOption>
+              {/* Dinero Slider */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-gray-300 flex items-center gap-2">
+                    {getMoneyIcon()} Capital Inicial (COP)
+                  </Label>
+                  <span className="font-mono bg-black px-2 py-1 rounded text-green-400 text-sm">
+                    ${money.toLocaleString("es-CO")}
+                  </span>
+                </div>
+                <Slider value={[money]} onValueChange={(v) => setMoney(v[0])} min={100000} max={10000000} step={50000} />
+              </div>
 
-            <ConfigOption
-              id="config-tools"
-              title="Tools"
-              description="Amount of farming tools available."
-              tooltipInfo="Tools increase farming efficiency..."
-            >
-              <Input
-                type="number"
-                placeholder={String(tools)}
-                onChange={(e) => setTools(Number(e.target.value))}
-                className="mt-2"
-              />
-            </ConfigOption>
+              {/* Personalidad Visual Picker */}
+              <div className="space-y-4 pt-4 border-t border-[#272d34]">
+                <Label className="text-gray-300 flex items-center gap-2 mb-2">
+                  <Brain className="w-4 h-4 text-purple-400" /> Perfil de Personalidad
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div 
+                    onClick={() => setPersonality(0)}
+                    className={cn("cursor-pointer p-3 rounded-lg border text-center transition-colors", personality === 0 ? "bg-purple-900/20 border-purple-500 text-white" : "border-gray-800 text-gray-500 hover:border-gray-600")}
+                  >
+                    <Brain className="w-5 h-5 mx-auto mb-1" />
+                    <span className="text-xs font-semibold">Homogéneo (0.0)</span>
+                  </div>
+                  <div 
+                    onClick={() => setPersonality(0.5)}
+                    className={cn("cursor-pointer p-3 rounded-lg border text-center transition-colors", personality === 0.5 ? "bg-purple-900/20 border-purple-500 text-white" : "border-gray-800 text-gray-500 hover:border-gray-600")}
+                  >
+                    <Network className="w-5 h-5 mx-auto mb-1" />
+                    <span className="text-xs font-semibold">Diverso (0.5)</span>
+                  </div>
+                </div>
+              </div>
+            </section>
 
-            <ConfigOption
-              id="config-seeds"
-              title="Seeds"
-              description="Number of seeds available for planting."
-              tooltipInfo="Seeds are essential for crop production..."
-            >
-              <Input
-                type="number"
-                placeholder={String(seeds)}
-                onChange={(e) => setSeeds(Number(e.target.value))}
-                className="mt-2"
-              />
-            </ConfigOption>
+            {/* 3. Políticas y Complementos (Switches) */}
+            <section className="bg-[#171c1f] p-6 rounded-2xl border border-[#272d34] shadow-lg flex flex-col justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-6">
+                  <HeartPulse className="w-5 h-5 text-rose-400" /> Reglas del Mundo
+                </h2>
+                
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-gray-800/50 hover:border-gray-700 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${emotions ? 'bg-rose-500/20 text-rose-400' : 'bg-gray-800 text-gray-500'}`}><HeartPulse className="w-5 h-5" /></div>
+                      <div>
+                        <p className="font-semibold text-sm text-white">Módulo Emocional (eBDI)</p>
+                        <p className="text-xs text-gray-500">Agentes sienten miedo, alegría y estrés.</p>
+                      </div>
+                    </div>
+                    <Switch checked={emotions} onCheckedChange={setEmotions} />
+                  </div>
 
-            <ConfigOption
-              id="config-water"
-              title="Water"
-              description="Initial water resources available."
-              tooltipInfo="Water is crucial for crop growth..."
-            >
-              <Input
-                type="number"
-                placeholder={String(water)}
-                onChange={(e) => setWater(Number(e.target.value))}
-                className="mt-2"
-              />
-            </ConfigOption>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-gray-800/50 hover:border-gray-700 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${irrigation ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-800 text-gray-500'}`}><Droplets className="w-5 h-5" /></div>
+                      <div>
+                        <p className="font-semibold text-sm text-white">Infraestructura de Riego</p>
+                        <p className="text-xs text-gray-500">Permite mitigar impactos de sequías.</p>
+                      </div>
+                    </div>
+                    <Switch checked={irrigation} onCheckedChange={setIrrigation} />
+                  </div>
 
-            <ConfigOption
-              id="config-irrigation"
-              title="Irrigation"
-              description="Irrigation system level (0 = none, higher = better)."
-              tooltipInfo="Better irrigation systems improve yields..."
-            >
-              <Input
-                type="number"
-                placeholder={String(irrigation)}
-                onChange={(e) => setIrrigation(Number(e.target.value))}
-                className="mt-2"
-              />
-            </ConfigOption>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-gray-800/50 hover:border-gray-700 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${training ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-800 text-gray-500'}`}><GraduationCap className="w-5 h-5" /></div>
+                      <div>
+                        <p className="font-semibold text-sm text-white">Programas de Capacitación</p>
+                        <p className="text-xs text-gray-500">Aumenta eficiencia de siembra a largo plazo.</p>
+                      </div>
+                    </div>
+                    <Switch checked={training} onCheckedChange={setTraining} />
+                  </div>
+                </div>
+              </div>
 
-            <ConfigOption
-              id="config-emotions"
-              title="Emotions"
-              description="Emotional complexity level for agents."
-              tooltipInfo="Determines how emotions affect decisions..."
-            >
-              <Input
-                type="number"
-                placeholder={String(emotions)}
-                onChange={(e) => setEmotions(Number(e.target.value))}
-                className="mt-2"
-              />
-            </ConfigOption>
-
-            <ConfigOption
-              id="config-years"
-              title="Years"
-              description="Number of years the simulation should run."
-              tooltipInfo="Simulation duration..."
-            >
-              <Slider
-                value={[years]}
-                onValueChange={(v) => setYears(v[0])}
-                min={1}
-                max={100}
-                step={1}
-                className="mt-2"
-              />
-              <p className="text-sm mt-2">Current Years: {years}</p>
-            </ConfigOption>
+              <div className="mt-8 space-y-2">
+                <Label className="text-gray-400 text-xs uppercase tracking-wider">Años de Simulación ({years})</Label>
+                <Slider value={[years]} onValueChange={(v) => setYears(v[0])} min={1} max={10} step={1} />
+              </div>
+            </section>
           </div>
 
           {/* Mensaje de error si la simulación no arrancó */}
@@ -323,18 +336,32 @@ export default function SimulatorConfigPage() {
             </div>
           )}
 
-          <motion.button
-            className="mt-4 w-full bg-[hsl(221.2,83.2%,53.3%)] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[hsl(221.2,83.2%,53.3%)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={isStarting ? {} : { scale: 1.02 }}
-            whileTap={isStarting ? {} : { scale: 0.98 }}
-            disabled={isStarting}
-            onClick={handleStartSimulation}
-          >
-            {isStarting ? "Starting simulation…" : "Save Configuration"}
-          </motion.button>
+          {/* 4. Terminal Inferior y Botón de Inicio Fijo */}
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0f1417]/90 backdrop-blur-md border-t border-[#272d34] p-4 lg:pl-[16rem]">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-4 items-center justify-between">
+              
+              {/* Consola */}
+              <div className="flex-1 w-full bg-black rounded-lg p-3 border border-gray-800 flex items-start gap-2 overflow-x-auto">
+                <Terminal className="w-5 h-5 text-gray-500 shrink-0" />
+                <code className="text-green-400 text-xs whitespace-nowrap opacity-80 select-all">
+                  {buildTerminalCommand()}
+                </code>
+              </div>
+
+              <motion.button
+                className="shrink-0 bg-primary text-white py-3 px-8 rounded-xl font-bold flex items-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]"
+                whileHover={isStarting ? {} : { scale: 1.05 }}
+                whileTap={isStarting ? {} : { scale: 0.95 }}
+                disabled={isStarting}
+                onClick={handleStartSimulation}
+              >
+                {isStarting ? <span className="animate-pulse">🚀 Inicializando JVM...</span> : <><Rocket className="w-5 h-5" /> Iniciar Experimento</>}
+              </motion.button>
+            </div>
+          </div>
 
           {/* Botón de ayuda flotante */}
-          <div className="fixed bottom-4 right-4 flex flex-col gap-2">
+          <div className="fixed top-24 right-4 flex flex-col gap-2 z-50">
             <Button
               className="bg-[#2664eb] text-white hover:bg-[#1e4bbf] rounded-full p-2"
               onClick={() => setShowTourButton(!showTourButton)}

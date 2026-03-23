@@ -5,15 +5,17 @@
  */
 
 const nextConfig = {
-    output: 'standalone',
-    reactStrictMode: true,
+    // standalone solo en producción — evita overhead en dev
+    ...(process.env.NODE_ENV === 'production' && { output: 'standalone' }),
+    // reactStrictMode desactivado: en dev causaría doble-mount de efectos
+    // y por tanto dos conexiones WebSocket simultáneas al ViewerLens.
+    reactStrictMode: false,
     images: {
       unoptimized: true,
     },
-    // output: 'export' removido para permitir API Routes (reemplaza IPC de Electron)
     typescript: {
       ignoreBuildErrors: true,
     },
 }
 
-  export default nextConfig
+export default nextConfig

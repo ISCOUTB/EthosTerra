@@ -12,6 +12,10 @@ services:
       # (sobreescribe el valor del .env si se definen ahí)
       - JAVA_TOOL_OPTIONS=-Xmx2g -Xms512m
       # HOSTNAME ya está fijado en el Dockerfile a 0.0.0.0
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     volumes:
       # Persistir logs y CSV de experimentos en el host
       # Los datos sobreviven a `docker compose down`
@@ -31,3 +35,16 @@ services:
       retries: 3
       start_period: 60s
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5

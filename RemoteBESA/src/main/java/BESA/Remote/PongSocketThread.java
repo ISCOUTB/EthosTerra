@@ -119,8 +119,8 @@ System.out.println("PongSocketThread");
                                 RemoteAdmHandlerBESA admLocalHandler = (RemoteAdmHandlerBESA) this.admLocal.getAdmHandler();
                                 remoteAdmHandler.getAdmRemote().registerRemoteAdm(admLocalHandler.getAdmId(),
                                         admLocalHandler.getAlias(),
-                                        admLocalHandler.getIpRmiRegistry(),
-                                        admLocalHandler.getPortRmiRegistry());
+                                        "",
+                                        0);
                                 ReportBESA.trace("ALIVE: AdmLocalHandler = " + admLocalHandler);
                                 ArrayList idList = new ArrayList();
                                 ArrayList aliasList = new ArrayList();

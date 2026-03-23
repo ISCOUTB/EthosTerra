@@ -1,0 +1,294 @@
+# ============================================================
+# Experimento: 5 contenedores × 8 agentes = 40 agentes totales
+# Modo headless — sin UI, solo simulación terminal
+#
+# Arquitectura:
+#   wps01        →  primary  (servicios + 8 campesinos)
+#   wps02…wps05  →  workers  (8 campesinos cada uno)
+#   Total agentes: 40  |  Años simulados: 1
+#
+# Comandos:
+#   Build (solo primera vez o tras cambios en Java):
+#     docker compose -f docker-compose.exp-5C-8A.yml build
+#
+#   Ejecutar experimento completo:
+#     docker compose -f docker-compose.exp-5C-8A.yml up
+#
+#   Solo logs de un nodo:
+#     docker compose -f docker-compose.exp-5C-8A.yml logs -f wps01
+#
+#   Detener y limpiar contenedores:
+#     docker compose -f docker-compose.exp-5C-8A.yml down
+#
+# Resultados:
+#   data/logs/wps01/wpsSimulator.csv   ← CSV principal (nodo primario)
+#   data/logs/wps0{2..5}/              ← logs de cada worker
+#
+# Para cambiar parámetros (agentes, años, dinero…):
+#   Edita la sección de cada servicio. No requiere rebuild, solo volver a up.
+# ============================================================
+
+# ── Configuración compartida ─────────────────────────────────────────────────
+
+x-java-base: &java-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: javaonly
+  restart: on-failure
+
+x-java-env: &java-env
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USERNAME: guest
+  RABBITMQ_PASSWORD: guest
+  # Variables de entorno OS requeridas por Java en contenedores mínimos
+  USER: wpsuser
+  USERNAME: wpsuser
+  LANG: C.UTF-8
+
+# ── Servicios ────────────────────────────────────────────────────────────────
+services:
+
+  # ── RabbitMQ ───────────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # Management UI → http://localhost:15672  (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── wps01: nodo primario ──────────────────────────────────────────────────
+  # Rol inferido automáticamente por mode=wps01 → primary
+  # Crea: MarketPlace, BankOffice, CivicAuthority, CommunityDynamics,
+  #        PerturbationGenerator + 8 PeasantFamily
+  wps01:
+    <<: *java-base
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      <<: *java-env
+      JAVA_TOOL_OPTIONS: -Xmx2g -Xms512m   # más heap: aloja todos los servicios
+    command:
+      - -mode
+      - wps01
+      - -nodes
+      - "5"
+      - -agents
+      - "8"
+      - -env
+      - local
+      - -money
+      - "1500000"
+      - -land
+      - "2"
+      - -personality
+      - "0"
+      - -tools
+      - "10"
+      - -seeds
+      - "10"
+      - -water
+      - "10"
+      - -irrigation
+      - "1"
+      - -emotions
+      - "1"
+      - -training
+      - "1"
+      - -world
+      - mediumworld
+      - -years
+      - "1"
+    volumes:
+      - ./data/logs/wps01:/app/logs
+      - ./wpsUI/public:/app/web
+    ports:
+      - "8001:8000"   # ViewerLens WebSocket del primario (monitoreo opcional)
+
+  # ── wps02: nodo worker ────────────────────────────────────────────────────
+  # Rol inferido automáticamente por mode=wps02 → worker
+  # Crea: 8 PeasantFamily (se conectan a servicios en wps01 via RabbitMQ)
+  wps02:
+    <<: *java-base
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      wps01:
+        condition: service_started
+    environment:
+      <<: *java-env
+      JAVA_TOOL_OPTIONS: -Xmx1g -Xms256m
+    command:
+      - -mode
+      - wps02
+      - -agents
+      - "8"
+      - -env
+      - local
+      - -money
+      - "1500000"
+      - -land
+      - "2"
+      - -personality
+      - "0"
+      - -tools
+      - "10"
+      - -seeds
+      - "10"
+      - -water
+      - "10"
+      - -irrigation
+      - "1"
+      - -emotions
+      - "1"
+      - -training
+      - "1"
+      - -world
+      - mediumworld
+      - -years
+      - "1"
+    volumes:
+      - ./data/logs/wps02:/app/logs
+      - ./wpsUI/public:/app/web
+
+  # ── wps03: nodo worker ────────────────────────────────────────────────────
+  wps03:
+    <<: *java-base
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      wps01:
+        condition: service_started
+    environment:
+      <<: *java-env
+      JAVA_TOOL_OPTIONS: -Xmx1g -Xms256m
+    command:
+      - -mode
+      - wps03
+      - -agents
+      - "8"
+      - -env
+      - local
+      - -money
+      - "1500000"
+      - -land
+      - "2"
+      - -personality
+      - "0"
+      - -tools
+      - "10"
+      - -seeds
+      - "10"
+      - -water
+      - "10"
+      - -irrigation
+      - "1"
+      - -emotions
+      - "1"
+      - -training
+      - "1"
+      - -world
+      - mediumworld
+      - -years
+      - "1"
+    volumes:
+      - ./data/logs/wps03:/app/logs
+      - ./wpsUI/public:/app/web
+
+  # ── wps04: nodo worker ────────────────────────────────────────────────────
+  wps04:
+    <<: *java-base
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      wps01:
+        condition: service_started
+    environment:
+      <<: *java-env
+      JAVA_TOOL_OPTIONS: -Xmx1g -Xms256m
+    command:
+      - -mode
+      - wps04
+      - -agents
+      - "8"
+      - -env
+      - local
+      - -money
+      - "1500000"
+      - -land
+      - "2"
+      - -personality
+      - "0"
+      - -tools
+      - "10"
+      - -seeds
+      - "10"
+      - -water
+      - "10"
+      - -irrigation
+      - "1"
+      - -emotions
+      - "1"
+      - -training
+      - "1"
+      - -world
+      - mediumworld
+      - -years
+      - "1"
+    volumes:
+      - ./data/logs/wps04:/app/logs
+      - ./wpsUI/public:/app/web
+
+  # ── wps05: nodo worker ────────────────────────────────────────────────────
+  wps05:
+    <<: *java-base
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      wps01:
+        condition: service_started
+    environment:
+      <<: *java-env
+      JAVA_TOOL_OPTIONS: -Xmx1g -Xms256m
+    command:
+      - -mode
+      - wps05
+      - -agents
+      - "8"
+      - -env
+      - local
+      - -money
+      - "1500000"
+      - -land
+      - "2"
+      - -personality
+      - "0"
+      - -tools
+      - "10"
+      - -seeds
+      - "10"
+      - -water
+      - "10"
+      - -irrigation
+      - "1"
+      - -emotions
+      - "1"
+      - -training
+      - "1"
+      - -world
+      - mediumworld
+      - -years
+      - "1"
+    volumes:
+      - ./data/logs/wps05:/app/logs
+      - ./wpsUI/public:/app/web

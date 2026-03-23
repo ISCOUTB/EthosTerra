@@ -1,0 +1,150 @@
+# ============================================================
+# Experimento: 2 contenedores × 6 agentes = 12 agentes totales
+# Modo headless distribuido (AMQP)
+#
+# Configuración:
+#   Arquitectura: 1 RabbitMQ + 1 Primario (wps01) + 1 Worker (wps02)
+#   Agentes:      6 por nodo
+#   Dinero:       5,000,000 COP
+#   Tierra:       2 parcelas por agente
+#   Módulos:      Emociones (ON), Irrigación (ON), Capacitación (ON)
+#   Duración:     2 Años
+#
+# Comandos:
+#   Ejecutar experimento completo:
+#     docker compose -f docker-compose.exp-2C-12A.yml up
+#
+#   Limpiar al terminar:
+#     docker compose -f docker-compose.exp-2C-12A.yml down
+#
+# Resultados:
+#   data/logs/exp-2C-12A/wps01/wpsSimulator.csv  (nodo primario)
+#   data/logs/exp-2C-12A/wps02/wpsSimulator.csv  (nodo worker)
+# ============================================================
+
+# ── Configuración compartida ─────────────────────────────────────────────────
+
+x-java-base: &java-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: javaonly
+  restart: on-failure
+
+x-java-env: &java-env
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USERNAME: guest
+  RABBITMQ_PASSWORD: guest
+  # Variables de entorno OS requeridas por Java en contenedores mínimos
+  USER: wpsuser
+  USERNAME: wpsuser
+  LANG: C.UTF-8
+
+# ── Servicios ────────────────────────────────────────────────────────────────
+services:
+
+  # ── Broker de Mensajería ───────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # Management UI → http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Nodo Primario (Servicios + 6 agentes) ──────────────────────────────────
+  wps01:
+    <<: *java-base
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      <<: *java-env
+      JAVA_TOOL_OPTIONS: -Xmx2g -Xms512m -Djava.util.logging.config.file=/dev/null
+    command:
+      - -mode
+      - wps01
+      - -nodes
+      - "2"
+      - -agents
+      - "6"
+      - -env
+      - local
+      - -money
+      - "5000000"
+      - -land
+      - "2"
+      - -personality
+      - "0"
+      - -tools
+      - "10"
+      - -seeds
+      - "10"
+      - -water
+      - "10"
+      - -irrigation
+      - "1"
+      - -emotions
+      - "1"
+      - -training
+      - "1"
+      - -world
+      - mediumworld
+      - -years
+      - "2"
+    volumes:
+      - ./data/logs/exp-2C-12A/wps01:/app/logs
+      - ./wpsUI/public:/app/web
+
+  # ── Nodo Worker (6 agentes) ────────────────────────────────────────────────
+  wps02:
+    <<: *java-base
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      wps01:
+        condition: service_started
+    environment:
+      <<: *java-env
+      JAVA_TOOL_OPTIONS: -Xmx1g -Xms256m -Djava.util.logging.config.file=/dev/null
+    command:
+      # Los flags deben ser idénticos al primario en lógica de negocio
+      - -mode
+      - wps02
+      - -agents
+      - "6"
+      - -env
+      - local
+      - -money
+      - "5000000"
+      - -land
+      - "2"
+      - -personality
+      - "0"
+      - -tools
+      - "10"
+      - -seeds
+      - "10"
+      - -water
+      - "10"
+      - -irrigation
+      - "1"
+      - -emotions
+      - "1"
+      - -training
+      - "1"
+      - -world
+      - mediumworld
+      - -years
+      - "2"
+    volumes:
+      - ./data/logs/exp-2C-12A/wps02:/app/logs
+      - ./wpsUI/public:/app/web

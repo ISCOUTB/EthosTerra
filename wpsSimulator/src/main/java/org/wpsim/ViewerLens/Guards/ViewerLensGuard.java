@@ -58,6 +58,11 @@ public class ViewerLensGuard extends GuardBESA {
                         WebsocketServer.getInstance().broadcastMessage("j=" + viewerMessage.getPeasantMessage());
                     }
                 }
+                case "INTERACTION" -> {
+                    if (wpsConfig.getInstance().getBooleanProperty("viewer.webui")) {
+                        WebsocketServer.getInstance().broadcastMessage("i=" + viewerMessage.getPeasantMessage());
+                    }
+                }
                 default -> logger.info(viewerMessage.getPeasantMessage());
             }
         } finally {

@@ -60,9 +60,7 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
             // Parsear el contenido del archivo JSON
             JSONArray landsArray = new JSONArray(
                     Objects.requireNonNull(
-                            wpsConfig.getInstance().loadFile(
-                                    "web/data/world." + params.world + ".json" //config.getStringProperty("government.world")
-                            )
+                            wpsConfig.getInstance().loadWorldFile(params.world)
                     )
             );
             // Iterar sobre el contenido parseado y asignar los datos al hashmap

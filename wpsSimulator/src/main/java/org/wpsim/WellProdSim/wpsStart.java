@@ -70,7 +70,8 @@ public class wpsStart {
         // Definir los parámetros esperados
         Options options = new Options();
         options.addOption(new Option("env", true, "Environment"));
-        options.addOption(new Option("mode", true, "Mode of operation"));
+        options.addOption(new Option("mode", true, "Container alias (e.g. single, wps01, wps02)"));
+        options.addOption(new Option("role", true, "Node role: primary (services+peasants) or worker (peasants only)"));
         options.addOption(new Option("nodes", true, "Nodes"));
         options.addOption(new Option("agents", true, "Number of agents"));
         options.addOption(new Option("money", true, "Amount of money"));
@@ -102,6 +103,9 @@ public class wpsStart {
             }
             if (cmd.hasOption("mode")) {
                 params.mode = cmd.getOptionValue("mode");
+            }
+            if (cmd.hasOption("role")) {
+                params.role = cmd.getOptionValue("role");
             }
             if (cmd.hasOption("nodes")) {
                 params.nodes = Integer.parseInt(cmd.getOptionValue("nodes"));
@@ -156,50 +160,54 @@ public class wpsStart {
     }
 
     private static void createContainer() {
-        if (!params.mode.equals("wps01")) {
-            // update ControlAgent Name
+        boolean isSingle = params.mode.equals("single") || params.mode.equals("web");
+
+        // Infer role from mode when not provided explicitly:
+        //   single / web → primary (everything in one JVM, no RabbitMQ needed)
+        //   wps01        → primary (services + peasants, distributed)
+        //   anything else → worker (peasants only, distributed)
+        if (params.role == null) {
+            params.role = (isSingle || params.mode.equals("wps01")) ? "primary" : "worker";
+        }
+
+        // Worker containers in distributed mode need uniquely named control/viewer agents
+        if (!isSingle && params.role.equals("worker")) {
             config.setControlAgentName(params.mode + "_" + config.getControlAgentName());
-            // update ViewerAgent Name
             config.setViewerAgentName(params.mode + "_" + config.getViewerAgentName());
         }
-        // container creation
-        String path = "server_" + params.env + "_" + params.mode + ".xml";
-        System.out.println("Starting in " + path + " mode");
-        AdmBESA adm = AdmBESA.getInstance(path);
+
+        BESA.Config.EnvironmentCase envCase = isSingle
+                ? BESA.Config.EnvironmentCase.LOCAL
+                : BESA.Config.EnvironmentCase.REMOTE;
+
+        System.out.println("Starting container '" + params.mode + "' role=" + params.role
+                + " env=" + envCase);
+
+        BESA.Config.ConfigBESA builderConfig = BESA.Config.ConfigBESA.builder()
+                .alias(params.mode)
+                .environmentCase(envCase)
+                .build();
+        AdmBESA adm = AdmBESA.getInstance(builderConfig);
         System.out.println(adm.getConfigBESA());
     }
 
     private static void startSimulation() {
+        System.out.println("Centralizado: " + AdmBESA.getInstance().isCentralized()
+                + "  role=" + params.role + "  agents=" + peasantFamiliesAgents);
 
-        System.out.println("Es centralizado: " + AdmBESA.getInstance().isCentralized());
-
-        switch (params.mode) {
-            case "wps01" -> {
+        switch (params.role) {
+            case "primary" -> {
                 createServices();
-                pauseThread(3000);
+                pauseThread(2000); // give services time to register before peasants start
                 createPeasants(config.peasantSerialID, peasantFamiliesAgents);
                 showRunningAgents();
             }
-            case "wps02", "wps03", "wps04", "wps05" -> {
+            case "worker" -> {
                 createPeasants(config.peasantSerialID, peasantFamiliesAgents);
-                System.out.println("Simulating " + peasantFamiliesAgents + " agents");
                 showRunningAgents();
             }
-            case "web" -> {
-                // Single mode
-                createServices();
-                System.out.println("Simulating " + peasantFamiliesAgents + " agents");
-                createPeasants(config.peasantSerialID, peasantFamiliesAgents);
-            }
-            case "single" -> {
-                // Single benchmark mode
-                wpsStart.CREATED_AGENTS = 0;
-                createServices();
-                System.out.println("Simulating " + peasantFamiliesAgents + " agents");
-                createPeasants(1, peasantFamiliesAgents);
-                showRunningAgents();
-            }
-            default -> System.out.println("No se reconoce el nombre del contendor BESA " + params.mode);
+            default -> System.err.println("Unknown role '" + params.role
+                    + "'. Use -role primary or -role worker.");
         }
     }
 
@@ -247,6 +255,7 @@ public class wpsStart {
             }
         } catch (Exception ex) {
             System.err.println("error creando peasants" + ex.getMessage());
+            ex.printStackTrace(); // Keep stack trace for debugging
         }
 
     }

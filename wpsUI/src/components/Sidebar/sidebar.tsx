@@ -7,43 +7,28 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useTheme } from "next-themes";
 import Image from "next/image";
+import Link from "next/link";
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 
 const Sidebar: React.FC = () => {
-  const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
 
   useEffect(() => {
-    const handler = () => {
-      toast({
-        variant: "default",
-        title: "Ended simulation",
-        description: "The simulation has ended! .",
-      });
-    };
-    if (window.electronAPI && window.electronAPI.on) {
-      window.electronAPI.on("simulation-ended", handler);
-    }
-    return () => {
-      if (window.electronAPI && window.electronAPI.removeListener) {
-        window.electronAPI.removeListener("simulation-ended", handler);
-      }
-    };
-  }, []);
-
-  // Chequea el estado del proceso Java periódicamente
-  useEffect(() => {
+    let prevRunning: boolean | null = null;
     const checkSimulationStatus = async () => {
       try {
-        if (window.electronAPI && window.electronAPI.checkJavaProcess) {
-          const result = await window.electronAPI.checkJavaProcess();
-          setIsSimulationRunning(result.running);
+        const res = await fetch("/api/simulator");
+        const data = await res.json();
+        const running = Boolean(data.running);
+        if (prevRunning === true && !running) {
+          toast({ variant: "default", title: "Simulation ended", description: "The simulation has finished." });
         }
+        prevRunning = running;
+        setIsSimulationRunning(running);
       } catch {
         setIsSimulationRunning(false);
       }
@@ -58,9 +43,8 @@ const Sidebar: React.FC = () => {
     if (isSimulationRunning) {
       toast({
         variant: "destructive",
-        title: "Data Simulation",
-        description:
-          "Wait until the end of the simulation to start another one .",
+        title: "Simulation in progress",
+        description: "Wait for the simulation to finish before starting another one.",
         action: <ToastAction altText="Got it">Got it</ToastAction>,
       });
       return;
@@ -69,61 +53,47 @@ const Sidebar: React.FC = () => {
   };
 
   const menuItems = [
-    { icon: <Home size={20} />, label: "Home Page", href: "/pages/simulador" },
-    {
-      icon: <PieChart size={20} />,
-      label: "Analytics",
-      href: "/pages/analytics",
-    },
-    {
-      icon: <Settings size={20} />,
-      label: "Settings",
-      href: "/#",
-      onClick: handleSettingsClick,
-    },
-    { icon: <Mail size={20} />, label: "Contact Us", href: "/pages/contact" },
-    {
-      icon: <Download size={20} />,
-      label: "Download",
-      href: "/pages/dataExport",
-    },
+    { icon: <Home size={20} />, label: "Simulator", href: "/pages/simulador" },
+    { icon: <PieChart size={20} />, label: "Analytics", href: "/pages/analytics" },
+    { icon: <Settings size={20} />, label: "Settings", href: "/pages/settings", onClick: handleSettingsClick },
+    { icon: <Mail size={20} />, label: "Contact", href: "/pages/contact" },
+    { icon: <Download size={20} />, label: "Export Data", href: "/pages/dataExport" },
   ];
 
   return (
-    <div className="bg-[#171c1f] text-foreground w-88 flex flex-col h-full">
+    <div className="bg-[#171c1f] text-foreground w-52 flex flex-col h-full shrink-0">
       <div className="p-4">
-        <h1 className="text-2xl font-clash font-bold bg-[#2664eb] rounded-lg p-4 flex items-center justify-center">
-          WellProdSimulator
+        <h1 className="text-xl font-clash font-bold bg-[#2664eb] rounded-lg p-3 flex items-center justify-center">
+          EthosTerra
         </h1>
       </div>
 
-      <nav className="flex-1  items-center border-t border-[#ffff] flex flex-col px-4 py-6 space-y-4">
+      <nav className="flex-1 border-t border-white/10 flex flex-col px-3 py-4 space-y-2">
         <TooltipProvider>
           {menuItems.map((item, index) => (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
-                <a
+                <Link
                   href={item.href}
-                  className="w-full flex items-center  bg-[#153c8f] border-[#2664eb] justify-center py-3 px-4 text-foreground hover:text-[##153c8f] rounded-lg transition-colors font-clash text-white hover:bg-[#2664eb] hover:shadow-lg"
+                  className="w-full flex items-center gap-2 bg-[#153c8f] justify-start py-2.5 px-3 text-white rounded-lg transition-colors font-clash hover:bg-[#2664eb] hover:shadow-lg text-sm"
                   onClick={item.onClick}
                 >
                   {item.icon}
-                  <span className="ml-2">{item.label}</span>
-                </a>
+                  <span>{item.label}</span>
+                </Link>
               </TooltipTrigger>
             </Tooltip>
           ))}
         </TooltipProvider>
       </nav>
 
-      {/* Imagen en la parte inferior */}
       <div className="mt-auto flex justify-center p-4">
         <Image
           src="/images/logo.svg"
-          alt="WellProdSimulator"
-          width={300}
-          height={200}
-          className="w-64 h-64 object-contain"
+          alt="EthosTerra"
+          width={160}
+          height={120}
+          className="w-40 h-auto object-contain opacity-80"
         />
       </div>
     </div>

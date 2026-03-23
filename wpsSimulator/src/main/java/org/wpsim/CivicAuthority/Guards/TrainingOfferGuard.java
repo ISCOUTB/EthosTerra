@@ -52,10 +52,12 @@ public class TrainingOfferGuard extends PeriodicGuardBESA {
 
     }
 
-    private List<String> generatePeasantFamilyAgentAliases(int families) {
+    private List<String> generatePeasantFamilyAgentAliases(int familiesPerNode) {
         List<String> aliases = new ArrayList<>();
-        for (int i = 1; i <= families; i++) {
-            aliases.add("PeasantFamily_" + i);
+        // Only generate aliases for the local container's agents
+        String prefix = wpsStart.params.mode + "PeasantFamily";
+        for (int i = 1; i <= familiesPerNode; i++) {
+            aliases.add(prefix + i);
         }
         return aliases;
     }

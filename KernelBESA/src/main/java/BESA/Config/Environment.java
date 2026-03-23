@@ -26,14 +26,7 @@ public class Environment {
      * Send event timeout.
      */
     protected long sendeventtimeout;
-    /**
-     * RMI timeout.
-     */
-    protected long rmitimeout;
-    /**
-     * Remote tag.
-     */
-    protected Remote remote;
+
     /**
      * External tag.
      * TODO Cambiar nombre de clase.
@@ -74,23 +67,7 @@ public class Environment {
         return ce;
     }
     
-    /**
-     * Gets the remote tag information.
-     * 
-     * @return Remote tag information.
-     */
-    public Remote getRemote() {
-        return remote;
-    }
 
-    /**
-     * Gets the RMI timeout.
-     * 
-     * @return RMI timeout.
-     */
-    public long getRmitimeout() {
-        return rmitimeout;
-    }
 
     public void setSeneventattemps(int seneventattemps) {
         this.seneventattemps = seneventattemps;
@@ -100,13 +77,7 @@ public class Environment {
         this.sendeventtimeout = sendeventtimeout;
     }
 
-    public void setRmitimeout(long rmitimeout) {
-        this.rmitimeout = rmitimeout;
-    }
 
-    public void setRemote(Remote remote) {
-        this.remote = remote;
-    }
 
     public void setInterop(Interop interop) {
         this.interop = interop;

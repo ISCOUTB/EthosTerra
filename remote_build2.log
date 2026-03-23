@@ -1,0 +1,337 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 558B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 6.79kB done
+#2 DONE 0.0s
+
+#3 [auth] library/node:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [auth] library/eclipse-temurin:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-jammy
+#5 ...
+
+#6 [internal] load metadata for docker.io/library/node:20-slim
+#6 DONE 0.8s
+
+#7 [internal] load metadata for docker.io/library/eclipse-temurin:21-jdk-jammy
+#7 DONE 0.8s
+
+#5 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-jammy
+#5 DONE 0.8s
+
+#8 [internal] load .dockerignore
+#8 transferring context: 710B done
+#8 DONE 0.0s
+
+#9 [internal] load build context
+#9 DONE 0.0s
+
+#10 [java-build  1/26] FROM docker.io/library/eclipse-temurin:21-jdk-jammy@sha256:db76cc1ec33597273b26359c23ff1fc8d83a570ead897ce694e9d314e0014032
+#10 resolve docker.io/library/eclipse-temurin:21-jdk-jammy@sha256:db76cc1ec33597273b26359c23ff1fc8d83a570ead897ce694e9d314e0014032 0.1s done
+#10 DONE 0.1s
+
+#11 [webapp  1/19] FROM docker.io/library/eclipse-temurin:21-jre-jammy@sha256:9124935fec241982824f1992fefab73f14701c3cc54a3e18cdb4bf6ce11d9a12
+#11 resolve docker.io/library/eclipse-temurin:21-jre-jammy@sha256:9124935fec241982824f1992fefab73f14701c3cc54a3e18cdb4bf6ce11d9a12
+#11 resolve docker.io/library/eclipse-temurin:21-jre-jammy@sha256:9124935fec241982824f1992fefab73f14701c3cc54a3e18cdb4bf6ce11d9a12 0.1s done
+#11 DONE 0.1s
+
+#12 FROM docker.io/library/node:20-slim@sha256:17281e8d1dc4d671976c6b89a12f47a44c2f390b63a989e2e327631041f544fd
+#12 resolve docker.io/library/node:20-slim@sha256:17281e8d1dc4d671976c6b89a12f47a44c2f390b63a989e2e327631041f544fd 0.1s done
+#12 DONE 0.1s
+
+#13 [webapp  3/19] COPY --from=node:20-slim /usr/local/bin/node /usr/local/bin/node
+#13 CACHED
+
+#14 [webapp  4/19] COPY --from=node:20-slim /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+#14 CACHED
+
+#15 [webapp  2/19] RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+#15 CACHED
+
+#16 [webapp  5/19] RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm     && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx     && node --version && npm --version && npx --version
+#16 CACHED
+
+#17 [webapp  6/19] RUN groupadd -r wpsuser && useradd -r -g wpsuser -d /app -s /sbin/nologin wpsuser
+#17 CACHED
+
+#18 [webapp  7/19] WORKDIR /app
+#18 CACHED
+
+#9 [internal] load build context
+#9 transferring context: 106.61kB 0.1s done
+#9 DONE 0.1s
+
+#19 [java-build  8/26] COPY BDIBESA/pom.xml       ./BDIBESA/pom.xml
+#19 CACHED
+
+#20 [java-build 10/26] COPY wpsSimulator/pom.xml  ./wpsSimulator/pom.xml
+#20 CACHED
+
+#21 [java-build  2/26] RUN apt-get update && apt-get install -y --no-install-recommends maven && rm -rf /var/lib/apt/lists/*
+#21 CACHED
+
+#22 [java-build  3/26] WORKDIR /build
+#22 CACHED
+
+#23 [java-build  5/26] COPY LocalBESA/pom.xml     ./LocalBESA/pom.xml
+#23 CACHED
+
+#24 [java-build  6/26] COPY RemoteBESA/pom.xml    ./RemoteBESA/pom.xml
+#24 CACHED
+
+#25 [java-build 12/26] COPY KernelBESA/    ./KernelBESA/
+#25 CACHED
+
+#26 [java-build  4/26] COPY KernelBESA/pom.xml    ./KernelBESA/pom.xml
+#26 CACHED
+
+#27 [java-build 11/26] RUN cd KernelBESA   && mvn install -N -q -DskipTests     && cd ../LocalBESA    && mvn install -N -q -DskipTests     && cd ../RemoteBESA   && mvn install -N -q -DskipTests     && cd ../RationalBESA && mvn install -N -q -DskipTests     && cd ../BDIBESA      && mvn install -N -q -DskipTests     && cd ../eBDIBESA     && mvn install -N -q -DskipTests     && cd ../wpsSimulator && mvn dependency:go-offline -q -P docker
+#27 CACHED
+
+#28 [java-build  9/26] COPY eBDIBESA/pom.xml      ./eBDIBESA/pom.xml
+#28 CACHED
+
+#29 [java-build  7/26] COPY RationalBESA/pom.xml  ./RationalBESA/pom.xml
+#29 CACHED
+
+#30 [java-build 13/26] COPY LocalBESA/     ./LocalBESA/
+#30 CACHED
+
+#31 [java-build 14/26] COPY RemoteBESA/    ./RemoteBESA/
+#31 DONE 0.1s
+
+#32 [java-build 15/26] COPY RationalBESA/  ./RationalBESA/
+#32 DONE 0.1s
+
+#33 [java-build 16/26] COPY BDIBESA/       ./BDIBESA/
+#33 DONE 0.1s
+
+#34 [java-build 17/26] COPY eBDIBESA/      ./eBDIBESA/
+#34 DONE 0.1s
+
+#35 [java-build 18/26] COPY wpsSimulator/  ./wpsSimulator/
+#35 DONE 0.2s
+
+#36 [java-build 19/26] RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#36 DONE 4.9s
+
+#37 [java-build 20/26] RUN cd LocalBESA    && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#37 DONE 4.2s
+
+#38 [java-build 21/26] RUN cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#38 1.617 [[1;34mINFO[m] Scanning for projects...
+#38 1.690 [[1;34mINFO[m] 
+#38 1.691 [[1;34mINFO[m] [1m-------------------< [0;36mio.github.iscoutb:remote-besa[0;1m >--------------------[m
+#38 1.701 [[1;34mINFO[m] [1mBuilding RemoteBESA 3.6.0[m
+#38 1.705 [[1;34mINFO[m] [1m--------------------------------[ jar ]---------------------------------[m
+#38 1.897 [[1;34mINFO[m] 
+#38 1.897 [[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:2.6:resources[m [1m(default-resources)[m @ [36mremote-besa[0;1m ---[m
+#38 2.083 [[1;34mINFO[m] Using 'UTF-8' encoding to copy filtered resources.
+#38 2.085 [[1;34mINFO[m] skip non existing resourceDirectory /build/RemoteBESA/src/main/resources
+#38 2.088 [[1;34mINFO[m] 
+#38 2.088 [[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.11.0:compile[m [1m(default-compile)[m @ [36mremote-besa[0;1m ---[m
+#38 2.297 [[1;34mINFO[m] Changes detected - recompiling the module! :source
+#38 2.301 [[1;34mINFO[m] Compiling 28 source files with javac [debug target 21] to target/classes
+#38 3.604 [[1;34mINFO[m] /build/RemoteBESA/src/main/java/BESA/Remote/PongThread.java: Some input files use or override a deprecated API.
+#38 3.605 [[1;34mINFO[m] /build/RemoteBESA/src/main/java/BESA/Remote/PongThread.java: Recompile with -Xlint:deprecation for details.
+#38 3.605 [[1;34mINFO[m] /build/RemoteBESA/src/main/java/BESA/Remote/PongThread.java: Some input files use unchecked or unsafe operations.
+#38 3.606 [[1;34mINFO[m] /build/RemoteBESA/src/main/java/BESA/Remote/PongThread.java: Recompile with -Xlint:unchecked for details.
+#38 3.608 [[1;34mINFO[m] 
+#38 3.608 [[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:2.6:testResources[m [1m(default-testResources)[m @ [36mremote-besa[0;1m ---[m
+#38 3.614 [[1;34mINFO[m] Using 'UTF-8' encoding to copy filtered resources.
+#38 3.614 [[1;34mINFO[m] skip non existing resourceDirectory /build/RemoteBESA/src/test/resources
+#38 3.615 [[1;34mINFO[m] 
+#38 3.616 [[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.11.0:testCompile[m [1m(default-testCompile)[m @ [36mremote-besa[0;1m ---[m
+#38 3.623 [[1;34mINFO[m] No sources to compile
+#38 3.623 [[1;34mINFO[m] 
+#38 3.623 [[1;34mINFO[m] [1m--- [0;32mmaven-surefire-plugin:2.12.4:test[m [1m(default-test)[m @ [36mremote-besa[0;1m ---[m
+#38 3.767 [[1;34mINFO[m] Tests are skipped.
+#38 3.767 [[1;34mINFO[m] 
+#38 3.767 [[1;34mINFO[m] [1m--- [0;32mmaven-jar-plugin:2.4:jar[m [1m(default-jar)[m @ [36mremote-besa[0;1m ---[m
+#38 3.944 [[1;34mINFO[m] Building jar: /build/RemoteBESA/target/remote-besa-3.6.0.jar
+#38 3.989 [[1;34mINFO[m] 
+#38 3.989 [[1;34mINFO[m] [1m>>> [0;32mmaven-source-plugin:3.3.0:jar[m [1m(attach-sources)[0;1m > [0;1mgenerate-sources[m @ [36mremote-besa[0;1m >>>[m
+#38 3.991 [[1;34mINFO[m] 
+#38 3.991 [[1;34mINFO[m] [1m<<< [0;32mmaven-source-plugin:3.3.0:jar[m [1m(attach-sources)[0;1m < [0;1mgenerate-sources[m @ [36mremote-besa[0;1m <<<[m
+#38 3.992 [[1;34mINFO[m] 
+#38 3.993 [[1;34mINFO[m] 
+#38 3.993 [[1;34mINFO[m] [1m--- [0;32mmaven-source-plugin:3.3.0:jar[m [1m(attach-sources)[m @ [36mremote-besa[0;1m ---[m
+#38 4.171 [[1;34mINFO[m] Skipping source per configuration.
+#38 4.171 [[1;34mINFO[m] 
+#38 4.172 [[1;34mINFO[m] [1m--- [0;32mmaven-javadoc-plugin:3.5.0:jar[m [1m(attach-javadocs)[m @ [36mremote-besa[0;1m ---[m
+#38 4.709 [[1;34mINFO[m] Skipping javadoc generation
+#38 4.709 [[1;34mINFO[m] 
+#38 4.711 [[1;34mINFO[m] [1m--- [0;32mmaven-install-plugin:2.4:install[m [1m(default-install)[m @ [36mremote-besa[0;1m ---[m
+#38 4.748 [[1;34mINFO[m] Installing /build/RemoteBESA/target/remote-besa-3.6.0.jar to /root/.m2/repository/io/github/iscoutb/remote-besa/3.6.0/remote-besa-3.6.0.jar
+#38 4.767 [[1;34mINFO[m] Installing /build/RemoteBESA/pom.xml to /root/.m2/repository/io/github/iscoutb/remote-besa/3.6.0/remote-besa-3.6.0.pom
+#38 4.776 [[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+#38 4.776 [[1;34mINFO[m] [1;32mBUILD SUCCESS[m
+#38 4.777 [[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+#38 4.782 [[1;34mINFO[m] Total time:  3.179 s
+#38 4.783 [[1;34mINFO[m] Finished at: 2026-03-22T06:03:58Z
+#38 4.783 [[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+#38 DONE 4.8s
+
+#39 [java-build 22/26] RUN cd RationalBESA && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#39 DONE 2.3s
+
+#40 [java-build 23/26] RUN cd BDIBESA      && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#40 DONE 4.3s
+
+#41 [java-build 24/26] RUN cd eBDIBESA     && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+#41 DONE 3.9s
+
+#42 [java-build 25/26] RUN cd wpsSimulator && mvn package -q -DskipTests     -Dmaven.javadoc.skip=true -Dmaven.source.skip=true     -P docker
+#42 DONE 47.4s
+
+#43 [java-build 26/26] RUN jar tf /build/wpsSimulator/target/wps-simulator-3.6.0.jar | head -5 &&     jar xf /build/wpsSimulator/target/wps-simulator-3.6.0.jar META-INF/MANIFEST.MF &&     cat META-INF/MANIFEST.MF &&     jar tf /build/wpsSimulator/target/wps-simulator-3.6.0.jar | grep -c "BESA/" &&     echo "=== JAR verification passed ==="
+#43 0.525 META-INF/MANIFEST.MF
+#43 0.525 META-INF/
+#43 0.525 wpsConfig.properties
+#43 0.525 data/
+#43 0.525 data/mariaLaBaja/
+#43 0.913 Manifest-Version: 1.0
+#43 0.913 Archiver-Version: Plexus Archiver
+#43 0.913 Created-By: Apache Maven 3.6.3
+#43 0.913 Built-By: root
+#43 0.913 Build-Jdk: 21.0.10
+#43 0.913 Main-Class: org.wpsim.WellProdSim.wpsStart
+#43 0.913 
+#43 1.120 200
+#43 1.120 === JAR verification passed ===
+#43 DONE 1.2s
+
+#44 [webapp  8/19] COPY --from=java-build     /build/wpsSimulator/target/wps-simulator-3.6.0.jar     /app/wps-simulator.jar
+#44 DONE 0.1s
+
+#45 [webapp  9/19] COPY wpsUI/package.json wpsUI/tsconfig.json wpsUI/next.config.mjs wpsUI/tailwind.config.ts wpsUI/postcss.config.mjs ./
+#45 DONE 0.1s
+
+#46 [webapp 10/19] COPY wpsUI/src/ ./src/
+#46 DONE 0.1s
+
+#47 [webapp 11/19] COPY wpsUI/public/ ./public/
+#47 DONE 0.1s
+
+#48 [webapp 12/19] RUN mkdir -p /app/src/wps/logs
+#48 DONE 0.3s
+
+#49 [webapp 13/19] RUN ln -s /app/src/wps/logs /app/logs
+#49 DONE 0.4s
+
+#50 [webapp 14/19] RUN npm pkg delete dependencies.wellprodsim dependencies.WellProdSim 2>/dev/null; true
+#50 DONE 0.9s
+
+#51 [webapp 15/19] RUN npm install --ignore-scripts --no-optional
+#51 0.569 npm warn config optional Use `--omit=optional` to exclude optional dependencies, or
+#51 0.569 npm warn config `--include=optional` to include them.
+#51 0.569 npm warn config
+#51 0.569 npm warn config       Default value does install optional deps unless otherwise omitted.
+#51 101.8 npm warn deprecated are-we-there-yet@3.0.1: This package is no longer supported.
+#51 102.1 npm warn deprecated npmlog@6.0.2: This package is no longer supported.
+#51 102.1 npm warn deprecated @npmcli/move-file@2.0.1: This functionality has been moved to @npmcli/fs
+#51 103.3 npm warn deprecated gauge@4.0.4: This package is no longer supported.
+#51 103.7 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#51 104.1 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+#51 106.2 npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+#51 106.8 npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+#51 107.5 npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 109.9 npm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 114.7 npm warn deprecated glob@8.1.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 120.8 npm warn deprecated glob@10.3.10: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 121.0 npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#51 129.6 npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+#51 274.7 npm warn deprecated next@14.2.15: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
+#51 275.2 
+#51 275.2 added 944 packages, and audited 945 packages in 5m
+#51 275.2 
+#51 275.2 216 packages are looking for funding
+#51 275.2   run `npm fund` for details
+#51 275.6 
+#51 275.6 23 vulnerabilities (2 low, 1 moderate, 19 high, 1 critical)
+#51 275.6 
+#51 275.6 To address issues that do not require attention, run:
+#51 275.6   npm audit fix
+#51 275.6 
+#51 275.6 To address all issues (including breaking changes), run:
+#51 275.6   npm audit fix --force
+#51 275.6 
+#51 275.6 Run `npm audit` for details.
+#51 DONE 276.5s
+
+#52 [webapp 16/19] RUN npx next build
+#52 1.665 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#52 1.665 This information is used to shape Next.js' roadmap and prioritize features.
+#52 1.665 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#52 1.665 https://nextjs.org/telemetry
+#52 1.665 
+#52 1.734   Ôû▓ Next.js 14.2.15
+#52 1.734 
+#52 1.800    Creating an optimized production build ...
+#52 2.284    Downloading swc package @next/swc-linux-x64-gnu...
+#52 6.561    Downloading swc package @next/swc-linux-x64-musl...
+#52 36.70  Ô£ô Compiled successfully
+#52 36.71    Skipping validation of types
+#52 36.71    Linting ...
+#52 37.00    Collecting page data ...
+#52 38.62    Generating static pages (0/12) ...
+#52 39.09    Generating static pages (3/12) 
+#52 39.09    Generating static pages (6/12) 
+#52 39.10    Generating static pages (9/12) 
+#52 39.10  Ô£ô Generating static pages (12/12)
+#52 39.32    Finalizing page optimization ...
+#52 39.32    Collecting build traces ...
+#52 54.23 
+#52 54.23 Route (app)                              Size     First Load JS
+#52 54.23 Ôöî Ôùï /                                    32.3 kB         120 kB
+#52 54.23 Ôö£ Ôùï /_not-found                          876 B          88.7 kB
+#52 54.23 Ôö£ ãÆ /api/simulator                       0 B                0 B
+#52 54.23 Ôö£ ãÆ /api/simulator/app-path              0 B                0 B
+#52 54.23 Ôö£ ãÆ /api/simulator/csv                   0 B                0 B
+#52 54.23 Ôö£ ãÆ /api/simulator/file                  0 B                0 B
+#52 54.23 Ôö£ Ôùï /pages/analytics                     31.8 kB         296 kB
+#52 54.23 Ôö£ Ôùï /pages/contact                       21.8 kB         163 kB
+#52 54.23 Ôö£ Ôùï /pages/dataExport                    4.88 kB         148 kB
+#52 54.23 Ôö£ Ôùï /pages/settings                      4.34 kB         163 kB
+#52 54.23 Ôöö Ôùï /pages/simulador                     47.3 kB         338 kB
+#52 54.23 + First Load JS shared by all            87.8 kB
+#52 54.23   Ôö£ chunks/117-82bebd18304c2013.js       31.8 kB
+#52 54.23   Ôö£ chunks/fd9d1056-33dbbf1723128ec3.js  53.6 kB
+#52 54.23   Ôöö other shared chunks (total)          2.44 kB
+#52 54.23 
+#52 54.23 
+#52 54.23 Ôùï  (Static)   prerendered as static content
+#52 54.23 ãÆ  (Dynamic)  server-rendered on demand
+#52 54.23 
+#52 DONE 54.8s
+
+#53 [webapp 17/19] RUN cp -r /app/public /app/.next/standalone/public &&     cp -r /app/.next/static /app/.next/standalone/.next/static
+#53 DONE 0.5s
+
+#54 [webapp 18/19] RUN cp /app/wps-simulator.jar /app/.next/standalone/wps-simulator.jar
+#54 DONE 0.5s
+
+#55 [webapp 19/19] RUN chown -R wpsuser:wpsuser /app/.next /app/src /app/logs /app/wps-simulator.jar
+#55 DONE 5.8s
+
+#56 exporting to image
+#56 exporting layers
+#56 exporting layers 39.1s done
+#56 exporting manifest sha256:af08c1879e5f0e07fc58ee828f9eaae82f7339403d0c0221fc5ca7d728995910 0.0s done
+#56 exporting config sha256:c80c308ee5407c96ddb81cedc6d04362f56ea9ac036557f5ebbfe2e55cec102b 0.0s done
+#56 exporting attestation manifest sha256:76575190eaa7dd72c86554c34dc8c0bd503073f9e89df133d114b6ba5f37a448 0.0s done
+#56 exporting manifest list sha256:5131d47c3b739568d8472cf20b5d16a8f51d49eba4d975146038f127b6c6670e 0.0s done
+#56 naming to docker.io/library/ethosterra-container-a:latest
+#56 naming to docker.io/library/ethosterra-container-a:latest done
+#56 unpacking to docker.io/library/ethosterra-container-a:latest
+#56 unpacking to docker.io/library/ethosterra-container-a:latest 23.1s done
+#56 DONE 62.3s
+
+#57 resolving provenance for metadata file
+#57 DONE 0.0s
+ ethosterra-container-a  Built

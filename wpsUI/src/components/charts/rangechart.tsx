@@ -27,7 +27,7 @@ useEffect(() => {
   const loadData = async () => {
     try {
       console.log(`Cargando datos para parámetro: ${parameter}, agente: ${agent || 'todos'}`);
-      const response = await window.electronAPI.readCsv();
+      const response = await fetch("/api/simulator/csv").then((r) => r.json());
       if (!response.success || !response.data) {
         throw new Error(response.error || "Error al leer el archivo CSV");
       }
