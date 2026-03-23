@@ -26,6 +26,11 @@ services:
       - WPS_LOGS_PATH=/app/logs
       - NODE_ENV=development
       - RABBITMQ_HOST=rabbitmq
+      # File watcher polling: necesario para Docker + Windows/WSL2
+      # Sin esto, next dev no detecta cambios en los archivos montados como volumen
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=300
+      - WATCHPACK_POLLING=true
       # Activa debug remoto en cada proceso Java que se lance desde Next.js
       - JAVA_TOOL_OPTIONS=-Xmx2g -Xms512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     depends_on:
