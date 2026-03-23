@@ -76,6 +76,7 @@ export default function SimulatorConfigPage() {
   const [tools, setTools] = useState(20);
   const [seeds, setSeeds] = useState(50);
   const [water, setWater] = useState(0);
+  const [worldSize, setWorldSize] = useState<number>(400);
   const [irrigation, setIrrigation] = useState(true);
   const [emotions, setEmotions] = useState(true);
   const [training, setTraining] = useState(false);
@@ -113,7 +114,7 @@ export default function SimulatorConfigPage() {
       emotions: emotions ? 1 : 0,
       training: training ? 1 : 0,
       years,
-      world: "mediumworld",
+      world: worldSize.toString(),
     };
     return Object.entries(argsObj).flatMap(([key, value]) => [
       `-${key}`,
@@ -145,6 +146,7 @@ export default function SimulatorConfigPage() {
   };
 
   const handleStartSimulation = async () => {
+    localStorage.setItem("map_size", worldSize.toString());
     const started = await handleExecuteExe();
     if (started) {
       router.push("/pages/simulador");
@@ -220,6 +222,39 @@ export default function SimulatorConfigPage() {
                 isSelected={land === 12}
                 onClick={() => setLand(12)}
                 colorClass="border-red-500/50"
+              />
+            </div>
+          </section>
+
+          {/* 1.5 Dimensión del Mapa */}
+          <section className="bg-[#171c1f] p-6 rounded-2xl border border-[#272d34] shadow-lg">
+            <h2 className="text-xl font-semibold mb-4 text-white flex items-center gap-2">
+              <Network className="w-5 h-5 text-indigo-400" /> Extensión del Terreno Simulado
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <VisualCard 
+                title="Pequeño (100)" 
+                description="Iteraciones rápidas, baja complejidad de red. Matriz 10x10."
+                icon={<Sprout className="w-6 h-6" />}
+                isSelected={worldSize === 100}
+                onClick={() => setWorldSize(100)}
+                colorClass="border-indigo-500/50"
+              />
+              <VisualCard 
+                title="Estándar (400)" 
+                description="Balance óptimo entre carga visual y comportamiento social. Matriz 20x20."
+                icon={<Trees className="w-6 h-6" />}
+                isSelected={worldSize === 400}
+                onClick={() => setWorldSize(400)}
+                colorClass="border-blue-500/60"
+              />
+              <VisualCard 
+                title="Extenso (800)" 
+                description="Alta ocupación. Simula redes de competencia complejas. Matriz 40x20."
+                icon={<Network className="w-6 h-6" />}
+                isSelected={worldSize === 800}
+                onClick={() => setWorldSize(800)}
+                colorClass="border-purple-500/50"
               />
             </div>
           </section>

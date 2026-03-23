@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Landmark, Gavel, Users, ShoppingCart, Tractor, Activity,
-  RadioTower, Wifi, WifiOff, X, Inbox, ArrowDownLeft
+  RadioTower, Wifi, WifiOff, X, Inbox, ArrowDownLeft, Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +73,7 @@ export function AgentNetworkMap() {
   const [messages, setMessages] = useState<BesaMessage[]>([]);
   const [log, setLog] = useState<BesaMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [currentDate, setCurrentDate] = useState<string>("Esperando...");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   // Almacena los IDs de familias descubiertas a través de mensajes j=
   const [discoveredFamilies, setDiscoveredFamilies] = useState<string[]>([]);
@@ -190,6 +191,13 @@ export function AgentNetworkMap() {
             setLog([]);
             setMessages([]);
             setSelectedNodeId(null);
+            setCurrentDate("Esperando...");
+            break;
+          }
+
+          // ── Avance del tiempo (Fecha) ─────────────────────────────
+          case "d=": {
+            setCurrentDate(payload);
             break;
           }
         }
@@ -248,6 +256,9 @@ export function AgentNetworkMap() {
             <div className="w-[1px] h-4 bg-gray-700 mx-1" />
             <Activity className="w-3.5 h-3.5" />
             <span>{log.length} eventos</span>
+            <div className="w-[1px] h-4 bg-gray-700 mx-1" />
+            <Calendar className="w-3.5 h-3.5" />
+            <span className="font-mono text-sky-300">{currentDate}</span>
           </div>
         </div>
 
@@ -280,7 +291,7 @@ export function AgentNetworkMap() {
           {messages.map((msg) => {
             const source = resolveNode(msg.sourceId);
             const target = resolveNode(msg.targetId);
-            if (!source || !target) return null;
+            if (!source || !target || source.id === target.id) return null;
             return (
               <line
                 key={`active-${msg.id}`}
@@ -297,7 +308,7 @@ export function AgentNetworkMap() {
             {messages.map((msg) => {
               const source = resolveNode(msg.sourceId);
               const target = resolveNode(msg.targetId);
-              if (!source || !target) return null;
+              if (!source || !target || source.id === target.id) return null;
               return (
                 <motion.circle
                   key={msg.id}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Home, PieChart, Settings, Mail, Download } from "lucide-react";
+import { Home, PieChart, Settings, Mail, Download, Network, BarChartIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipProvider,
@@ -55,6 +55,8 @@ const Sidebar: React.FC = () => {
   const menuItems = [
     { icon: <Home size={20} />, label: "Simulator", href: "/pages/simulador" },
     { icon: <PieChart size={20} />, label: "Analytics", href: "/pages/analytics" },
+    { icon: <BarChartIcon size={20} />, label: "Statistics", href: "/pages/statistics" },
+    { icon: <Network size={20} />, label: "Network", href: "/pages/network" },
     { icon: <Settings size={20} />, label: "Settings", href: "/pages/settings", onClick: handleSettingsClick },
     { icon: <Mail size={20} />, label: "Contact", href: "/pages/contact" },
     { icon: <Download size={20} />, label: "Export Data", href: "/pages/dataExport" },

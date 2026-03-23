@@ -33,7 +33,7 @@ import static org.wpsim.WellProdSim.wpsStart.params;
  */
 public class CivicAuthorityState extends StateBESA implements Serializable {
 
-    private static final int GRID_SIZE = 70;
+    private int gridSize;
     /**
      * Map that contains the land ownership information.
      */
@@ -49,6 +49,12 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
     public CivicAuthorityState() {
         super();
         this.landOwnership = new HashMap<>();
+        
+        if (params.world.equals("100")) this.gridSize = 10;
+        else if (params.world.equals("400")) this.gridSize = 20;
+        else if (params.world.equals("800")) this.gridSize = 40; // 40x20
+        else this.gridSize = 70; // Mapas reales / mediumworld
+        
         initializeLands();
     }
 
@@ -103,15 +109,15 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
 
     private Point landNameToPoint(String landName) {
         int number = Integer.parseInt(landName.replace("land_", ""));
-        int x = (number - 1) % GRID_SIZE;
-        int y = (number - 1) / GRID_SIZE;
+        int x = (number - 1) % this.gridSize;
+        int y = (number - 1) / this.gridSize;
         return new Point(x, y);
     }
 
     private List<String> selectBlock(List<String> availableLands, int rows, int cols) {
         // Recorrer cada punto posible como punto de inicio del bloque
-        for (int y = 0; y <= GRID_SIZE - rows; y++) {
-            for (int x = 0; x <= GRID_SIZE - cols; x++) {
+        for (int y = 0; y <= this.gridSize - rows; y++) {
+            for (int x = 0; x <= this.gridSize - cols; x++) {
                 Point startPoint = new Point(x, y);
                 if (isBlockAvailable(startPoint, rows, cols, availableLands)) {
                     return extractBlock(startPoint, rows, cols, availableLands);
@@ -124,7 +130,7 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
     private boolean isBlockAvailable(Point startPoint, int rows, int cols, List<String> availableLands) {
         for (int y = startPoint.y; y < startPoint.y + rows; y++) {
             for (int x = startPoint.x; x < startPoint.x + cols; x++) {
-                String landName = "land_" + (y * GRID_SIZE + x + 1);
+                String landName = "land_" + (y * this.gridSize + x + 1);
                 if (!availableLands.contains(landName)) {
                     return false;
                 }
@@ -137,7 +143,7 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
         List<String> block = new ArrayList<>();
         for (int y = startPoint.y; y < startPoint.y + rows; y++) {
             for (int x = startPoint.x; x < startPoint.x + cols; x++) {
-                String landName = "land_" + (y * GRID_SIZE + x + 1);
+                String landName = "land_" + (y * this.gridSize + x + 1);
                 block.add(landName);
                 availableLands.remove(landName);
             }
@@ -224,9 +230,9 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
             }
         }
 
-        // Asignar fincas pequeñas wpsStart.config.getBooleanProperty("pfagent.smallfarms")
+        // Asignar fincas pequeñas (1x2)
         if (small) {
-            while (!availableLands.isEmpty()) {
+            while (true) {
                 List<String> farmLands = selectBlock(availableLands, 1, 2);
                 if (farmLands.isEmpty()) {
                     break;
@@ -234,18 +240,12 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
                 farms.put("farm_" + farmId + "_small", farmLands);
                 farmId++;
             }
-            // Lógica adicional para asignar tierras no asignadas a fincas pequeñas
-            while (!availableLands.isEmpty() && availableLands.size() >= 2) {
-                // Tomamos cualquier bloque de 2 tierras contiguas disponibles
-                List<String> farmLands = new ArrayList<>();
-                farmLands.add(availableLands.get(0));
-                farmLands.add(availableLands.get(1));
-
-                // Removemos esas tierras de availableLands
-                availableLands.removeAll(farmLands);
-
-                // Agregamos estas tierras a una finca pequeña
-                farms.put("farm_" + farmId + "_small", farmLands);
+            // Mop up: Asignar cualquier tierra restante como finca de 1 unidad (1x1)
+            // para asegurar que nunca se asigne algo no contiguo en un mismo bloque
+            while (!availableLands.isEmpty()) {
+                List<String> farmLands = selectBlock(availableLands, 1, 1);
+                if (farmLands.isEmpty()) break;
+                farms.put("farm_" + farmId + "_tiny", farmLands);
                 farmId++;
             }
         }

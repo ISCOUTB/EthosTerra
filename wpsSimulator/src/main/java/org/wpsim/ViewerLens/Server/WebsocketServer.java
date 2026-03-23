@@ -25,6 +25,9 @@ import io.undertow.websockets.spi.WebSocketHttpExchange;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.wpsim.SimulationControl.Util.ControlCurrentDate;
 import org.wpsim.WellProdSim.Config.wpsConfig;
@@ -40,6 +43,8 @@ public class WebsocketServer implements Runnable {
 
     private final List<WebSocketChannel> activeChannels = Collections.synchronizedList(new ArrayList<>());
     private static WebsocketServer instance;
+    private final Map<String, String> agentStates = new ConcurrentHashMap<>();
+    private final List<String> recentInteractions = Collections.synchronizedList(new LinkedList<>());
 
     /**
      * Websocket server instance
@@ -98,6 +103,17 @@ public class WebsocketServer implements Runnable {
                                                     "d=" + ControlCurrentDate.getInstance().getCurrentDate(), channel,
                                                     null);
                                             WebSockets.sendText("q=" + wpsStart.peasantFamiliesAgents, channel, null);
+                                            
+                                            // Provide cached agents states immediately
+                                            for (String cachedState : getInstance().agentStates.values()) {
+                                                WebSockets.sendText(cachedState, channel, null);
+                                            }
+                                            // Provide recent interactions
+                                            synchronized (getInstance().recentInteractions) {
+                                                for (String inter : getInstance().recentInteractions) {
+                                                    WebSockets.sendText(inter, channel, null);
+                                                }
+                                            }
                                         } else {
                                             System.out.println("Unknown message: " + msg);
                                         }
@@ -121,6 +137,27 @@ public class WebsocketServer implements Runnable {
      * @param message the message
      */
     public void broadcastMessage(String message) {
+        if (message.startsWith("j=")) {
+            try {
+                String jsonPart = message.substring(2);
+                int nameIdx = jsonPart.indexOf("\"name\":\"");
+                if (nameIdx != -1) {
+                    int endIdx = jsonPart.indexOf("\"", nameIdx + 8);
+                    if (endIdx != -1) {
+                        String name = jsonPart.substring(nameIdx + 8, endIdx);
+                        agentStates.put(name, message);
+                    }
+                }
+            } catch (Exception e) {}
+        } else if (message.startsWith("i=")) {
+            synchronized (recentInteractions) {
+                recentInteractions.add(message);
+                if (recentInteractions.size() > 100) {
+                    recentInteractions.remove(0);
+                }
+            }
+        }
+
         synchronized (activeChannels) {
             for (WebSocketChannel channel : activeChannels) {
                 if (channel.isOpen()) {

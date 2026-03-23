@@ -1,6 +1,5 @@
 "use client";
 import SimulationMap from "@/components/simulation/containerMap";
-import TabContent from "@/components/charts/datatabs/TabContent";
 import FarmInfoComponent from "./farmInfoComponents";
 import { Button } from "../ui/button";
 import { StopCircle, HelpCircle } from "lucide-react";
@@ -72,10 +71,6 @@ export default function MapSimulator() {
 
             {/* Botón con WebSocket */}
             <ToggleButton />
-
-            <div id="tab-content">
-              <TabContent />
-            </div>
           </div>
         </div>
       </div>

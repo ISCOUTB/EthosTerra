@@ -222,10 +222,10 @@ public class wpsStart {
             }
         }*/
         System.out.println("UPDATE: Contenedores activos");
-        Enumeration<String> containers = AdmBESA.getInstance().getAdmAliasList();
+        /*Enumeration<String> containers = AdmBESA.getInstance().getAdmAliasList();
         while (containers.hasMoreElements()) {
             System.out.println("UPDATE:" + containers.nextElement());
-        }
+        }*/
 
     }
 
