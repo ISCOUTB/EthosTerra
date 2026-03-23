@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Landmark, Gavel, Users, ShoppingCart, Tractor, Activity,
-  RadioTower, Wifi, WifiOff, X, Inbox, ArrowDownLeft, Calendar
+  RadioTower, Wifi, WifiOff, X, Inbox, ArrowDownLeft, Calendar,
+  Skull, User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -77,7 +78,8 @@ export function AgentNetworkMap() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   // Almacena los IDs de familias descubiertas a través de mensajes j=
   const [discoveredFamilies, setDiscoveredFamilies] = useState<string[]>([]);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [agentStates, setAgentStates] = useState<Record<string, { health: number; farmId: string }>>({});
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // ── Nodos dinámicos ───────────────────────────────────────────────────
   const familyNodes = useMemo(
@@ -99,11 +101,8 @@ export function AgentNetworkMap() {
   // ── Mensajes filtrados para el nodo seleccionado ──────────────────────
   const selectedNodeMessages = useMemo(() => {
     if (!selectedNodeId) return [];
-    return log.filter((m) => {
-      const target = resolveNode(m.targetId);
-      return target?.id === selectedNodeId;
-    });
-  }, [selectedNodeId, log, resolveNode]);
+    return log.filter(msg => msg.targetId === selectedNodeId || msg.sourceId === selectedNodeId);
+  }, [log, selectedNodeId]);
 
   // ── Contador de mensajes recibidos por nodo ───────────────────────────
   const nodeIncomingCount = useMemo(() => {
@@ -143,6 +142,20 @@ export function AgentNetworkMap() {
             try {
               const data = JSON.parse(payload);
               if (data && data.from && data.to) {
+                // Descubrir agentes a partir de interacciones también
+                [data.from, data.to].forEach(agentName => {
+                  if (agentName && !HUB_IDS.has(agentName)) {
+                    setDiscoveredFamilies((prev) => {
+                      if (prev.includes(agentName)) return prev;
+                      return [...prev, agentName].sort((a, b) => {
+                        const na = parseInt(a.replace(/\D+/g, "") || "0");
+                        const nb = parseInt(b.replace(/\D+/g, "") || "0");
+                        return na - nb;
+                      });
+                    });
+                  }
+                });
+
                 const newMsg: BesaMessage = {
                   id: Math.random().toString(36).substring(2, 9),
                   sourceId: data.from,
@@ -169,6 +182,16 @@ export function AgentNetworkMap() {
               const data = JSON.parse(payload);
               if (data && data.name) {
                 const agentName: string = data.name;
+                const parsedState = typeof data.state === "string" ? JSON.parse(data.state) : data.state;
+                
+                const health = parsedState.health ?? 100;
+                const farmId = parsedState.peasantFamilyLandAlias || "";
+
+                setAgentStates(prev => ({
+                  ...prev,
+                  [agentName]: { health, farmId }
+                }));
+
                 // Solo agregar si es familia (no un hub) y no ya descubierta
                 if (!HUB_IDS.has(agentName)) {
                   setDiscoveredFamilies((prev) => {
@@ -188,6 +211,7 @@ export function AgentNetworkMap() {
           // ── Reset de simulación ───────────────────────────────────
           case "q=": {
             setDiscoveredFamilies([]);
+            setAgentStates({});
             setLog([]);
             setMessages([]);
             setSelectedNodeId(null);
@@ -228,10 +252,9 @@ export function AgentNetworkMap() {
     : null;
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] w-full bg-[#0f1417] text-white p-4 gap-4 font-archivo">
-
-      {/* ── Panel Izquierdo: Mapa de Red ───────────────────────────────── */}
-      <div className="flex-1 relative overflow-hidden bg-[#14181c] rounded-2xl border border-[#272d34] shadow-2xl flex flex-col">
+    <div className="flex flex-col lg:flex-row h-screen bg-[#0f1417] text-white p-2 pl-20 lg:pl-24 gap-2 font-archivo overflow-hidden">
+      {/* Panel Principal: Mapa de Red + Consola */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-2 relative overflow-hidden">
 
         {/* Controles */}
         <div className="absolute top-4 left-4 z-20 flex items-center gap-4 bg-black/50 backdrop-blur px-4 py-2 rounded-lg border border-gray-800">
@@ -327,10 +350,30 @@ export function AgentNetworkMap() {
 
         {/* Nodos de Agentes */}
         {allNodes.map((node) => {
-          const Icon = node.icon;
           const isHub = node.type === "hub";
           const isSelected = selectedNodeId === node.id;
           const count = nodeIncomingCount[node.id] || 0;
+          
+          let nodeColor = node.color;
+          let nodeIcon = node.icon;
+
+          if (!isHub) {
+            const state = agentStates[node.id];
+            if (state) {
+              const { health, farmId } = state;
+              if (health <= 0) {
+                nodeColor = "text-slate-400 border-slate-500 bg-slate-500/20";
+                nodeIcon = Skull;
+              } else if (health < 20) {
+                nodeColor = "text-red-400 border-red-500 bg-red-500/30";
+              } else if (!farmId || farmId === "" || farmId === "Unassigned") {
+                nodeIcon = User;
+                nodeColor = "text-gray-400 border-gray-600 bg-gray-900/40";
+              }
+            }
+          }
+
+          const IconComponent = nodeIcon;
 
           return (
             <motion.div
@@ -347,21 +390,22 @@ export function AgentNetworkMap() {
               <div className="relative">
                 <div
                   className={cn(
-                    "p-2 rounded-full border shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all",
-                    node.color,
-                    isHub ? "w-14 h-14 border-2" : "w-10 h-10",
-                    isSelected && "ring-2 ring-sky-400 ring-offset-2 ring-offset-[#14181c]"
+                    "p-1.5 rounded-full border shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all",
+                    nodeColor,
+                    isHub ? "w-12 h-12 border-2" : "w-8 h-8",
+                    isSelected && "ring-2 ring-sky-400 ring-offset-2 ring-offset-[#14181c]",
+                    !isHub && agentStates[node.id]?.health <= 0 && "opacity-25"
                   )}
                 >
-                  <Icon className={isHub ? "w-7 h-7" : "w-5 h-5"} />
+                  <IconComponent className={isHub ? "w-6 h-6" : "w-4 h-4"} />
                 </div>
                 {count > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-sky-500 text-white text-[9px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-lg border border-[#14181c]">
+                  <span className="absolute -top-1 -right-1 bg-sky-500 text-white text-[8px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-lg border border-[#14181c]">
                     {count > 99 ? "99+" : count}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] mt-1.5 font-bold bg-[#0f1417]/80 border border-gray-800 px-2 py-0.5 rounded shadow whitespace-nowrap">
+              <span className="text-[9px] mt-1 font-bold bg-[#0f1417]/80 border border-gray-800 px-1.5 py-0.5 rounded shadow whitespace-nowrap">
                 {node.label}
               </span>
             </motion.div>
@@ -446,52 +490,150 @@ export function AgentNetworkMap() {
         </AnimatePresence>
       </div>
 
-      {/* ── Panel Derecho: Consola global ──────────────────────────────── */}
-      <div className="w-full lg:w-80 bg-[#171c1f] border border-[#272d34] rounded-2xl flex flex-col overflow-hidden shadow-xl">
-        <div className="bg-black/40 border-b border-gray-800 p-4 flex items-center gap-2">
-          <Activity className="w-5 h-5 text-green-400" />
-          <h3 className="font-semibold text-sm">Registro de Eventos</h3>
-          <span className="ml-auto text-[10px] text-gray-500 bg-gray-800/60 px-2 py-0.5 rounded-full">{log.length}</span>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-          {log.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-gray-600">
-              <RadioTower className="w-10 h-10 mb-3 opacity-30" />
-              <p className="text-xs text-center">Esperando interacciones…<br />Inicia una simulación desde el panel principal.</p>
+      {/* ── Panel Derecho: Consola global / Detalles del Agente ───────── */}
+      <div className="w-full lg:w-96 bg-[#171c1f] border border-[#272d34] rounded-2xl flex flex-col overflow-hidden shadow-xl transition-all duration-300">
+        {selectedNodeId ? (
+          <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
+            {/* Cabecera de Selección */}
+            <div className="bg-[#2664eb]/20 border-b border-gray-800 p-4 flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className={cn("p-2 rounded-full border shadow-lg", resolveNode(selectedNodeId)?.color)}>
+                  {React.createElement(resolveNode(selectedNodeId)?.icon || Activity, { className: "w-5 h-5" })}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white truncate max-w-[160px]">
+                    {resolveNode(selectedNodeId)?.label || selectedNodeId}
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-mono italic">
+                    {selectedNodeId.replace("PeasantFamily_", "Fam_")}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedNodeId(null)}
+                className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                title="Volver al registro global"
+              >
+                <X className="w-4 h-4 text-gray-400 hover:text-white" />
+              </button>
             </div>
-          )}
-          <AnimatePresence initial={false}>
-            {log.map((msg) => {
-              const isFamilyToHub = msg.sourceId.includes("Family");
-              return (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="bg-[#14181c] p-3 rounded-lg border border-[#272d34] text-xs space-y-1"
-                >
-                  <div className="flex justify-between items-center text-gray-500">
-                    <span className="font-mono text-[10px]">
-                      {new Date(msg.timestamp).toISOString().split("T")[1].slice(0, -1)}
-                    </span>
-                    <span className="text-[10px] bg-blue-900/30 text-blue-400 px-1.5 rounded">{msg.id}</span>
-                  </div>
-                  <p className="font-semibold text-gray-200">[{msg.action}]</p>
-                  {msg.detail && <p className="text-gray-500 text-[10px] truncate">{msg.detail}</p>}
-                  <div className="flex items-center gap-2 text-gray-400 mt-1">
-                    <span className={cn("truncate max-w-[100px]", isFamilyToHub ? "text-blue-300" : "text-amber-300")}>
-                      {msg.sourceId.replace("PeasantFamily_", "Fam_")}
-                    </span>
-                    <span className="text-gray-600">→</span>
-                    <span className={cn("truncate max-w-[100px]", !isFamilyToHub ? "text-blue-300" : "text-amber-300")}>
-                      {msg.targetId.replace("PeasantFamily_", "Fam_")}
+
+            {/* Información de Estado (Solo Familia) */}
+            {agentStates[selectedNodeId] && (
+              <div className="p-3 bg-black/20 border-b border-gray-800 grid grid-cols-2 gap-2">
+                <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                  <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Vitalidad</p>
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      agentStates[selectedNodeId].health > 0 ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" : "bg-gray-600"
+                    )} />
+                    <span className="text-xs font-mono font-bold">
+                      {agentStates[selectedNodeId].health}%
                     </span>
                   </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
+                </div>
+                <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                  <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Localización</p>
+                  <p className="text-xs font-mono text-amber-500 truncate">
+                    {agentStates[selectedNodeId].farmId || "Sin Tierras"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Historial de Interacciones Específico */}
+            <div className="flex-1 flex flex-col min-h-0 bg-black/10">
+              <div className="px-4 py-2 text-[10px] uppercase font-bold text-gray-500 bg-[#14181c] border-b border-gray-800 flex justify-between">
+                <span>Historia BESA</span>
+                <span>{selectedNodeMessages.length} total</span>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                {selectedNodeMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-48 text-gray-600 italic">
+                    <Inbox className="w-8 h-8 mb-2 opacity-20" />
+                    <p className="text-[11px]">Sin interacciones registradas aún</p>
+                  </div>
+                ) : (
+                  <AnimatePresence initial={false}>
+                    {selectedNodeMessages.map((msg) => (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="bg-[#14181c]/80 p-2.5 rounded-lg border border-gray-800/50 hover:border-sky-500/30 transition-all group"
+                      >
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[9px] font-mono text-sky-500 opacity-60">
+                            {new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-1.5 rounded-full">
+                            {msg.action}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-gray-300 leading-tight">
+                          {msg.sourceId === selectedNodeId ? (
+                            <p>Envió a <span className="text-amber-500 italic">{msg.targetId.replace("PeasantFamily_", "Fam_")}</span></p>
+                          ) : (
+                            <p>Recibió de <span className="text-sky-400 italic">{msg.sourceId.replace("PeasantFamily_", "Fam_")}</span></p>
+                          )}
+                        </div>
+                        {msg.detail && (
+                          <div className="mt-1.5 text-[10px] text-gray-500 leading-relaxed bg-black/20 p-1.5 rounded italic">
+                            {msg.detail}
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
+            <div className="bg-black/40 border-b border-gray-800 p-4 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-green-400 animate-pulse" />
+              <h3 className="font-semibold text-sm">Registro de Eventos</h3>
+              <span className="ml-auto text-[10px] text-gray-500 bg-gray-800/60 px-2 py-0.5 rounded-full">{log.length}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              {log.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-gray-600">
+                  <RadioTower className="w-10 h-10 mb-3 opacity-30" />
+                  <p className="text-xs text-center italic">Esperando tráfico BESA...<br />Selecciona un nodo para detalles específicos.</p>
+                </div>
+              )}
+              <AnimatePresence initial={false}>
+                {log.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-[#14181c] p-3 rounded-lg border border-[#272d34] text-xs space-y-1 hover:border-sky-500/30 cursor-pointer transition-all"
+                    onClick={() => setSelectedNodeId(msg.sourceId)}
+                  >
+                    <div className="flex justify-between items-center text-gray-500">
+                      <span className="font-mono text-[10px]">
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </span>
+                      <span className="text-[10px] font-bold text-sky-400 uppercase tracking-tighter">{msg.action}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-400 mt-1">
+                      <span className="truncate max-w-[100px] text-blue-300">
+                        {msg.sourceId.replace("PeasantFamily_", "Fam_")}
+                      </span>
+                      <span className="text-gray-700">→</span>
+                      <span className="truncate max-w-[100px] text-amber-300">
+                        {msg.targetId.replace("PeasantFamily_", "Fam_")}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

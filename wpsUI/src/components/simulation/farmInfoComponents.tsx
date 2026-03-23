@@ -93,21 +93,24 @@ export default function FarmInfoComponent() {
     }
   }, [])
 
-  // Get expression based on health
-  const getExpression = (health: number) => {
+  // Get expression based on health and land ownership
+  const getExpression = (health: number, farmId: string) => {
+    if (health <= 0) return "💀"
+    if (!farmId || farmId === "" || farmId === "Unassigned") return "👤"
     const healthPercentage = Math.min(100, Math.max(0, health))
     if (healthPercentage > 75) return "😄"
     if (healthPercentage > 50) return "🙂"
-    if (healthPercentage > 25) return "😐"
-    return "😟"
+    if (healthPercentage > 20) return "😐"
+    return "😫"
   }
 
   // Get avatar color based on health
   const getAvatarColor = (health: number) => {
+    if (health <= 0) return "bg-slate-500"
     const healthPercentage = Math.min(100, Math.max(0, health))
     if (healthPercentage > 75) return "bg-green-500"
     if (healthPercentage > 50) return "bg-yellow-500"
-    if (healthPercentage > 25) return "bg-orange-500"
+    if (healthPercentage > 20) return "bg-orange-500"
     return "bg-red-500"
   }
 
@@ -143,9 +146,9 @@ export default function FarmInfoComponent() {
                     >
                       <div className="flex items-center p-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white">
                         <div
-                          className={`w-8 h-8 rounded-full ${getAvatarColor(info.life)} flex items-center justify-center text-lg mr-2 border border-white`}
+                          className={`w-8 h-8 rounded-full ${getAvatarColor(info.life)} flex items-center justify-center text-lg mr-2 border border-white ${info.life <= 0 ? "opacity-25" : ""}`}
                         >
-                          {getExpression(info.life)}
+                          {getExpression(info.life, info.farmId)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold truncate text-sm">{info.id}</h3>
