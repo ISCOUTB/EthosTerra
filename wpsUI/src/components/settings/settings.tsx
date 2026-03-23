@@ -69,15 +69,15 @@ const VisualCard = ({ title, description, icon, isSelected, onClick, colorClass 
 );
 
 export default function SimulatorConfigPage() {
-  const [agents, setAgents] = useState(50);
+  const [agents, setAgents] = useState(20);
   const [money, setMoney] = useState(1500000);
-  const [land, setLand] = useState(6);
-  const [personality, setPersonality] = useState(0);
+  const [land, setLand] = useState(2);
+  const [personality, setPersonality] = useState(0.5);
   const [tools, setTools] = useState(20);
   const [seeds, setSeeds] = useState(50);
   const [water, setWater] = useState(0);
-  const [irrigation, setIrrigation] = useState(false);
-  const [emotions, setEmotions] = useState(false);
+  const [irrigation, setIrrigation] = useState(true);
+  const [emotions, setEmotions] = useState(true);
   const [training, setTraining] = useState(false);
   const [years, setYears] = useState(2);
   const [showTourButton, setShowTourButton] = useState(false);
