@@ -73,7 +73,7 @@ COPY --from=java-build \
 COPY wpsUI/package.json wpsUI/tsconfig.json wpsUI/next.config.mjs \
      wpsUI/tailwind.config.ts wpsUI/postcss.config.mjs ./
 
-RUN npm install --ignore-scripts --no-optional
+RUN npm install
 
 # Directorio de logs (sobreescrito por bind-mount en compose)
 RUN mkdir -p /app/logs
@@ -90,4 +90,4 @@ ENV NODE_ENV=development
 # next dev con -H para aceptar conexiones de cualquier interfaz dentro del contenedor
 # npm install al arrancar: detecta nuevas deps en package.json sin rebuild.
 # Con el volumen nombrado node_modules_dev, si no hay cambios tarda ~1s.
-CMD ["sh", "-c", "npm install --ignore-scripts --no-optional --prefer-offline && npx next dev --turbo -H 0.0.0.0 -p 3000"]
+CMD ["sh", "-c", "npm install --prefer-offline && npx next dev --turbo -H 0.0.0.0 -p 3000"]

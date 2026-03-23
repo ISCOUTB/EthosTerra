@@ -141,25 +141,25 @@ export default function FarmInfoComponent() {
                       }`}
                       onClick={() => setSelectedFarm(info.id === selectedFarm ? null : info.id)}
                     >
-                      <div className="flex items-center p-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white">
+                      <div className="flex items-center p-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white">
                         <div
-                          className={`w-12 h-12 rounded-full ${getAvatarColor(info.life)} flex items-center justify-center text-2xl mr-3 border-2 border-white`}
+                          className={`w-8 h-8 rounded-full ${getAvatarColor(info.life)} flex items-center justify-center text-lg mr-2 border border-white`}
                         >
                           {getExpression(info.life)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold truncate">{info.id}</h3>
+                          <h3 className="font-bold truncate text-sm">{info.id}</h3>
                         </div>
                       </div>
-                      <div className="p-3">
-                        <div className="mb-3">
-                          <div className="flex justify-between text-sm mb-1">
+                      <div className="p-2 text-xs">
+                        <div className="mb-1">
+                          <div className="flex justify-between mb-0.5">
                             <span className="flex items-center gap-1 text-red-600">
-                              <Heart className="w-4 h-4" /> Health
+                              <Heart className="w-3 h-3" /> Health
                             </span>
                             <span>{info.life.toFixed(1)}</span>
                           </div>
-                          <Progress value={info.life} className="h-2" />
+                          <Progress value={info.life} className="h-1" />
                         </div>
 
                         {selectedFarm === info.id && (

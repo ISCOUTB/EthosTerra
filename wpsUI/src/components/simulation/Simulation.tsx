@@ -4,6 +4,7 @@ import FarmInfoComponent from "./farmInfoComponents";
 import { Button } from "../ui/button";
 import { StopCircle, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import TabContent from "@/components/charts/datatabs/TabContent";
 
 const ToggleButton = () => {
   const handleButtonClick = async () => {
@@ -55,22 +56,27 @@ export default function MapSimulator() {
         {/* Sección de Información de la Finca */}
         <div
           id="farm-info"
-          className="w-full md:w-2/5 bg-[#181c20] rounded-lg shadow-md p-2 scrollbar-hide overflow-auto"
+          className="w-full md:w-[30%] bg-[#181c20] rounded-lg shadow-md p-2 scrollbar-hide overflow-auto"
         >
-          <h2 className="text-xl font-bold font-clash mb-2 text-center text-white bg-[#2664eb] rounded-lg p-1">
+          <h2 className="text-lg font-bold font-clash mb-1 text-center text-white bg-[#2664eb] rounded-lg p-1">
             Farm Information
           </h2>
           <FarmInfoComponent />
         </div>
         {/* Sección de Mapa de Simulación + Contenido de Pestañas */}
-        <div className="w-full bg-[#181c20] rounded-lg shadow-md p-2 overflow-auto">
-          <div className="h-[400px] rounded-3xl">
-            <div id="simulation-map">
+        <div className="w-full bg-[#181c20] rounded-lg shadow-md p-2 overflow-auto scrollbar-hide">
+          <div className="flex flex-col gap-4">
+            <div id="simulation-map" className="aspect-square h-[350px] mx-auto rounded-2xl overflow-hidden bg-[#1a232b] mb-1">
               <SimulationMap />
             </div>
 
             {/* Botón con WebSocket */}
             <ToggleButton />
+
+            {/* Estadísticas integradas debajo del mapa */}
+            <div id="simulation-stats" className="mt-4 border-t border-[#2664eb]/30 pt-4">
+              <TabContent />
+            </div>
           </div>
         </div>
       </div>

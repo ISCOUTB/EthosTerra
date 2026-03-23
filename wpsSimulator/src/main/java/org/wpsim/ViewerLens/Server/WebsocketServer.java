@@ -140,15 +140,25 @@ public class WebsocketServer implements Runnable {
         if (message.startsWith("j=")) {
             try {
                 String jsonPart = message.substring(2);
-                int nameIdx = jsonPart.indexOf("\"name\":\"");
+                // Simple but more robust parsing for "name":"..."
+                String nameSearch = "\"name\":\"";
+                int nameIdx = jsonPart.indexOf(nameSearch);
+                if (nameIdx == -1) {
+                    nameSearch = "\"name\" : \"";
+                    nameIdx = jsonPart.indexOf(nameSearch);
+                }
+                
                 if (nameIdx != -1) {
-                    int endIdx = jsonPart.indexOf("\"", nameIdx + 8);
+                    int startValue = nameIdx + nameSearch.length();
+                    int endIdx = jsonPart.indexOf("\"", startValue);
                     if (endIdx != -1) {
-                        String name = jsonPart.substring(nameIdx + 8, endIdx);
+                        String name = jsonPart.substring(startValue, endIdx);
                         agentStates.put(name, message);
                     }
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                System.err.println("Error caching agent state: " + e.getMessage());
+            }
         } else if (message.startsWith("i=")) {
             synchronized (recentInteractions) {
                 recentInteractions.add(message);

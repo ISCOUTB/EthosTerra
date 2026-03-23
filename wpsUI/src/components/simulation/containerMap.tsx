@@ -58,10 +58,8 @@ const SimulationMap: React.FC = () => {
       let data = event.data.substring(2);
       switch (prefix) {
         case "q=":
-          requestAnimationFrame(() => {
-            setIsSimulationActive(true);
-            setAgentData([]);
-          });
+          setIsSimulationActive(true);
+          setAgentData([]);
           break;
         case "j=":
           try {
@@ -70,7 +68,7 @@ const SimulationMap: React.FC = () => {
             const parsedState = JSON.parse(state);
             const lands_number = parsedState.assignedLands?.length || 0;
             const contractor = parsedState.contractor || "";
-            const newLands = [];
+            const newLands: LandData[] = [];
             for (let j = 0; j < lands_number; j++) {
               const land_name = parsedState.assignedLands[j].landName;
               const land_name_short = land_name.split("_")[1];
@@ -180,7 +178,7 @@ const SimulationMap: React.FC = () => {
   return (
     <div className="w-full h-full flex justify-center items-center overflow-hidden rounded-lg">
       <div 
-        className="w-full max-w-[850px] bg-[#1a232b] rounded-[30px] border-2 border-[#ffff] shadow-2xl p-4 overflow-hidden relative"
+        className="w-full h-full max-w-[850px] max-h-full bg-[#1a232b] rounded-2xl border-2 border-[#ffff] shadow-2xl p-1 md:p-2 overflow-hidden relative flex flex-col"
       >
         {/* SVG Wrapper for Contracts */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-20 px-4 py-4" style={{ top: 0, left: 0 }}>
@@ -188,7 +186,7 @@ const SimulationMap: React.FC = () => {
         </svg>
 
         <div 
-          className="w-full h-full grid gap-[5px]"
+          className="w-full h-full grid gap-[1px]"
           style={{ 
             gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` 
           }}
@@ -243,10 +241,10 @@ const SimulationMap: React.FC = () => {
                   borderWidth: ownerName ? (mapSize === 800 ? "1px" : "2px") : "0px",
                 }}
                 transition={{ duration: 0.5 }}
-                className={`aspect-square rounded-[2px] transition-colors relative group border-solid box-border m-[1px]`}
+                className={`aspect-square rounded-[1px] transition-colors relative group border-solid box-border`}
               >
                 {/* Tooltip on hover */}
-                <div className="absolute opacity-0 group-hover:opacity-100 bg-black text-white text-[10px] p-2 rounded -top-12 left-1/2 -translate-x-1/2 z-30 pointer-events-none whitespace-nowrap shadow-lg border border-gray-700 flex flex-col gap-0.5 items-center">
+                <div className="absolute opacity-0 group-hover:opacity-100 bg-black text-white text-[9px] p-1.5 rounded -top-10 left-1/2 -translate-x-1/2 z-30 pointer-events-none whitespace-nowrap shadow-lg border border-gray-700 flex flex-col gap-0.5 items-center">
                   <span className="font-bold text-[#3b82f6]">{landId}</span>
                   <span className="text-gray-400 text-[9px] mb-1">{typeLabel}</span>
                   {ownerName && <span style={{ color: borderColor }}>Dueño: {ownerName}</span>}
