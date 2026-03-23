@@ -44,6 +44,12 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
     private Map<String, List<String>> farms;
 
     /**
+     * Training slots available.
+     */
+    private int trainingSlots;
+    private int initialTrainingSlots;
+
+    /**
      * Constructor.
      */
     public CivicAuthorityState() {
@@ -55,6 +61,11 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
         else if (params.world.equals("800")) this.gridSize = 40; // 40x20
         else this.gridSize = 70; // Mapas reales / mediumworld
         
+        this.initialTrainingSlots = (params.trainingSlots != -1) 
+                ? params.trainingSlots 
+                : wpsConfig.getInstance().getIntProperty("civicauthority.trainingSlots");
+        this.trainingSlots = this.initialTrainingSlots;
+
         initializeLands();
     }
 
@@ -280,6 +291,24 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
     public String toString() {
         return "GovernmentAgentState{" +
                 "landOwnership=" + landOwnership +
+                ", trainingSlots=" + trainingSlots +
                 '}';
+    }
+
+    public synchronized boolean useTrainingSlot() {
+        if (this.trainingSlots > 0) {
+            this.trainingSlots--;
+            return true;
+        }
+        return false;
+    }
+
+    public synchronized void resetTrainingSlots() {
+        this.trainingSlots = this.initialTrainingSlots;
+        System.out.println("UPDATE: Training slots renewed: " + this.trainingSlots);
+    }
+
+    public int getTrainingSlots() {
+        return trainingSlots;
     }
 }

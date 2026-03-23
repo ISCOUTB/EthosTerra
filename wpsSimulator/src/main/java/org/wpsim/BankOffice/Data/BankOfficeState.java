@@ -15,6 +15,7 @@
 package org.wpsim.BankOffice.Data;
 
 import BESA.Kernel.Agent.StateBESA;
+import org.wpsim.WellProdSim.wpsStart;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -53,7 +54,7 @@ public class BankOfficeState extends StateBESA implements Serializable {
      */
     public BankOfficeState() {
         super();
-        availableMoney = 10000000;
+        availableMoney = wpsStart.config.getDoubleProperty("bank.money.initial");
     }
 
     public boolean giveLoanToPeasantFamily(BankOfficeMessageType loanType, String peasantFamily, double money) {

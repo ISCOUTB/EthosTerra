@@ -32,6 +32,8 @@ import org.wpsim.WellProdSim.Config.wpsConfig;
 
 import java.util.Enumeration;
 
+// Forced rebuild due to stale JAR
+
 /**
  *
  */
@@ -85,7 +87,11 @@ public class wpsStart {
         options.addOption(new Option("training", true, "Enable Training"));
         options.addOption(new Option("world", true, "World Size"));
         options.addOption(new Option("years", true, "Number of years"));
-        //options.addOption(new Option("step", false, "Step Time"));
+        options.addOption(new Option("variance", true, "Peasant variance"));
+        options.addOption(new Option("criminality", true, "Society criminality"));
+        options.addOption(new Option("step", true, "Step Time"));
+        options.addOption(new Option("perturbation", true, "Perturbation type"));
+        options.addOption(new Option("trainingslots", true, "Training Slots per Year"));
 
         // Crear el parser para los argumentos
         CommandLineParser parser = new DefaultParser();
@@ -143,12 +149,23 @@ public class wpsStart {
             if (cmd.hasOption("years")) {
                 params.years = Integer.parseInt(cmd.getOptionValue("years"));
             }
-
-            /*if (cmd.hasOption("step")) {
+            if (cmd.hasOption("variance")) {
+                params.variance = Double.parseDouble(cmd.getOptionValue("variance"));
+            }
+            if (cmd.hasOption("criminality")) {
+                params.criminality = Integer.parseInt(cmd.getOptionValue("criminality"));
+            }
+            if (cmd.hasOption("step")) {
                 params.steptime = Integer.parseInt(cmd.getOptionValue("step"));
-            }else{
+            } else if (params.steptime == -1) {
                 params.steptime = Integer.parseInt(wpsStart.config.getStringProperty("control.steptime"));
-            }*/
+            }
+            if (cmd.hasOption("perturbation")) {
+                params.perturbation = cmd.getOptionValue("perturbation");
+            }
+            if (cmd.hasOption("trainingslots")) {
+                params.trainingSlots = Integer.parseInt(cmd.getOptionValue("trainingslots"));
+            }
 
 
         } catch (Exception e) {

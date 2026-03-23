@@ -77,7 +77,7 @@ StablePeasant:
   totalIncome: 0.0
   debtPayment: 0.0
   #training:
-  trainingLevel: 1.0
+  trainingLevel: 0.5
   trainingAvailability: 0.7
   trainingRelevance: 1
   trainingCost: 1.0

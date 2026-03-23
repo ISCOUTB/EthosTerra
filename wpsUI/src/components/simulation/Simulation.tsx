@@ -2,35 +2,98 @@
 import SimulationMap from "@/components/simulation/containerMap";
 import FarmInfoComponent from "./farmInfoComponents";
 import { Button } from "../ui/button";
-import { StopCircle, HelpCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { StopCircle, HelpCircle, TrendingUp } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import TabContent from "@/components/charts/datatabs/TabContent";
+import SimulationReport from "./SimulationReport";
+import { cn } from "@/lib/utils";
 
-const ToggleButton = () => {
-  const handleButtonClick = async () => {
+interface ToggleButtonProps {
+  isRunning: boolean;
+  setShowReport: (show: boolean) => void;
+}
+
+const ToggleButton = ({ isRunning, setShowReport }: ToggleButtonProps) => {
+  const [stopping, setStopping] = useState(false);
+
+  const handleStop = async () => {
+    setStopping(true);
     try {
-      await fetch("/api/simulator", { method: "DELETE" });
+      if (isRunning) {
+        await fetch("/api/simulator", { method: "DELETE" });
+      }
     } catch (error) {
-      console.error("Error al detener el proceso Java:", error);
+      console.error("Error al gestionar el proceso Java:", error);
+    } finally {
+      // No reseteamos stopping aquí inmediatamente porque el poller
+      // eventualmente verá que ya no corre y cambiará el UI
+      setTimeout(() => setStopping(false), 2000);
     }
   };
 
   return (
-    <div className="flex items-center justify-center space-x-2 mt-2">
-      <Button
-        id="stop-button"
-        onClick={handleButtonClick}
-        className="flex items-center space-x-1 text-white bg-[#2664eb] hover:bg-[#1e4bbf] font-clash font-bold py-1"
-      >
-        <StopCircle className="w-6 h-6 font-clash" />
-        <span>Stop</span>
-      </Button>
+    <div className="flex items-center gap-4">
+      {isRunning ? (
+        <button
+          onClick={handleStop}
+          disabled={stopping}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg active:scale-95",
+            stopping
+              ? "bg-gray-600 cursor-not-allowed opacity-50"
+              : "bg-red-600 hover:bg-red-700 shadow-red-900/20 shadow-lg"
+          )}
+        >
+          <div className={cn("w-2 h-2 rounded-full bg-white", !stopping && "animate-pulse")} />
+          {stopping ? "Stopping..." : "Stop Simulation"}
+        </button>
+      ) : (
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 border border-gray-700 text-gray-400 rounded-lg text-sm font-medium">
+            <div className="w-2 h-2 rounded-full bg-gray-500" />
+            Simulation Stopped
+          </span>
+          <button
+            onClick={() => setShowReport(true)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 active:scale-95 border border-emerald-500/30"
+          >
+            <TrendingUp className="w-4 h-4" />
+            View Results Report
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
 export default function MapSimulator() {
   const [showTourButton, setShowTourButton] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const prevRunningRef = useRef(false);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch("/api/simulator");
+        const data = await res.json();
+        
+        // Detección de fin de simulación
+        if (prevRunningRef.current === true && data.running === false) {
+          setShowReport(true);
+        }
+        
+        setIsRunning(data.running);
+        prevRunningRef.current = data.running;
+      } catch (e) {
+        console.error("Error polling simulator status", e);
+      }
+    };
+
+    const interval = setInterval(checkStatus, 3000);
+    checkStatus(); // Inicial
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Import dinámico: driver.js accede a window/document y falla en SSR si se importa estáticamente
@@ -70,8 +133,7 @@ export default function MapSimulator() {
               <SimulationMap />
             </div>
 
-            {/* Botón con WebSocket */}
-            <ToggleButton />
+            <ToggleButton isRunning={isRunning} setShowReport={setShowReport} />
 
             {/* Estadísticas integradas debajo del mapa */}
             <div id="simulation-stats" className="mt-4 border-t border-[#2664eb]/30 pt-4">
@@ -80,6 +142,9 @@ export default function MapSimulator() {
           </div>
         </div>
       </div>
+
+      {/* Reporte Final */}
+      <SimulationReport isOpen={showReport} onClose={() => setShowReport(false)} />
 
       {/* Botón de ayuda flotante */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-2">

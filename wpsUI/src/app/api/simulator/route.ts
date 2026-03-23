@@ -37,6 +37,11 @@ const ALLOWED_FLAGS = new Set([
   "-env",
   "-mode",
   "-nodes",
+  "-variance",
+  "-criminality",
+  "-step",
+  "-perturbation",
+  "-trainingslots",
 ]);
 
 // Caracteres que indican intento de inyección de comandos

@@ -34,8 +34,12 @@ public class SimulationParams {
     public int emotions = -1;
     public int training = -1;
     public int nodes = 0;
-    public int steptime = 50;
     public int years = 1;
+    public double variance = -1.0;
+    public int criminality = -1;
+    public int steptime = -1;
+    public String perturbation = null;
+    public int trainingSlots = -1;
     public String world;
 
 }

@@ -34,7 +34,8 @@ const SimulationMap: React.FC = () => {
   }, []);
 
   const connectWebSocket = () => {
-    const url = "ws://localhost:8000/wpsViewer";
+    const host = window.location.hostname;
+    const url = `ws://${host}:8000/wpsViewer`;
     socketRef.current = new WebSocket(url);
 
     socketRef.current.onerror = function () {
@@ -58,8 +59,9 @@ const SimulationMap: React.FC = () => {
       let data = event.data.substring(2);
       switch (prefix) {
         case "q=":
-          setIsSimulationActive(true);
+          // Reset for new simulation run
           setAgentData([]);
+          setIsSimulationActive(false);
           break;
         case "j=":
           try {
@@ -77,6 +79,7 @@ const SimulationMap: React.FC = () => {
                 current_season: parsedState.assignedLands[j].currentSeason,
               });
             }
+            setIsSimulationActive(true);
             setAgentData((prev) => {
               const exists = prev.some((a) => a.name_agent === name);
               if (exists) {
@@ -102,23 +105,17 @@ const SimulationMap: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isSimulationActive) {
-      const interval = setInterval(() => {
-        const landNames: string[] = [];
-        const seasonNames: string[] = [];
-        agentData.forEach((agent) => {
-          agent.lands.forEach((land) => {
-            landNames.push(land.name);
-            seasonNames.push(land.current_season);
-          });
-        });
-        setSpecificLandNames(landNames);
-        setSpecificSeason(seasonNames);
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [agentData, isSimulationActive]);
+    const landNames: string[] = [];
+    const seasonNames: string[] = [];
+    agentData.forEach((agent) => {
+      agent.lands.forEach((land) => {
+        landNames.push(land.name);
+        seasonNames.push(land.current_season);
+      });
+    });
+    setSpecificLandNames(landNames);
+    setSpecificSeason(seasonNames);
+  }, [agentData]);
 
   const getAgentColor = (name: string) => {
     let hash = 0;
@@ -206,7 +203,7 @@ const SimulationMap: React.FC = () => {
  
             // Look up owner and season
             const owner = agentData.find(a => a.lands.some(l => l.name === landId));
-            if (isSimulationActive && owner) {
+            if (owner) {
               ownerName = owner.name_agent;
               borderColor = getAgentColor(ownerName);
               
@@ -215,16 +212,16 @@ const SimulationMap: React.FC = () => {
                 const season = land.current_season;
                 switch (season) {
                   case "PREPARATION":
-                    bgColor = "#eab308"; // Dorado
+                    bgColor = "#eab308";
                     break;
                   case "PLANTING":
-                    bgColor = "#f97316"; // Naranja
+                    bgColor = "#f97316";
                     break;
                   case "GROWTH":
-                    bgColor = "#ef4444"; // Rojo
+                    bgColor = "#ef4444";
                     break;
                   case "HARVEST":
-                    bgColor = "#22c55e"; // Verde
+                    bgColor = "#22c55e";
                     break;
                 }
               }

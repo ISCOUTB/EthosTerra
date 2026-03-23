@@ -118,7 +118,8 @@ export function AgentNetworkMap() {
 
   // ── Conexión al WebSocket de ViewerLens ───────────────────────────────
   useEffect(() => {
-    const wsUrl = "ws://localhost:8000/wpsViewer";
+    const host = window.location.hostname;
+    const wsUrl = `ws://${host}:8000/wpsViewer`;
     let ws: WebSocket;
     let alive = true;
 

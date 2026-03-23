@@ -24,7 +24,8 @@ export default function FarmInfoComponent() {
   const [selectedFarm, setSelectedFarm] = useState<string | null>(null)
 
   const connectWebSocket = () => {
-    const url = "ws://localhost:8000/wpsViewer"
+    const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
+    const url = `ws://${host}:8000/wpsViewer`
     socketRef.current = new WebSocket(url)
 
     socketRef.current.onerror = (event) => {

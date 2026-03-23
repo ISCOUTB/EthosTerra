@@ -162,7 +162,7 @@ public class WebsocketServer implements Runnable {
         } else if (message.startsWith("i=")) {
             synchronized (recentInteractions) {
                 recentInteractions.add(message);
-                if (recentInteractions.size() > 100) {
+                if (recentInteractions.size() > 500) {
                     recentInteractions.remove(0);
                 }
             }

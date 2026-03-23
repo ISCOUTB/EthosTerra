@@ -282,9 +282,11 @@ public final class wpsConfig {
 
         PeasantFamilyProfile pfProfile = this.getDefaultPeasantFamilyProfile();
 
+        double pfVariance = (params.variance != -1.0) ? params.variance : getDoubleProperty("pfagent.variance");
+
         double rnd = 1 + generateRandomNumber(
-                getDoubleProperty("pfagent.variance") * -1,
-                getDoubleProperty("pfagent.variance")
+                pfVariance * -1,
+                pfVariance
         );
 
         if (params.money != -1) {
@@ -321,7 +323,8 @@ public final class wpsConfig {
         pfProfile.setMinimumVital(wpsStart.config.getIntProperty("pfagent.minimalVital") * rnd);
 
         Random rand = new Random();
-        if (rand.nextInt(101) <= getIntProperty("society.criminality")) {
+        int criminalityThreshold = (params.criminality != -1) ? params.criminality : getIntProperty("society.criminality");
+        if (rand.nextInt(101) <= criminalityThreshold) {
             pfProfile.setCriminalityAffinity(true);
         }
 

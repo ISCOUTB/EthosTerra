@@ -137,7 +137,10 @@ public class PlantCropTask extends wpsLandTask {
                                         )
                                 )
                         );
-                        profile.useSeeds(1);
+                        // Implement probability-based seed saving
+                        if (Math.random() > (1.0 - profile.getEfficiencyFactor())) {
+                            profile.useSeeds(1);
+                        }
                         currentLandInfo.setCurrentSeason(SeasonType.GROWING);
                     } catch (Exception ex) {
                         break;

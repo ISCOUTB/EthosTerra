@@ -28,8 +28,14 @@ useEffect(() => {
     try {
       console.log(`Cargando datos para parámetro: ${parameter}, agente: ${agent || 'todos'}`);
       const response = await fetch("/api/simulator/csv").then((r) => r.json());
-      if (!response.success || !response.data) {
-        throw new Error(response.error || "Error al leer el archivo CSV");
+      if (!response.success) {
+        throw new Error(response.error || "Error en la respuesta de la API");
+      }
+
+      if (!response.data) {
+        console.log("Esperando datos del CSV...");
+        setData([]);
+        return;
       }
 
       // Analizar el CSV correctamente con Papa
@@ -108,7 +114,15 @@ useEffect(() => {
           }}
         />
         <Tooltip />
-        <Area type="monotone" dataKey="value" stroke={color} fill="url(#colorGradient)" />
+        <Area
+          type="monotone"
+          dataKey="value"
+          stroke={color}
+          fill="url(#colorGradient)"
+          isAnimationActive={true}
+          animationDuration={600}
+          animationEasing="ease-in-out"
+        />
       </AreaChart>
     </ResponsiveContainer>
   );
