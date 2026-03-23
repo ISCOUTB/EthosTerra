@@ -52,7 +52,8 @@ public class CommunityDynamicsRequestHelpGuard extends GuardBESA  {
                 //wpsReport.info("Disponible " + agentHelper + " para ayudar a " + agentContractor, this.getAgent().getAlias());
             }
 
-            //wpsReport.info("enviando ayuda " +  agentHelper + " para " + societyDataMessage.getPeasantFamilyAgent(), this.getAgent().getAlias());
+            //wpsReport.info(agentHelper + " enviando ayuda para " + agentContractor, this.getAgent().getAlias());
+            wpsReport.interaction(agentContractor, "CommunityDynamics", "REQUEST_HELP", "helper=" + agentHelper);
             //System.out.println("enviando contrato como ayudante a " +  agentHelper + " para " + societyDataMessage.getPeasantFamilyContractor());
             AdmBESA.getInstance().getHandlerByAlias(
                     agentHelper

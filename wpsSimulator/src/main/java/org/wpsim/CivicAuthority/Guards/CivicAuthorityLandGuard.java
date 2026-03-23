@@ -22,6 +22,7 @@ import org.wpsim.CivicAuthority.Data.CivicAuthorityState;
 import org.wpsim.CivicAuthority.Data.CivicAuthorityLandData;
 import org.wpsim.PeasantFamily.Guards.FromCivicAuthority.FromCivicAuthorityGuard;
 import org.wpsim.PeasantFamily.Guards.FromCivicAuthority.FromCivicAuthorityMessage;
+import org.wpsim.ViewerLens.Util.wpsReport;
 
 import java.util.Map;
 
@@ -46,6 +47,7 @@ public class CivicAuthorityLandGuard extends GuardBESA  {
 
         try {
             //System.out.println("SENT: peasant family: " + data.getFamilyName() + " Assigned farm: " + assignedFarmName + " Assigned lands: " + assignedLands);
+            wpsReport.interaction(data.getFamilyName(), "CivicAuthority", "ASSIGN_LAND", assignedFarmName != null ? assignedFarmName : "none");
             AdmBESA.getInstance().getHandlerByAlias(
                     data.getFamilyName()
             ).sendEvent(

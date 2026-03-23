@@ -32,45 +32,59 @@ interface AgentNode {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
+   Nodos Hub (fijos)
+   ──────────────────────────────────────────────────────────────────────────── */
+const HUBS: AgentNode[] = [
+  { id: "MarketPlace", label: "Mercado", type: "hub", x: 42, y: 42, icon: ShoppingCart, color: "text-amber-400 border-amber-500 bg-amber-500/20" },
+  { id: "BankOffice", label: "Banco", type: "hub", x: 58, y: 42, icon: Landmark, color: "text-emerald-400 border-emerald-500 bg-emerald-500/20" },
+  { id: "CivicAuthority", label: "Gobierno", type: "hub", x: 42, y: 58, icon: Gavel, color: "text-purple-400 border-purple-500 bg-purple-500/20" },
+  { id: "CommunityDynamics", label: "Comunidad", type: "hub", x: 58, y: 58, icon: Users, color: "text-pink-400 border-pink-500 bg-pink-500/20" },
+];
+
+const HUB_IDS = new Set(HUBS.map((h) => h.id));
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Helper: posicionar N familias en un círculo
+   ──────────────────────────────────────────────────────────────────────────── */
+function buildFamilyNodes(familyIds: string[]): AgentNode[] {
+  const count = familyIds.length;
+  if (count === 0) return [];
+  const radius = 38;
+  return familyIds.map((id, i) => {
+    const angle = (i / count) * 2 * Math.PI - Math.PI / 2; // empieza arriba
+    const num = id.replace(/\D+/g, "") || `${i + 1}`;
+    return {
+      id,
+      label: `Familia ${num}`,
+      type: "family" as const,
+      x: 50 + radius * Math.cos(angle),
+      y: 50 + radius * Math.sin(angle),
+      icon: Tractor,
+      color: "text-blue-400 border-blue-500 bg-blue-900/30",
+    };
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
    Componente principal
    ──────────────────────────────────────────────────────────────────────────── */
 
-export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
+export function AgentNetworkMap() {
   const [messages, setMessages] = useState<BesaMessage[]>([]);
   const [log, setLog] = useState<BesaMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [activeAgents, setActiveAgents] = useState<Set<string>>(new Set());
+  // Almacena los IDs de familias descubiertas a través de mensajes j=
+  const [discoveredFamilies, setDiscoveredFamilies] = useState<string[]>([]);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  // ── Nodos Centrales (Servicios BESA) ──────────────────────────────────
-  const hubs: AgentNode[] = useMemo(() => [
-    { id: "MarketPlace", label: "Mercado", type: "hub", x: 42, y: 42, icon: ShoppingCart, color: "text-amber-400 border-amber-500 bg-amber-500/20" },
-    { id: "BankOffice", label: "Banco", type: "hub", x: 58, y: 42, icon: Landmark, color: "text-emerald-400 border-emerald-500 bg-emerald-500/20" },
-    { id: "CivicAuthority", label: "Gobierno", type: "hub", x: 42, y: 58, icon: Gavel, color: "text-purple-400 border-purple-500 bg-purple-500/20" },
-    { id: "CommunityDynamics", label: "Comunidad", type: "hub", x: 58, y: 58, icon: Users, color: "text-pink-400 border-pink-500 bg-pink-500/20" },
-  ], []);
+  // ── Nodos dinámicos ───────────────────────────────────────────────────
+  const familyNodes = useMemo(
+    () => buildFamilyNodes(discoveredFamilies),
+    [discoveredFamilies]
+  );
 
-  // ── Nodos de Familias en círculo ──────────────────────────────────────
-  const families: AgentNode[] = useMemo(() => {
-    const nodes: AgentNode[] = [];
-    const radius = 38;
-    for (let i = 0; i < agentCount; i++) {
-      const angle = (i / agentCount) * 2 * Math.PI;
-      nodes.push({
-        id: `PeasantFamily_${i + 1}`,
-        label: `Familia ${i + 1}`,
-        type: "family",
-        x: 50 + radius * Math.cos(angle),
-        y: 50 + radius * Math.sin(angle),
-        icon: Tractor,
-        color: "text-blue-400 border-blue-500 bg-blue-900/30",
-      });
-    }
-    return nodes;
-  }, [agentCount]);
-
-  const allNodes = useMemo(() => [...hubs, ...families], [hubs, families]);
+  const allNodes = useMemo(() => [...HUBS, ...familyNodes], [familyNodes]);
 
   // ── Resolución flexible de nodos ──────────────────────────────────────
   const resolveNode = useCallback(
@@ -90,7 +104,7 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
     });
   }, [selectedNodeId, log, resolveNode]);
 
-  // ── Contador de mensajes recibidos por nodo (para badge) ──────────────
+  // ── Contador de mensajes recibidos por nodo ───────────────────────────
   const nodeIncomingCount = useMemo(() => {
     const map: Record<string, number> = {};
     for (const m of log) {
@@ -127,7 +141,6 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
           case "i=": {
             try {
               const data = JSON.parse(payload);
-              // Backend envía: { from, to, action, detail }
               if (data && data.from && data.to) {
                 const newMsg: BesaMessage = {
                   id: Math.random().toString(36).substring(2, 9),
@@ -141,7 +154,6 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
                 setMessages((prev) => [...prev, newMsg]);
                 setLog((prev) => [newMsg, ...prev].slice(0, 200));
 
-                // Limpiar partícula visual tras 1.5s
                 setTimeout(() => {
                   setMessages((prev) => prev.filter((m) => m.id !== newMsg.id));
                 }, 1500);
@@ -150,19 +162,34 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
             break;
           }
 
-          // ── Estado JSON del agente → descubrir agentes activos ────
+          // ── Estado JSON del agente → descubrir familias activas ───
           case "j=": {
             try {
               const data = JSON.parse(payload);
               if (data && data.name) {
-                setActiveAgents((prev) => {
-                  if (prev.has(data.name)) return prev;
-                  const next = new Set(prev);
-                  next.add(data.name);
-                  return next;
-                });
+                const agentName: string = data.name;
+                // Solo agregar si es familia (no un hub) y no ya descubierta
+                if (!HUB_IDS.has(agentName)) {
+                  setDiscoveredFamilies((prev) => {
+                    if (prev.includes(agentName)) return prev;
+                    return [...prev, agentName].sort((a, b) => {
+                      const na = parseInt(a.replace(/\D+/g, "") || "0");
+                      const nb = parseInt(b.replace(/\D+/g, "") || "0");
+                      return na - nb;
+                    });
+                  });
+                }
               }
             } catch { /* ignore */ }
+            break;
+          }
+
+          // ── Reset de simulación ───────────────────────────────────
+          case "q=": {
+            setDiscoveredFamilies([]);
+            setLog([]);
+            setMessages([]);
+            setSelectedNodeId(null);
             break;
           }
         }
@@ -187,7 +214,7 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
     };
   }, []);
 
-  // ── Información del nodo seleccionado ─────────────────────────────────
+  // ── Info del nodo seleccionado ─────────────────────────────────────────
   const selectedNode = selectedNodeId
     ? allNodes.find((n) => n.id === selectedNodeId)
     : null;
@@ -198,7 +225,7 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
       {/* ── Panel Izquierdo: Mapa de Red ───────────────────────────────── */}
       <div className="flex-1 relative overflow-hidden bg-[#14181c] rounded-2xl border border-[#272d34] shadow-2xl flex flex-col">
 
-        {/* Controles del Grafo */}
+        {/* Controles */}
         <div className="absolute top-4 left-4 z-20 flex items-center gap-4 bg-black/50 backdrop-blur px-4 py-2 rounded-lg border border-gray-800">
           <RadioTower className="w-5 h-5 text-primary" />
           <div className="flex flex-col">
@@ -211,39 +238,35 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
               ? <Wifi className="w-4 h-4 text-green-500 animate-pulse" />
               : <WifiOff className="w-4 h-4 text-red-500" />}
             <span className={cn("text-xs font-semibold", isConnected ? "text-green-500" : "text-red-500")}>
-              {isConnected ? "Conectado al Puerto 8000" : "Desconectado"}
+              {isConnected ? "Conectado" : "Desconectado"}
             </span>
           </div>
           <div className="w-[1px] h-8 bg-gray-700 mx-2" />
           <div className="flex items-center gap-2 text-xs text-gray-400">
+            <Users className="w-3.5 h-3.5" />
+            <span>{discoveredFamilies.length} agentes</span>
+            <div className="w-[1px] h-4 bg-gray-700 mx-1" />
             <Activity className="w-3.5 h-3.5" />
             <span>{log.length} eventos</span>
           </div>
         </div>
 
-        {/* Lienzo SVG para conexiones y partículas animadas */}
+        {/* SVG: conexiones y partículas */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
           <defs>
             <filter id="glow">
               <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
+              <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
-
             <filter id="glow-strong">
               <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
+              <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
 
-          {/* Líneas de conexión estáticas */}
-          {hubs.map((hub) =>
-            families.map((fam) => (
+          {/* Líneas estáticas hub↔familia */}
+          {HUBS.map((hub) =>
+            familyNodes.map((fam) => (
               <line
                 key={`line-${hub.id}-${fam.id}`}
                 x1={`${hub.x}%`} y1={`${hub.y}%`}
@@ -253,14 +276,14 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
             ))
           )}
 
-          {/* Líneas activas (resaltadas) cuando hay mensajes en tránsito */}
+          {/* Líneas activas cuando hay mensajes en tránsito */}
           {messages.map((msg) => {
             const source = resolveNode(msg.sourceId);
             const target = resolveNode(msg.targetId);
             if (!source || !target) return null;
             return (
               <line
-                key={`active-line-${msg.id}`}
+                key={`active-${msg.id}`}
                 x1={`${source.x}%`} y1={`${source.y}%`}
                 x2={`${target.x}%`} y2={`${target.y}%`}
                 stroke="#38bdf8" strokeWidth="1.5" opacity="0.6"
@@ -269,7 +292,7 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
             );
           })}
 
-          {/* Partículas Animadas (Mensajes Viajando) */}
+          {/* Partículas animadas */}
           <AnimatePresence>
             {messages.map((msg) => {
               const source = resolveNode(msg.sourceId);
@@ -299,8 +322,10 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
           const count = nodeIncomingCount[node.id] || 0;
 
           return (
-            <div
+            <motion.div
               key={node.id}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
               className={cn(
                 "absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-10 cursor-pointer transition-all duration-200",
                 isSelected ? "scale-125" : "hover:scale-110"
@@ -319,7 +344,6 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
                 >
                   <Icon className={isHub ? "w-7 h-7" : "w-5 h-5"} />
                 </div>
-                {/* Badge de conteo de mensajes recibidos */}
                 {count > 0 && (
                   <span className="absolute -top-1 -right-1 bg-sky-500 text-white text-[9px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-lg border border-[#14181c]">
                     {count > 99 ? "99+" : count}
@@ -329,11 +353,21 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
               <span className="text-[10px] mt-1.5 font-bold bg-[#0f1417]/80 border border-gray-800 px-2 py-0.5 rounded shadow whitespace-nowrap">
                 {node.label}
               </span>
-            </div>
+            </motion.div>
           );
         })}
 
-        {/* ── Panel de inspección al hacer clic en un nodo ──────────── */}
+        {/* Mensaje cuando aún no hay agentes */}
+        {discoveredFamilies.length === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-0 text-gray-600 pointer-events-none">
+            <RadioTower className="w-12 h-12 mb-3 opacity-20" />
+            <p className="text-sm text-center max-w-xs opacity-50">
+              Esperando agentes…<br />Inicia una simulación para ver la red BESA en tiempo real.
+            </p>
+          </div>
+        )}
+
+        {/* ── Panel de inspección al hacer clic ────────────────────────── */}
         <AnimatePresence>
           {selectedNode && (
             <motion.div
@@ -342,7 +376,6 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
               exit={{ opacity: 0, y: 20 }}
               className="absolute bottom-4 left-4 right-4 lg:left-auto lg:right-4 lg:w-96 z-30 bg-[#171c1f]/95 backdrop-blur-md border border-[#272d34] rounded-xl shadow-2xl overflow-hidden"
             >
-              {/* Cabecera */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-black/30">
                 <div className="flex items-center gap-3">
                   <div className={cn("p-1.5 rounded-full border", selectedNode.color)}>
@@ -361,7 +394,6 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
                 </button>
               </div>
 
-              {/* Lista de mensajes recibidos */}
               <div className="max-h-60 overflow-y-auto p-3 space-y-2 custom-scrollbar">
                 {selectedNodeMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-gray-600">
@@ -382,39 +414,32 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
                         </span>
                       </div>
                       <p className="font-semibold text-sky-300">{msg.action}</p>
-                      {msg.detail && (
-                        <p className="text-gray-400 truncate">{msg.detail}</p>
-                      )}
+                      {msg.detail && <p className="text-gray-400 truncate">{msg.detail}</p>}
                       <div className="flex items-center gap-1.5 text-gray-500 mt-1">
                         <ArrowDownLeft className="w-3 h-3 text-sky-500" />
-                        <span className="text-blue-300 truncate">
-                          {msg.sourceId.replace("PeasantFamily_", "Fam_")}
-                        </span>
+                        <span className="text-blue-300 truncate">{msg.sourceId.replace("PeasantFamily_", "Fam_")}</span>
                         <span className="text-gray-700">→</span>
-                        <span className="text-amber-300 truncate">
-                          {msg.targetId.replace("PeasantFamily_", "Fam_")}
-                        </span>
+                        <span className="text-amber-300 truncate">{msg.targetId.replace("PeasantFamily_", "Fam_")}</span>
                       </div>
                     </motion.div>
                   ))
                 )}
               </div>
 
-              {/* Pie con resumen */}
               <div className="px-4 py-2 border-t border-gray-800 bg-black/20 text-[10px] text-gray-500 flex justify-between">
                 <span>{selectedNodeMessages.length} mensajes recibidos</span>
-                <span>Click fuera para cerrar</span>
+                <span>Click para cerrar</span>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* ── Panel Derecho: Consola global de Eventos BESA ──────────────── */}
+      {/* ── Panel Derecho: Consola global ──────────────────────────────── */}
       <div className="w-full lg:w-80 bg-[#171c1f] border border-[#272d34] rounded-2xl flex flex-col overflow-hidden shadow-xl">
         <div className="bg-black/40 border-b border-gray-800 p-4 flex items-center gap-2">
           <Activity className="w-5 h-5 text-green-400" />
-          <h3 className="font-semibold text-sm">Registro de Eventos (EventBESA)</h3>
+          <h3 className="font-semibold text-sm">Registro de Eventos</h3>
           <span className="ml-auto text-[10px] text-gray-500 bg-gray-800/60 px-2 py-0.5 rounded-full">{log.length}</span>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
@@ -441,9 +466,7 @@ export function AgentNetworkMap({ agentCount = 12 }: { agentCount?: number }) {
                     <span className="text-[10px] bg-blue-900/30 text-blue-400 px-1.5 rounded">{msg.id}</span>
                   </div>
                   <p className="font-semibold text-gray-200">[{msg.action}]</p>
-                  {msg.detail && (
-                    <p className="text-gray-500 text-[10px] truncate">{msg.detail}</p>
-                  )}
+                  {msg.detail && <p className="text-gray-500 text-[10px] truncate">{msg.detail}</p>}
                   <div className="flex items-center gap-2 text-gray-400 mt-1">
                     <span className={cn("truncate max-w-[100px]", isFamilyToHub ? "text-blue-300" : "text-amber-300")}>
                       {msg.sourceId.replace("PeasantFamily_", "Fam_")}

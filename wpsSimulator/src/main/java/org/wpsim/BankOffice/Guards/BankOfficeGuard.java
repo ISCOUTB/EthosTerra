@@ -136,6 +136,7 @@ public class BankOfficeGuard extends wpsGuardBESA {
             wpsReport.error("Mensaje no reconocido de funcExecGuard", this.getAgent().getAlias());
         }
         //wpsReport.info(state.toString(), this.getAgent().getAlias());
+        wpsReport.interaction(bankOfficeMessage.getPeasantAlias(), "BankOffice", String.valueOf(messageType), String.valueOf(fromBankOfficeMessageType));
         wpsCSV.log("Bank", bankOfficeMessage.getPeasantAlias() + "," + bankOfficeMessage.getCurrentDate() + "," + messageType + "," + fromBankOfficeMessageType);
         //System.out.println(state);
     }
