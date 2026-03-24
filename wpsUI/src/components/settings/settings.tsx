@@ -32,6 +32,9 @@ import {
   HeartPulse,
   Wrench,
   Wheat,
+  Frown,
+  Meh,
+  Smile,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -55,18 +58,24 @@ const VisualCard = ({ title, description, icon, isSelected, onClick, colorClass 
     whileTap={{ scale: 0.98 }}
     onClick={onClick}
     className={cn(
-      "cursor-pointer p-3 rounded-xl border-2 transition-all duration-300 flex flex-col items-center text-center gap-2",
+      "cursor-pointer p-2 rounded-xl border-2 transition-all duration-300 flex flex-col items-center text-center gap-1",
       isSelected 
         ? `bg-[#1a232b] ${colorClass} shadow-[0_0_15px_rgba(59,130,246,0.15)]` 
-        : "bg-[#14181c] border-[#272d34] hover:border-gray-500 opacity-70 hover:opacity-100"
+        : "bg-[#171c1f] border-[#272d34] hover:border-gray-700 text-gray-400"
     )}
   >
-    <div className={cn("p-2 rounded-full", isSelected ? "bg-primary/20 text-primary" : "bg-gray-800 text-gray-400")}>
+    <div className={cn(
+      "p-1.5 rounded-lg transition-colors",
+      isSelected ? "bg-blue-500/20 text-blue-400" : "bg-gray-800/50 text-gray-500"
+    )}>
       {icon}
     </div>
-    <div>
-      <h4 className="font-bold text-sm text-white mb-1">{title}</h4>
-      <p className="text-xs text-gray-400 leading-tight">{description}</p>
+    <div className="space-y-0.5">
+      <h3 className={cn(
+        "font-bold text-[11px] tracking-tight",
+        isSelected ? "text-white" : "text-gray-300"
+      )}>{title}</h3>
+      <p className="text-[9px] leading-tight text-gray-500 line-clamp-1">{description}</p>
     </div>
   </motion.div>
 );
@@ -108,7 +117,7 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Este modo te permite ajustar cada variable del ecosistema de forma independiente. Ideal para pruebas específicas de estrés o validación de hipótesis únicas.",
     icon: <Terminal className="w-5 h-5 text-blue-400" />,
     config: {
-      agents: 20, money: 1500000, land: 2, personality: 0.5, worldSize: 100,
+      agents: 20, money: 1500000, land: 2, personality: 0.1, worldSize: 100,
       water: 10, seeds: 50, tools: 20,
       emotions: true, irrigation: true, training: false, years: 1,
       variance: 0.4, criminality: 3, steptime: 40, trainingSlots: 50,
@@ -121,7 +130,7 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "El éxito no depende solo del capital, sino de cómo las familias gestionan el miedo al fracaso ante malas cosechas. Útil para ver si personalidades sensibles colapsan antes que las resilientes.",
     icon: <HeartPulse className="w-5 h-5 text-rose-400" />,
     config: {
-      agents: 40, money: 1500000, land: 6, personality: 0.5, worldSize: 400,
+      agents: 40, money: 1500000, land: 6, personality: 0.2, worldSize: 400,
       water: 10, seeds: 40, tools: 15,
       emotions: true, irrigation: false, training: false, years: 2,
       variance: 0.4, criminality: 5, steptime: 40, trainingSlots: 30,
@@ -134,7 +143,7 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Con parcelas ínfimas y capital bajo, las familias entran en un ciclo de deuda. Busca observar si surge apoyo mutuo en la red para evitar la quiebra colectiva.",
     icon: <Sprout className="w-5 h-5 text-orange-400" />,
     config: {
-      agents: 60, money: 100000, land: 2, personality: 0.5, worldSize: 400,
+      agents: 60, money: 100000, land: 2, personality: -0.2, worldSize: 400,
       water: 0, seeds: 15, tools: 5,
       emotions: true, irrigation: false, training: false, years: 1,
       variance: 0.2, criminality: 10, steptime: 40, trainingSlots: 20,
@@ -160,7 +169,7 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Demasiada tierra para poca gente. Observa si hay abandono de parcelas por agotamiento o si la capacitación compensa la falta de personal.",
     icon: <Trees className="w-5 h-5 text-indigo-400" />,
     config: {
-      agents: 15, money: 1500000, land: 12, personality: 0.5, worldSize: 800,
+      agents: 15, money: 1500000, land: 12, personality: 0.0, worldSize: 800,
       water: 15, seeds: 60, tools: 30,
       emotions: true, irrigation: false, training: true, years: 2,
       variance: 0.5, criminality: 8, steptime: 40, trainingSlots: 50,
@@ -173,7 +182,7 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Densidad extrema de contactos en matriz 10x10. El mapa de red será un hervidero. Verifica la capacidad del motor y líderes económicos emergentes.",
     icon: <Network className="w-5 h-5 text-purple-400" />,
     config: {
-      agents: 100, money: 1500000, land: 2, personality: 0.5, worldSize: 100,
+      agents: 100, money: 1500000, land: 2, personality: 0.1, worldSize: 100,
       water: 10, seeds: 50, tools: 20,
       emotions: true, irrigation: true, training: true, years: 1,
       variance: 0.8, criminality: 15, steptime: 50, trainingSlots: 150,
@@ -186,7 +195,7 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Sin riego, las familias dependen totalmente del clima. Veremos si la capacitación ayuda a optimizar el recurso o si la falta de agua es un bloqueador absoluto.",
     icon: <Droplets className="w-5 h-5 text-blue-300" />,
     config: {
-      agents: 30, money: 1500000, land: 2, personality: 0.5, worldSize: 400,
+      agents: 30, money: 1500000, land: 2, personality: -0.1, worldSize: 400,
       water: 0, seeds: 30, tools: 15,
       emotions: true, irrigation: false, training: true, years: 1,
       variance: 0.4, criminality: 5, steptime: 40, trainingSlots: 15,
@@ -215,7 +224,7 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Agentes pobres pero numerosos. El objetivo es ver si la alta densidad de interacciones fomenta el intercambio para mitigar la falta de capital.",
     icon: <Users className="w-5 h-5 text-blue-400" />,
     config: {
-      agents: 80, money: 200000, land: 2, personality: 0.5, worldSize: 400,
+      agents: 80, money: 200000, land: 2, personality: 0.2, worldSize: 400,
       water: 5, seeds: 20, tools: 8,
       emotions: true, irrigation: false, training: false, years: 1,
       variance: 0.1, criminality: 12, steptime: 40, trainingSlots: 10,
@@ -228,7 +237,7 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Agentes con excedentes desde el día 1. Útil para ver qué tan rápido 'limpian' el mercado o si el exceso de dinero desincentiva el trabajo.",
     icon: <Coins className="w-5 h-5 text-yellow-400" />,
     config: {
-      agents: 12, money: 8000000, land: 6, personality: 0.5, worldSize: 400,
+      agents: 12, money: 8000000, land: 6, personality: 0.4, worldSize: 400,
       water: 30, seeds: 100, tools: 50,
       emotions: true, irrigation: true, training: true, years: 2,
       variance: 0.7, criminality: 3, steptime: 40, trainingSlots: 100,
@@ -377,10 +386,10 @@ export default function SimulatorConfigPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-[#0f1417] text-[#ffffff] py-8 pl-20 lg:pl-24 pr-4 sm:pr-6 lg:pr-8 font-archivo pb-32">
-        <div className="max-w-5xl mx-auto space-y-8">
+      <div className="min-h-screen bg-[#0f1417] text-[#ffffff] py-6 pl-20 lg:pl-24 pr-4 sm:pr-6 lg:pr-8 font-archivo pb-20">
+        <div className="max-w-5xl mx-auto space-y-4">
           
-          <div className="flex flex-col items-center justify-center text-center space-y-3 mb-6">
+          <div className="flex flex-col items-center justify-center text-center space-y-2 mb-4">
             <h1 className="text-2xl md:text-3xl font-extrabold font-clash tracking-tight text-white flex items-center gap-3">
               <Rocket className="w-8 h-8 text-primary" />
               Diseño del Experimento
@@ -428,7 +437,7 @@ export default function SimulatorConfigPage() {
             </div>
 
             {/* Explicación Dinámica */}
-            <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20 shadow-inner h-[100px] flex items-center overflow-hidden">
+            <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 shadow-inner h-[100px] flex items-center overflow-hidden">
               {activeTemplate ? (
                 <div className="flex gap-3 items-start">
                   <div className="p-2 bg-primary/20 rounded-lg shrink-0">
@@ -457,7 +466,7 @@ export default function SimulatorConfigPage() {
             </div>
           </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* 1. Ecosistema y Parcelas (Tarjetas Visuales) */}
             <section className="bg-[#171c1f] p-4 rounded-2xl border border-[#272d34] shadow-lg">
               <h2 className="text-lg font-semibold mb-3 text-white flex items-center gap-2">
@@ -604,25 +613,6 @@ export default function SimulatorConfigPage() {
                 </div>
               </div>
 
-              {/* Personalidad Visual Picker */}
-              <div className="pt-2 border-t border-[#272d34]">
-                <div className="grid grid-cols-2 gap-2">
-                  <div 
-                    onClick={() => setPersonality(0)}
-                    className={cn("cursor-pointer p-2 rounded-lg border text-center transition-colors flex items-center justify-center gap-2", personality === 0 ? "bg-purple-900/20 border-purple-500 text-white" : "border-gray-800 text-gray-500 hover:border-gray-600")}
-                  >
-                    <Brain className="w-4 h-4" />
-                    <span className="text-[10px] font-semibold uppercase">Homogéneo</span>
-                  </div>
-                  <div 
-                    onClick={() => setPersonality(0.5)}
-                    className={cn("cursor-pointer p-2 rounded-lg border text-center transition-colors flex items-center justify-center gap-2", personality === 0.5 ? "bg-purple-900/20 border-purple-500 text-white" : "border-gray-800 text-gray-500 hover:border-gray-600")}
-                  >
-                    <Network className="w-4 h-4" />
-                    <span className="text-[10px] font-semibold uppercase">Diverso</span>
-                  </div>
-                </div>
-              </div>
             </section>
 
             {/* 3. Políticas y Complementos (Switches) */}
@@ -651,10 +641,45 @@ export default function SimulatorConfigPage() {
 
                   <div className="flex items-center justify-between p-2 rounded-xl bg-black/30 border border-gray-800/50">
                     <div className="flex items-center gap-2">
-                      <GraduationCap className={cn("w-4 h-4", training ? 'text-yellow-400' : 'text-gray-500')} />
+                      <GraduationCap className={cn("w-4 h-4", training ? 'text-amber-400' : 'text-gray-500')} />
                       <span className="text-xs text-white font-medium">Capacitación</span>
                     </div>
                     <Switch checked={training} onCheckedChange={setTraining} />
+                  </div>
+                </div>
+
+                {/* Personalidad Visual Picker (dentro de Reglas) */}
+                <div className="pt-2 border-t border-gray-800/50">
+                  <Label className="text-[10px] text-gray-500 uppercase mb-2 block">Perfil de Personalidad</Label>
+                  <div className="grid grid-cols-4 gap-1">
+                    <div
+                      onClick={() => setPersonality(-0.3)}
+                      className={cn("cursor-pointer p-1.5 rounded-lg border text-center transition-colors flex flex-col items-center justify-center gap-0.5", personality === -0.3 ? "bg-red-900/20 border-red-500 text-white" : "border-gray-800/50 text-gray-500 hover:border-gray-700")}
+                    >
+                      <Frown className="w-3 h-3" />
+                      <span className="text-[7px] font-semibold uppercase leading-tight">Pesimista</span>
+                    </div>
+                    <div
+                      onClick={() => setPersonality(0)}
+                      className={cn("cursor-pointer p-1.5 rounded-lg border text-center transition-colors flex flex-col items-center justify-center gap-0.5", personality === 0 ? "bg-gray-700/20 border-gray-500 text-white" : "border-gray-800/50 text-gray-500 hover:border-gray-700")}
+                    >
+                      <Meh className="w-3 h-3" />
+                      <span className="text-[7px] font-semibold uppercase leading-tight">Basal</span>
+                    </div>
+                    <div
+                      onClick={() => setPersonality(0.2)}
+                      className={cn("cursor-pointer p-1.5 rounded-lg border text-center transition-colors flex flex-col items-center justify-center gap-0.5", personality === 0.2 ? "bg-blue-900/20 border-blue-500 text-white" : "border-gray-800/50 text-gray-500 hover:border-gray-700")}
+                    >
+                      <Smile className="w-3 h-3" />
+                      <span className="text-[7px] font-semibold uppercase leading-tight">Resiliente</span>
+                    </div>
+                    <div
+                      onClick={() => setPersonality(0.5)}
+                      className={cn("cursor-pointer p-1.5 rounded-lg border text-center transition-colors flex flex-col items-center justify-center gap-0.5", personality === 0.5 ? "bg-green-900/20 border-green-500 text-white" : "border-gray-800/50 text-gray-500 hover:border-gray-700")}
+                    >
+                      <Rocket className="w-3 h-3" />
+                      <span className="text-[7px] font-semibold uppercase leading-tight">Optimista</span>
+                    </div>
                   </div>
                 </div>
 

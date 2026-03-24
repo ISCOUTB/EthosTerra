@@ -1,0 +1,38 @@
+services:
+  # ── Simulación + UI en modo producción ─────────────────────────────────────
+  # Utiliza el Dockerfile principal (multi-stage) que compila Next.js a standalone.
+  wellprodsim-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: webapp
+    ports:
+      - "3000:3000"   # Next.js standalone (UI)
+      - "8000:8000"   # WebSocket ViewerLens (Undertow)
+    volumes:
+      # Logs del simulador persistidos en el host
+      - ./data/logs:/app/logs
+    environment:
+      - WPS_JAR_PATH=/app/wps-simulator.jar
+      - WPS_LOGS_PATH=/app/logs
+      - NODE_ENV=production
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── RabbitMQ ──────────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5

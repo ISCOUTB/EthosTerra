@@ -103,8 +103,8 @@ RUN ln -s /app/src/wps/logs /app/logs
 # Eliminar dependencias dummy "file:" que causan error en npm install
 RUN npm pkg delete dependencies.wellprodsim dependencies.WellProdSim 2>/dev/null; true
 
-# Instalar dependencias de producción (--ignore-scripts evita postinstall de electron)
-RUN npm install --ignore-scripts --no-optional
+# Instalar dependencias de producción (necesario para lightningcss/SWC/Oxide)
+RUN npm install
 
 # Compilar Next.js (output: 'standalone' configurado en next.config.mjs)
 RUN npx next build
