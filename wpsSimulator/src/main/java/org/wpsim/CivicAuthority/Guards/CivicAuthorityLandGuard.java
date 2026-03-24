@@ -47,7 +47,9 @@ public class CivicAuthorityLandGuard extends GuardBESA  {
 
         try {
             //System.out.println("SENT: peasant family: " + data.getFamilyName() + " Assigned farm: " + assignedFarmName + " Assigned lands: " + assignedLands);
+            String result = assignedFarmName != null ? "LAND_ASSIGNED" : "LAND_DENIED";
             wpsReport.interaction(data.getFamilyName(), "CivicAuthority", "ASSIGN_LAND", assignedFarmName != null ? assignedFarmName : "none");
+            wpsReport.interaction("CivicAuthority", data.getFamilyName(), result, assignedFarmName != null ? assignedFarmName : "none");
             AdmBESA.getInstance().getHandlerByAlias(
                     data.getFamilyName()
             ).sendEvent(

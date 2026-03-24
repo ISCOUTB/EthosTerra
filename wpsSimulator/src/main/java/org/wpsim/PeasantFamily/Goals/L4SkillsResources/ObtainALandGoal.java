@@ -92,7 +92,7 @@ public class ObtainALandGoal extends wpsGoalBDI {
             return 0;
         }
 
-        if (believes.getPeasantProfile().getFarmName()) {
+        if (believes.getPeasantProfile().getFarmName() || believes.isWorkerWithoutLand()) {
             return 0;
         } else {
             return 1;

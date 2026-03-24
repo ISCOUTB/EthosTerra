@@ -11,6 +11,7 @@ import org.wpsim.MarketPlace.Guards.MarketPlaceInfoAgentGuard;
 import org.wpsim.WellProdSim.Config.wpsConfig;
 import org.wpsim.WellProdSim.Util.wpsCSV;
 import org.wpsim.WellProdSim.wpsStart;
+import org.wpsim.ViewerLens.Util.wpsReport;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,6 +42,7 @@ public class NaturalPhenomena extends PeriodicGuardBESA {
                         )
                 );
                 wpsCSV.log("NaturalPhenomena", "Market," + ControlCurrentDate.getInstance().getCurrentDate() + "," + randomIncreaseOrDecreaseType + "," + randomNumber);
+                wpsReport.interaction(wpsStart.config.getPerturbationAgentName(), "MarketPlace", randomIncreaseOrDecreaseType.toString(), "impact=" + randomNumber + "%");
             } catch (ExceptionBESA e) {
                 throw new RuntimeException(e);
             }

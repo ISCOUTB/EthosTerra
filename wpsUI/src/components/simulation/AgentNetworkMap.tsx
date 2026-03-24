@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Landmark, Gavel, Users, ShoppingCart, Tractor, Activity,
   RadioTower, Wifi, WifiOff, X, Inbox, ArrowDownLeft, Calendar,
-  Skull, User
+  Skull, User, Sprout, Zap, DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,41 @@ export interface BesaMessage {
   action: string;
   detail: string;
   timestamp: number;
+  category: CategoryKey | null;
+}
+
+export const INTERACTION_CATEGORIES = [
+  { key: "MarketPlace",       label: "Mercado",    color: "#f59e0b", particleColor: "#fbbf24", defaultOn: true  },
+  { key: "BankOffice",        label: "Banco",      color: "#10b981", particleColor: "#34d399", defaultOn: true  },
+  { key: "CivicAuthority",    label: "Gobierno",   color: "#a855f7", particleColor: "#c084fc", defaultOn: true  },
+  { key: "CommunityDynamics", label: "Comunidad",  color: "#ec4899", particleColor: "#f472b6", defaultOn: true  },
+  { key: "AgroEcosystem_harvest",  label: "Cosecha",  color: "#84cc16", particleColor: "#bef264", defaultOn: true  },
+  { key: "AgroEcosystem_pests",    label: "Pesticidas", color: "#65a30d", particleColor: "#a3e635", defaultOn: true  },
+  { key: "AgroEcosystem_planting", label: "Siembra",  color: "#3f6212", particleColor: "#4d7c0f", defaultOn: false },
+  { key: "Perturbation", label: "Perturbación", color: "#ef4444", particleColor: "#f87171", defaultOn: true  },
+] as const;
+
+export type CategoryKey = typeof INTERACTION_CATEGORIES[number]["key"];
+
+function classifyMessage(sourceId: string, targetId: string, action: string): CategoryKey | null {
+  const ids = [sourceId, targetId];
+  if (ids.some(id => id.includes("AgroEcosystem"))) {
+    const a = action.toLowerCase();
+    if (a.includes("harvest") || a.includes("crop_harvest")) return "AgroEcosystem_harvest";
+    if (a.includes("pest") || a.includes("pesticide") || a.includes("managepest")) return "AgroEcosystem_pests";
+    return "AgroEcosystem_planting"; // PlantCrop / CROP_INIT / irrigate / check
+  }
+  if (ids.some(id => id.includes("Perturbation") || id.includes("wpsPerturbation"))) return "Perturbation";
+  if (ids.some(id => id.includes("MarketPlace")))       return "MarketPlace";
+  if (ids.some(id => id.includes("BankOffice")))        return "BankOffice";
+  if (ids.some(id => id.includes("CivicAuthority")))    return "CivicAuthority";
+  if (ids.some(id => id.includes("CommunityDynamics"))) return "CommunityDynamics";
+  return null;
+}
+
+function categoryColor(category: CategoryKey | null): string {
+  if (!category) return "#38bdf8";
+  return INTERACTION_CATEGORIES.find(c => c.key === category)?.particleColor ?? "#38bdf8";
 }
 
 interface AgentNode {
@@ -36,10 +71,12 @@ interface AgentNode {
    Nodos Hub (fijos)
    ──────────────────────────────────────────────────────────────────────────── */
 const HUBS: AgentNode[] = [
-  { id: "MarketPlace", label: "Mercado", type: "hub", x: 42, y: 42, icon: ShoppingCart, color: "text-amber-400 border-amber-500 bg-amber-500/20" },
-  { id: "BankOffice", label: "Banco", type: "hub", x: 58, y: 42, icon: Landmark, color: "text-emerald-400 border-emerald-500 bg-emerald-500/20" },
-  { id: "CivicAuthority", label: "Gobierno", type: "hub", x: 42, y: 58, icon: Gavel, color: "text-purple-400 border-purple-500 bg-purple-500/20" },
-  { id: "CommunityDynamics", label: "Comunidad", type: "hub", x: 58, y: 58, icon: Users, color: "text-pink-400 border-pink-500 bg-pink-500/20" },
+  { id: "AgroEcosystem",    label: "Tierra",       type: "hub", x: 50, y: 50, icon: Sprout,       color: "text-lime-400 border-lime-500 bg-lime-500/20" },
+  { id: "MarketPlace",      label: "Mercado",      type: "hub", x: 35, y: 39, icon: ShoppingCart, color: "text-amber-400 border-amber-500 bg-amber-500/20" },
+  { id: "BankOffice",       label: "Banco",        type: "hub", x: 65, y: 39, icon: Landmark,     color: "text-emerald-400 border-emerald-500 bg-emerald-500/20" },
+  { id: "CivicAuthority",   label: "Gobierno",     type: "hub", x: 35, y: 61, icon: Gavel,        color: "text-purple-400 border-purple-500 bg-purple-500/20" },
+  { id: "CommunityDynamics",label: "Comunidad",    type: "hub", x: 65, y: 61, icon: Users,        color: "text-pink-400 border-pink-500 bg-pink-500/20" },
+  { id: "wpsPerturbation",  label: "Perturbación", type: "hub", x: 50, y: 26, icon: Zap,          color: "text-red-400 border-red-500 bg-red-500/20" },
 ];
 
 const HUB_IDS = new Set(HUBS.map((h) => h.id));
@@ -50,7 +87,7 @@ const HUB_IDS = new Set(HUBS.map((h) => h.id));
 function buildFamilyNodes(familyIds: string[]): AgentNode[] {
   const count = familyIds.length;
   if (count === 0) return [];
-  const radius = 38;
+  const radius = 42;
   return familyIds.map((id, i) => {
     const angle = (i / count) * 2 * Math.PI - Math.PI / 2; // empieza arriba
     const num = id.replace(/\D+/g, "") || `${i + 1}`;
@@ -76,10 +113,32 @@ export function AgentNetworkMap() {
   const [isConnected, setIsConnected] = useState(false);
   const [currentDate, setCurrentDate] = useState<string>("Esperando...");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  // Almacena los IDs de familias descubiertas a través de mensajes j=
   const [discoveredFamilies, setDiscoveredFamilies] = useState<string[]>([]);
-  const [agentStates, setAgentStates] = useState<Record<string, { health: number; farmId: string }>>({});
+  const [agentStates, setAgentStates] = useState<Record<string, { health: number; farmId: string; money: number }>>({});
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // ── Métricas derivadas ────────────────────────────────────────────────
+  const workingAgents = useMemo(
+    () => Object.values(agentStates).filter(s => s.farmId && s.farmId !== "" && s.farmId !== "Unassigned" && s.health > 0).length,
+    [agentStates]
+  );
+
+  const avgMoney = useMemo(() => {
+    const vals = Object.values(agentStates).filter(s => s.health > 0).map(s => s.money);
+    if (vals.length === 0) return 0;
+    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+  }, [agentStates]);
+
+  // ── Filtros de interacción ─────────────────────────────────────────────
+  const [filters, setFilters] = useState<Record<CategoryKey, boolean>>(
+    () => Object.fromEntries(INTERACTION_CATEGORIES.map(c => [c.key, c.defaultOn])) as Record<CategoryKey, boolean>
+  );
+  const [showFilters, setShowFilters] = useState(false);
+
+  const toggleFilter = (key: CategoryKey) =>
+    setFilters(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const isVisible = (msg: BesaMessage) => msg.category === null || filters[msg.category];
 
   // ── Nodos dinámicos ───────────────────────────────────────────────────
   const familyNodes = useMemo(
@@ -91,18 +150,23 @@ export function AgentNetworkMap() {
 
   // ── Resolución flexible de nodos ──────────────────────────────────────
   const resolveNode = useCallback(
-    (alias: string) =>
-      allNodes.find(
-        (n) => alias.includes(n.id) || n.id.includes(alias)
-      ),
+    (alias: string) => {
+      // First try exact match
+      const exact = allNodes.find((n) => n.id === alias);
+      if (exact) return exact;
+      // Then try hub substring match (hub IDs like "MarketPlace" may appear as substrings of messages)
+      return allNodes.find((n) => n.type === "hub" && (alias.includes(n.id) || n.id.includes(alias)));
+    },
     [allNodes]
   );
 
   // ── Mensajes filtrados para el nodo seleccionado ──────────────────────
   const selectedNodeMessages = useMemo(() => {
     if (!selectedNodeId) return [];
-    return log.filter(msg => msg.targetId === selectedNodeId || msg.sourceId === selectedNodeId);
-  }, [log, selectedNodeId]);
+    return log.filter(msg =>
+      (msg.targetId === selectedNodeId || msg.sourceId === selectedNodeId) && isVisible(msg)
+    );
+  }, [log, selectedNodeId, filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Contador de mensajes recibidos por nodo ───────────────────────────
   const nodeIncomingCount = useMemo(() => {
@@ -157,6 +221,7 @@ export function AgentNetworkMap() {
                   }
                 });
 
+                const category = classifyMessage(data.from, data.to, data.action || "");
                 const newMsg: BesaMessage = {
                   id: Math.random().toString(36).substring(2, 9),
                   sourceId: data.from,
@@ -164,6 +229,7 @@ export function AgentNetworkMap() {
                   action: data.action || "Interacción BESA",
                   detail: data.detail || "",
                   timestamp: Date.now(),
+                  category,
                 };
 
                 setMessages((prev) => [...prev, newMsg]);
@@ -185,12 +251,13 @@ export function AgentNetworkMap() {
                 const agentName: string = data.name;
                 const parsedState = typeof data.state === "string" ? JSON.parse(data.state) : data.state;
                 
-                const health = parsedState.health ?? 100;
-                const farmId = parsedState.peasantFamilyLandAlias || "";
+                const health: number = parsedState.health ?? 100;
+                const farmId: string = parsedState.peasantFamilyLandAlias || "";
+                const money: number = parsedState.money ?? 0;
 
                 setAgentStates(prev => ({
                   ...prev,
-                  [agentName]: { health, farmId }
+                  [agentName]: { health, farmId, money }
                 }));
 
                 // Solo agregar si es familia (no un hub) y no ya descubierta
@@ -258,32 +325,75 @@ export function AgentNetworkMap() {
       <div className="flex-1 flex flex-col lg:flex-row gap-2 relative overflow-hidden">
 
         {/* Controles */}
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-4 bg-black/50 backdrop-blur px-4 py-2 rounded-lg border border-gray-800">
-          <RadioTower className="w-5 h-5 text-primary" />
-          <div className="flex flex-col">
-            <span className="text-sm font-bold">Monitor de Red BESA</span>
-            <span className="text-xs text-gray-400">Interconexión de Agentes en Vivo</span>
+        <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+          <div className="flex items-center gap-4 bg-black/50 backdrop-blur px-4 py-2 rounded-lg border border-gray-800">
+            <RadioTower className="w-5 h-5 text-primary" />
+            <div className="flex flex-col">
+              <span className="text-sm font-bold">Monitor de Red BESA</span>
+              <span className="text-xs text-gray-400">Interconexión de Agentes en Vivo</span>
+            </div>
+            <div className="w-[1px] h-8 bg-gray-700 mx-2" />
+            <div className="flex items-center gap-2">
+              {isConnected
+                ? <Wifi className="w-4 h-4 text-green-500 animate-pulse" />
+                : <WifiOff className="w-4 h-4 text-red-500" />}
+              <span className={cn("text-xs font-semibold", isConnected ? "text-green-500" : "text-red-500")}>
+                {isConnected ? "Conectado" : "Desconectado"}
+              </span>
+            </div>
+            <div className="w-[1px] h-8 bg-gray-700 mx-2" />
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Users className="w-3.5 h-3.5" />
+              <span>{discoveredFamilies.length} agentes</span>
+              <div className="w-[1px] h-4 bg-gray-700 mx-1" />
+              <Tractor className="w-3.5 h-3.5 text-lime-400" />
+              <span className="text-lime-300 font-semibold">{workingAgents} con tierra</span>
+              <div className="w-[1px] h-4 bg-gray-700 mx-1" />
+              <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-emerald-300 font-semibold font-mono">
+                {avgMoney.toLocaleString("es-CO")}
+              </span>
+              <div className="w-[1px] h-4 bg-gray-700 mx-1" />
+              <Activity className="w-3.5 h-3.5" />
+              <span>{log.filter(isVisible).length} eventos</span>
+              <div className="w-[1px] h-4 bg-gray-700 mx-1" />
+              <Calendar className="w-3.5 h-3.5 text-sky-400" />
+              <span className="font-mono font-bold text-base text-sky-200 tracking-wide">{currentDate}</span>
+            </div>
+            <div className="w-[1px] h-8 bg-gray-700 mx-2" />
+            <button
+              onClick={() => setShowFilters(v => !v)}
+              className={cn(
+                "text-xs px-2 py-1 rounded border transition-colors font-semibold",
+                showFilters
+                  ? "bg-primary/20 border-primary text-primary"
+                  : "border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+              )}
+            >
+              Filtros
+            </button>
           </div>
-          <div className="w-[1px] h-8 bg-gray-700 mx-2" />
-          <div className="flex items-center gap-2">
-            {isConnected
-              ? <Wifi className="w-4 h-4 text-green-500 animate-pulse" />
-              : <WifiOff className="w-4 h-4 text-red-500" />}
-            <span className={cn("text-xs font-semibold", isConnected ? "text-green-500" : "text-red-500")}>
-              {isConnected ? "Conectado" : "Desconectado"}
-            </span>
-          </div>
-          <div className="w-[1px] h-8 bg-gray-700 mx-2" />
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <Users className="w-3.5 h-3.5" />
-            <span>{discoveredFamilies.length} agentes</span>
-            <div className="w-[1px] h-4 bg-gray-700 mx-1" />
-            <Activity className="w-3.5 h-3.5" />
-            <span>{log.length} eventos</span>
-            <div className="w-[1px] h-4 bg-gray-700 mx-1" />
-            <Calendar className="w-3.5 h-3.5" />
-            <span className="font-mono text-sky-300">{currentDate}</span>
-          </div>
+
+          {/* Panel de filtros desplegable */}
+          {showFilters && (
+            <div className="flex flex-wrap gap-1.5 bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-gray-800">
+              {INTERACTION_CATEGORIES.map(cat => (
+                <button
+                  key={cat.key}
+                  onClick={() => toggleFilter(cat.key)}
+                  className={cn(
+                    "text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all",
+                    filters[cat.key]
+                      ? "opacity-100 border-transparent text-black"
+                      : "opacity-40 border-gray-600 text-gray-400 bg-transparent"
+                  )}
+                  style={filters[cat.key] ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* SVG: conexiones y partículas */}
@@ -312,16 +422,17 @@ export function AgentNetworkMap() {
           )}
 
           {/* Líneas activas cuando hay mensajes en tránsito */}
-          {messages.map((msg) => {
+          {messages.filter(isVisible).map((msg) => {
             const source = resolveNode(msg.sourceId);
             const target = resolveNode(msg.targetId);
             if (!source || !target || source.id === target.id) return null;
+            const color = categoryColor(msg.category);
             return (
               <line
                 key={`active-${msg.id}`}
                 x1={`${source.x}%`} y1={`${source.y}%`}
                 x2={`${target.x}%`} y2={`${target.y}%`}
-                stroke="#38bdf8" strokeWidth="1.5" opacity="0.6"
+                stroke={color} strokeWidth="1.5" opacity="0.6"
                 filter="url(#glow)"
               />
             );
@@ -329,15 +440,16 @@ export function AgentNetworkMap() {
 
           {/* Partículas animadas */}
           <AnimatePresence>
-            {messages.map((msg) => {
+            {messages.filter(isVisible).map((msg) => {
               const source = resolveNode(msg.sourceId);
               const target = resolveNode(msg.targetId);
               if (!source || !target || source.id === target.id) return null;
+              const color = categoryColor(msg.category);
               return (
                 <motion.circle
                   key={msg.id}
                   r="5"
-                  fill="#38bdf8"
+                  fill={color}
                   filter="url(#glow-strong)"
                   initial={{ cx: `${source.x}%`, cy: `${source.y}%`, opacity: 0, scale: 0.5 }}
                   animate={{ cx: `${target.x}%`, cy: `${target.y}%`, opacity: 1, scale: 1 }}
@@ -521,7 +633,7 @@ export function AgentNetworkMap() {
 
             {/* Información de Estado (Solo Familia) */}
             {agentStates[selectedNodeId] && (
-              <div className="p-3 bg-black/20 border-b border-gray-800 grid grid-cols-2 gap-2">
+              <div className="p-3 bg-black/20 border-b border-gray-800 grid grid-cols-3 gap-2">
                 <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
                   <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Vitalidad</p>
                   <div className="flex items-center gap-2">
@@ -535,7 +647,13 @@ export function AgentNetworkMap() {
                   </div>
                 </div>
                 <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
-                  <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Localización</p>
+                  <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Dinero</p>
+                  <p className="text-xs font-mono text-emerald-400 font-bold truncate">
+                    ${agentStates[selectedNodeId].money.toLocaleString("es-CO")}
+                  </p>
+                </div>
+                <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                  <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Tierra</p>
                   <p className="text-xs font-mono text-amber-500 truncate">
                     {agentStates[selectedNodeId].farmId || "Sin Tierras"}
                   </p>
@@ -557,35 +675,39 @@ export function AgentNetworkMap() {
                   </div>
                 ) : (
                   <AnimatePresence initial={false}>
-                    {selectedNodeMessages.map((msg) => (
-                      <motion.div
-                        key={msg.id}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="bg-[#14181c]/80 p-2.5 rounded-lg border border-gray-800/50 hover:border-sky-500/30 transition-all group"
-                      >
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[9px] font-mono text-sky-500 opacity-60">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </span>
-                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-1.5 rounded-full">
-                            {msg.action}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-gray-300 leading-tight">
-                          {msg.sourceId === selectedNodeId ? (
-                            <p>Envió a <span className="text-amber-500 italic">{msg.targetId.replace("PeasantFamily_", "Fam_")}</span></p>
-                          ) : (
-                            <p>Recibió de <span className="text-sky-400 italic">{msg.sourceId.replace("PeasantFamily_", "Fam_")}</span></p>
-                          )}
-                        </div>
-                        {msg.detail && (
-                          <div className="mt-1.5 text-[10px] text-gray-500 leading-relaxed bg-black/20 p-1.5 rounded italic">
-                            {msg.detail}
+                    {selectedNodeMessages.map((msg) => {
+                      const color = categoryColor(msg.category);
+                      return (
+                        <motion.div
+                          key={msg.id}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="bg-[#14181c]/80 p-2.5 rounded-lg border border-gray-800/50 transition-all group"
+                          style={{ borderLeftColor: color, borderLeftWidth: 2 }}
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[9px] font-mono opacity-60" style={{ color }}>
+                              {new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </span>
+                            <span className="text-[10px] font-bold px-1.5 rounded-full" style={{ color, backgroundColor: color + "22" }}>
+                              {msg.action}
+                            </span>
                           </div>
-                        )}
-                      </motion.div>
-                    ))}
+                          <div className="text-[11px] text-gray-300 leading-tight">
+                            {msg.sourceId === selectedNodeId ? (
+                              <p>Envió a <span className="text-amber-500 italic">{msg.targetId.replace("PeasantFamily_", "Fam_")}</span></p>
+                            ) : (
+                              <p>Recibió de <span className="text-sky-400 italic">{msg.sourceId.replace("PeasantFamily_", "Fam_")}</span></p>
+                            )}
+                          </div>
+                          {msg.detail && (
+                            <div className="mt-1.5 text-[10px] text-gray-500 leading-relaxed bg-black/20 p-1.5 rounded italic">
+                              {msg.detail}
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
                   </AnimatePresence>
                 )}
               </div>
@@ -606,31 +728,37 @@ export function AgentNetworkMap() {
                 </div>
               )}
               <AnimatePresence initial={false}>
-                {log.map((msg) => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="bg-[#14181c] p-3 rounded-lg border border-[#272d34] text-xs space-y-1 hover:border-sky-500/30 cursor-pointer transition-all"
-                    onClick={() => setSelectedNodeId(msg.sourceId)}
-                  >
-                    <div className="flex justify-between items-center text-gray-500">
-                      <span className="font-mono text-[10px]">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                      </span>
-                      <span className="text-[10px] font-bold text-sky-400 uppercase tracking-tighter">{msg.action}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-400 mt-1">
-                      <span className="truncate max-w-[100px] text-blue-300">
-                        {msg.sourceId.replace("PeasantFamily_", "Fam_")}
-                      </span>
-                      <span className="text-gray-700">→</span>
-                      <span className="truncate max-w-[100px] text-amber-300">
-                        {msg.targetId.replace("PeasantFamily_", "Fam_")}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                {log.filter(isVisible).map((msg) => {
+                  const color = categoryColor(msg.category);
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="bg-[#14181c] p-3 rounded-lg border border-[#272d34] text-xs space-y-1 hover:opacity-90 cursor-pointer transition-all"
+                      style={{ borderLeftColor: color, borderLeftWidth: 2 }}
+                      onClick={() => setSelectedNodeId(msg.sourceId)}
+                    >
+                      <div className="flex justify-between items-center text-gray-500">
+                        <span className="font-mono text-[10px]">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-tighter" style={{ color }}>
+                          {msg.action}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-400 mt-1">
+                        <span className="truncate max-w-[100px] text-blue-300">
+                          {msg.sourceId.replace("PeasantFamily_", "Fam_")}
+                        </span>
+                        <span className="text-gray-700">→</span>
+                        <span className="truncate max-w-[100px] text-amber-300">
+                          {msg.targetId.replace("PeasantFamily_", "Fam_")}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           </div>

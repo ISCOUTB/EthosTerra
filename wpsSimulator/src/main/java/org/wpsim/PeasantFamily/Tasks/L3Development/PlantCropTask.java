@@ -38,6 +38,10 @@ import org.wpsim.AgroEcosystem.Helper.WorldConfiguration;
 import org.wpsim.AgroEcosystem.Messages.AgroEcosystemMessage;
 import org.wpsim.AgroEcosystem.Messages.AgroEcosystemMessageType;
 import org.wpsim.AgroEcosystem.layer.crop.CropLayer;
+import org.wpsim.AgroEcosystem.layer.crop.cell.cafe.CafeCell;
+import org.wpsim.AgroEcosystem.layer.crop.cell.frijol.FrijolCell;
+import org.wpsim.AgroEcosystem.layer.crop.cell.maiz.MaizCell;
+import org.wpsim.AgroEcosystem.layer.crop.cell.platano.PlatanoCell;
 import org.wpsim.AgroEcosystem.layer.crop.cell.rice.RiceCell;
 import org.wpsim.AgroEcosystem.layer.crop.cell.roots.RootsCell;
 import org.wpsim.AgroEcosystem.layer.disease.DiseaseCell;
@@ -137,6 +141,7 @@ public class PlantCropTask extends wpsLandTask {
                                         )
                                 )
                         );
+                        wpsReport.interaction(peasantAlias, "AgroEcosystem", "PlantCrop", currentLandInfo.getLandName());
                         // Implement probability-based seed saving
                         if (Math.random() > (1.0 - profile.getEfficiencyFactor())) {
                             profile.useSeeds(1);
@@ -208,40 +213,83 @@ public class PlantCropTask extends wpsLandTask {
         DiseaseCell diseaseCellRoots = new DiseaseCell("roots1DiseaseCell");
         diseaseLayer.addVertex(diseaseCellRoots);
         CropLayer cropLayer = new CropLayer();
-        // @TODO: CAMBIAR TIPO DE CULTIVO DEPENDIENDO
         switch (cropName) {
-            case "roots" -> cropLayer.addCrop(
-                    new RootsCell(
-                            1.05,
-                            1.2,
-                            0.7,
-                            1512,
-                            3330,
-                            cropSize,
-                            0.9,
-                            0.2,
-                            Soil.SAND,
-                            true,
-                            diseaseCellRoots,
-                            cropName,
-                            agentAlias
-                    )
-            );
+            // --- Arroz (rice) ---
+            // Kc_ini=1.05, Kc_mid=1.20, Kc_end=0.75 | GDD_mid=900, GDD_end=2000
+            // Soil: CLAY (inundado), root=0.5m, p=0.20
             case "rice" -> cropLayer.addCrop(
                     new RiceCell(
-                            1.05,
-                            1.2,
-                            0.7,
-                            1512,
-                            3330,
+                            1.05, 1.20, 0.75,
+                            900, 2000,
                             cropSize,
-                            0.9,
-                            0.2,
-                            Soil.SAND,
-                            true,
-                            diseaseCellRoots,
-                            cropName,
-                            agentAlias
+                            0.5, 0.20,
+                            Soil.CLAY,
+                            true, diseaseCellRoots, cropName, agentAlias
+                    )
+            );
+            // --- Yuca / tubérculos (roots) ---
+            // Kc_ini=0.30, Kc_mid=0.80, Kc_end=0.50 | GDD_mid=1800, GDD_end=4500
+            // Soil: SANDY_LOAM, root=0.8m, p=0.35
+            case "roots" -> cropLayer.addCrop(
+                    new RootsCell(
+                            0.30, 0.80, 0.50,
+                            1800, 4500,
+                            cropSize,
+                            0.8, 0.35,
+                            Soil.SANDY_LOAM,
+                            true, diseaseCellRoots, cropName, agentAlias
+                    )
+            );
+            // --- Maíz (maiz) ---
+            // Kc_ini=0.30, Kc_mid=1.20, Kc_end=0.60 | GDD_mid=800, GDD_end=1800
+            // Soil: LOAM, root=1.0m, p=0.55
+            case "maiz" -> cropLayer.addCrop(
+                    new MaizCell(
+                            0.30, 1.20, 0.60,
+                            800, 1800,
+                            cropSize,
+                            1.0, 0.55,
+                            Soil.LOAM,
+                            true, diseaseCellRoots, cropName, agentAlias
+                    )
+            );
+            // --- Frijol (frijol) ---
+            // Kc_ini=0.35, Kc_mid=1.15, Kc_end=0.35 | GDD_mid=600, GDD_end=1400
+            // Soil: CLAY, root=0.6m, p=0.45
+            case "frijol" -> cropLayer.addCrop(
+                    new FrijolCell(
+                            0.35, 1.15, 0.35,
+                            600, 1400,
+                            cropSize,
+                            0.6, 0.45,
+                            Soil.CLAY,
+                            true, diseaseCellRoots, cropName, agentAlias
+                    )
+            );
+            // --- Café (cafe) — PERENNE ---
+            // Kc_ini=0.90, Kc_mid=0.95, Kc_end=0.95 (canopia permanente)
+            // GDD_mid=3000, GDD_end=6500 | Soil: LOAM, root=1.5m, p=0.40
+            case "cafe" -> cropLayer.addCrop(
+                    new CafeCell(
+                            0.90, 0.95, 0.95,
+                            3000, 6500,
+                            cropSize,
+                            1.5, 0.40,
+                            Soil.LOAM,
+                            true, diseaseCellRoots, cropName, agentAlias
+                    )
+            );
+            // --- Plátano (platano) — PERENNE ---
+            // Kc_ini=0.50, Kc_mid=1.10, Kc_end=1.00 (sistema ratoon)
+            // GDD_mid=1200, GDD_end=2800 | Soil: LOAM, root=0.5m, p=0.35
+            case "platano" -> cropLayer.addCrop(
+                    new PlatanoCell(
+                            0.50, 1.10, 1.00,
+                            1200, 2800,
+                            cropSize,
+                            0.5, 0.35,
+                            Soil.LOAM,
+                            true, diseaseCellRoots, cropName, agentAlias
                     )
             );
         }

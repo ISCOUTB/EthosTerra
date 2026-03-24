@@ -14,22 +14,24 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { 
-  InfoIcon, 
-  HelpCircle, 
-  Terminal, 
-  Rocket, 
-  Users, 
-  Coins, 
-  Wallet, 
-  Landmark, 
-  Sprout, 
-  Trees, 
-  Tractor, 
-  Brain, 
+  InfoIcon,
+  HelpCircle,
+  Terminal,
+  Rocket,
+  Users,
+  Coins,
+  Wallet,
+  Landmark,
+  Sprout,
+  Trees,
+  Tractor,
+  Brain,
   Network,
   Droplets,
   GraduationCap,
-  HeartPulse
+  HeartPulse,
+  Wrench,
+  Wheat,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -87,6 +89,9 @@ interface ExperimentTemplate {
     irrigation: boolean;
     training: boolean;
     years: number;
+    water: number;
+    seeds: number;
+    tools: number;
     variance?: number;
     criminality?: number;
     steptime?: number;
@@ -103,19 +108,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Este modo te permite ajustar cada variable del ecosistema de forma independiente. Ideal para pruebas específicas de estrés o validación de hipótesis únicas.",
     icon: <Terminal className="w-5 h-5 text-blue-400" />,
     config: {
-      agents: 20,
-      money: 1500000,
-      land: 2,
-      personality: 0.5,
-      worldSize: 100,
-      emotions: true,
-      irrigation: true,
-      training: false,
-      years: 1,
-      variance: 0.4,
-      criminality: 3,
-      steptime: 40,
-      trainingSlots: 50
+      agents: 20, money: 1500000, land: 2, personality: 0.5, worldSize: 100,
+      water: 10, seeds: 50, tools: 20,
+      emotions: true, irrigation: true, training: false, years: 1,
+      variance: 0.4, criminality: 3, steptime: 40, trainingSlots: 50,
     }
   },
   {
@@ -125,19 +121,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "El éxito no depende solo del capital, sino de cómo las familias gestionan el miedo al fracaso ante malas cosechas. Útil para ver si personalidades sensibles colapsan antes que las resilientes.",
     icon: <HeartPulse className="w-5 h-5 text-rose-400" />,
     config: {
-      agents: 40,
-      money: 1500000,
-      land: 6,
-      personality: 0.5,
-      worldSize: 400,
-      emotions: true,
-      irrigation: false,
-      training: false,
-      years: 2,
-      variance: 0.4,
-      criminality: 5,
-      steptime: 40,
-      trainingSlots: 30
+      agents: 40, money: 1500000, land: 6, personality: 0.5, worldSize: 400,
+      water: 10, seeds: 40, tools: 15,
+      emotions: true, irrigation: false, training: false, years: 2,
+      variance: 0.4, criminality: 5, steptime: 40, trainingSlots: 30,
     }
   },
   {
@@ -147,19 +134,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Con parcelas ínfimas y capital bajo, las familias entran en un ciclo de deuda. Busca observar si surge apoyo mutuo en la red para evitar la quiebra colectiva.",
     icon: <Sprout className="w-5 h-5 text-orange-400" />,
     config: {
-      agents: 60,
-      money: 100000,
-      land: 2,
-      personality: 0.5,
-      worldSize: 400,
-      emotions: true,
-      irrigation: false,
-      training: false,
-      years: 1,
-      variance: 0.2,
-      criminality: 10,
-      steptime: 40,
-      trainingSlots: 20
+      agents: 60, money: 100000, land: 2, personality: 0.5, worldSize: 400,
+      water: 0, seeds: 15, tools: 5,
+      emotions: true, irrigation: false, training: false, years: 1,
+      variance: 0.2, criminality: 10, steptime: 40, trainingSlots: 20,
     }
   },
   {
@@ -169,19 +147,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Escenario ideal con infraestructura y conocimiento. Las familias deberían alcanzar excedentes de riqueza. Valida el techo de cristal productivo del modelo.",
     icon: <Tractor className="w-5 h-5 text-green-400" />,
     config: {
-      agents: 30,
-      money: 2000000,
-      land: 6,
-      personality: 0.5,
-      worldSize: 400,
-      emotions: true,
-      irrigation: true,
-      training: true,
-      years: 3,
-      variance: 0.6,
-      criminality: 2,
-      steptime: 30,
-      trainingSlots: 100
+      agents: 30, money: 2000000, land: 6, personality: 0.5, worldSize: 400,
+      water: 25, seeds: 80, tools: 40,
+      emotions: true, irrigation: true, training: true, years: 3,
+      variance: 0.6, criminality: 2, steptime: 30, trainingSlots: 100,
     }
   },
   {
@@ -191,19 +160,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Demasiada tierra para poca gente. Observa si hay abandono de parcelas por agotamiento o si la capacitación compensa la falta de personal.",
     icon: <Trees className="w-5 h-5 text-indigo-400" />,
     config: {
-      agents: 15,
-      money: 1500000,
-      land: 12,
-      personality: 0.5,
-      worldSize: 800,
-      emotions: true,
-      irrigation: false,
-      training: true,
-      years: 2,
-      variance: 0.5,
-      criminality: 8,
-      steptime: 40,
-      trainingSlots: 50
+      agents: 15, money: 1500000, land: 12, personality: 0.5, worldSize: 800,
+      water: 15, seeds: 60, tools: 30,
+      emotions: true, irrigation: false, training: true, years: 2,
+      variance: 0.5, criminality: 8, steptime: 40, trainingSlots: 50,
     }
   },
   {
@@ -213,19 +173,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Densidad extrema de contactos en matriz 10x10. El mapa de red será un hervidero. Verifica la capacidad del motor y líderes económicos emergentes.",
     icon: <Network className="w-5 h-5 text-purple-400" />,
     config: {
-      agents: 100,
-      money: 1500000,
-      land: 2,
-      personality: 0.5,
-      worldSize: 100,
-      emotions: true,
-      irrigation: true,
-      training: true,
-      years: 1,
-      variance: 0.8,
-      criminality: 15,
-      steptime: 50,
-      trainingSlots: 150
+      agents: 100, money: 1500000, land: 2, personality: 0.5, worldSize: 100,
+      water: 10, seeds: 50, tools: 20,
+      emotions: true, irrigation: true, training: true, years: 1,
+      variance: 0.8, criminality: 15, steptime: 50, trainingSlots: 150,
     }
   },
   {
@@ -235,19 +186,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Sin riego, las familias dependen totalmente del clima. Veremos si la capacitación ayuda a optimizar el recurso o si la falta de agua es un bloqueador absoluto.",
     icon: <Droplets className="w-5 h-5 text-blue-300" />,
     config: {
-      agents: 30,
-      money: 1500000,
-      land: 2,
-      personality: 0.5,
-      worldSize: 400,
-      emotions: true,
-      irrigation: false,
-      training: true,
-      years: 1,
-      variance: 0.4,
-      criminality: 5,
-      steptime: 40,
-      trainingSlots: 15
+      agents: 30, money: 1500000, land: 2, personality: 0.5, worldSize: 400,
+      water: 0, seeds: 30, tools: 15,
+      emotions: true, irrigation: false, training: true, years: 1,
+      variance: 0.4, criminality: 5, steptime: 40, trainingSlots: 15,
     }
   },
   {
@@ -257,15 +199,9 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Pocos agentes controlan casi todo el mapa extenso. Ideal para observar si una élite mantiene la productividad o si la falta de vecinos afecta el dinamismo.",
     icon: <Landmark className="w-5 h-5 text-emerald-400" />,
     config: {
-      agents: 5,
-      money: 5000000,
-      land: 12,
-      personality: 0.5,
-      worldSize: 800,
-      emotions: true,
-      irrigation: true,
-      training: true,
-      years: 2,
+      agents: 5, money: 5000000, land: 12, personality: 0.5, worldSize: 800,
+      water: 40, seeds: 120, tools: 60,
+      emotions: true, irrigation: true, training: true, years: 2,
       variance: 0.3,
       criminality: 1,
       steptime: 40,
@@ -279,19 +215,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Agentes pobres pero numerosos. El objetivo es ver si la alta densidad de interacciones fomenta el intercambio para mitigar la falta de capital.",
     icon: <Users className="w-5 h-5 text-blue-400" />,
     config: {
-      agents: 80,
-      money: 200000,
-      land: 2,
-      personality: 0.5,
-      worldSize: 400,
-      emotions: true,
-      irrigation: false,
-      training: false,
-      years: 1,
-      variance: 0.1,
-      criminality: 12,
-      steptime: 40,
-      trainingSlots: 10
+      agents: 80, money: 200000, land: 2, personality: 0.5, worldSize: 400,
+      water: 5, seeds: 20, tools: 8,
+      emotions: true, irrigation: false, training: false, years: 1,
+      variance: 0.1, criminality: 12, steptime: 40, trainingSlots: 10,
     }
   },
   {
@@ -301,19 +228,10 @@ const EXPERIMENT_TEMPLATES: ExperimentTemplate[] = [
     explanation: "Agentes con excedentes desde el día 1. Útil para ver qué tan rápido 'limpian' el mercado o si el exceso de dinero desincentiva el trabajo.",
     icon: <Coins className="w-5 h-5 text-yellow-400" />,
     config: {
-      agents: 12,
-      money: 8000000,
-      land: 6,
-      personality: 0.5,
-      worldSize: 400,
-      emotions: true,
-      irrigation: true,
-      training: true,
-      years: 2,
-      variance: 0.7,
-      criminality: 3,
-      steptime: 40,
-      trainingSlots: 100
+      agents: 12, money: 8000000, land: 6, personality: 0.5, worldSize: 400,
+      water: 30, seeds: 100, tools: 50,
+      emotions: true, irrigation: true, training: true, years: 2,
+      variance: 0.7, criminality: 3, steptime: 40, trainingSlots: 100,
     }
   },
 ];
@@ -357,6 +275,9 @@ export default function SimulatorConfigPage() {
     if (template.config.steptime !== undefined) setSteptime(template.config.steptime);
     if (template.config.perturbation !== undefined) setPerturbation(template.config.perturbation);
     if (template.config.trainingSlots !== undefined) setTrainingSlots(template.config.trainingSlots);
+    setWater(template.config.water);
+    setSeeds(template.config.seeds);
+    setTools(template.config.tools);
     setActiveTemplate(template.id);
   };
 
@@ -647,6 +568,39 @@ export default function SimulatorConfigPage() {
                     </span>
                   </div>
                   <Slider value={[trainingSlots]} onValueChange={(v) => setTrainingSlots(v[0])} min={0} max={500} step={5} />
+                </div>
+
+                {/* Agua Slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-gray-300 flex items-center gap-2 text-xs">
+                      <Droplets className="w-3 h-3 text-blue-400" /> Agua Inicial
+                    </Label>
+                    <span className="font-mono bg-black px-2 py-0.5 rounded text-blue-400 text-xs">{water}</span>
+                  </div>
+                  <Slider value={[water]} onValueChange={(v) => setWater(v[0])} min={0} max={100} step={5} />
+                </div>
+
+                {/* Semillas Slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-gray-300 flex items-center gap-2 text-xs">
+                      <Wheat className="w-3 h-3 text-amber-400" /> Semillas Iniciales
+                    </Label>
+                    <span className="font-mono bg-black px-2 py-0.5 rounded text-amber-400 text-xs">{seeds}</span>
+                  </div>
+                  <Slider value={[seeds]} onValueChange={(v) => setSeeds(v[0])} min={0} max={200} step={5} />
+                </div>
+
+                {/* Herramientas Slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-gray-300 flex items-center gap-2 text-xs">
+                      <Wrench className="w-3 h-3 text-orange-400" /> Herramientas Iniciales
+                    </Label>
+                    <span className="font-mono bg-black px-2 py-0.5 rounded text-orange-400 text-xs">{tools}</span>
+                  </div>
+                  <Slider value={[tools]} onValueChange={(v) => setTools(v[0])} min={0} max={100} step={5} />
                 </div>
               </div>
 

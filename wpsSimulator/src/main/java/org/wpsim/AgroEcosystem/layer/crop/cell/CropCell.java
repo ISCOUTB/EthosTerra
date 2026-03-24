@@ -369,4 +369,12 @@ public abstract class CropCell<S extends LayerCellState> extends GenericWorldLay
     public void setHarvestReady(boolean harvestReady) {
         this.harvestReady = harvestReady;
     }
+
+    /**
+     * Returns true if this crop is perennial (persists across harvest cycles).
+     * Perennial subclasses (CafeCell, PlatanoCell) override this to return true.
+     */
+    public boolean isPerennial() {
+        return false;
+    }
 }

@@ -18,6 +18,7 @@ import BESA.Kernel.Agent.Event.EventBESA;
 import BESA.Kernel.Agent.GuardBESA;
 import org.wpsim.CommunityDynamics.Data.CommunityDynamicsState;
 import org.wpsim.CommunityDynamics.Data.CommunityDynamicsDataMessage;
+import org.wpsim.ViewerLens.Util.wpsReport;
 
 /**
  *
@@ -33,7 +34,9 @@ public class CommunityDynamicsOffersHelpGuard extends GuardBESA  {
     public void funcExecGuard(EventBESA event) {
         CommunityDynamicsDataMessage communityDynamicsDataMessage = (CommunityDynamicsDataMessage) event.getData();
         CommunityDynamicsState state = (CommunityDynamicsState) this.getAgent().getState();
-        state.addPeasantFamilyToStack(communityDynamicsDataMessage.getPeasantFamilyHelper());
+        String workerAlias = communityDynamicsDataMessage.getPeasantFamilyHelper();
+        state.addPeasantFamilyToStack(workerAlias);
+        wpsReport.interaction(workerAlias, "CommunityDynamics", "OFFER_WORK", "available for hire");
     }
     
 }

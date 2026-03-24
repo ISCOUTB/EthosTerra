@@ -62,11 +62,10 @@ public class ManagePestsTask extends wpsTask {
                             )
                     )
             );
+            wpsReport.interaction(believes.getPeasantProfile().getPeasantFamilyAlias(), "AgroEcosystem", "ManagePests", believes.getAlias());
             ControlCurrentDate.getInstance().setCurrentDate(
                     believes.getInternalCurrentDate()
             );
-            //this.setTaskWaitingForExecution();
-
         } catch (ExceptionBESA ex) {
             wpsReport.error(ex, believes.getPeasantProfile().getPeasantFamilyAlias());
         }

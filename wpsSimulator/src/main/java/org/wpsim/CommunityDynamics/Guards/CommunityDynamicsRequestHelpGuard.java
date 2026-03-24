@@ -65,6 +65,7 @@ public class CommunityDynamicsRequestHelpGuard extends GuardBESA  {
                                     5
                             ))
             );
+            wpsReport.interaction("CommunityDynamics", agentHelper, "WORK_CONTRACT", "contractor=" + agentContractor);
             //wpsReport.info("enviando contrato " +  agentHelper + " para " + societyDataMessage.getPeasantFamilyAgent(), this.getAgent().getAlias());
             //System.out.println("enviando contrato como contratista a " + agentContractor);
             AdmBESA.getInstance().getHandlerByAlias(
@@ -77,6 +78,7 @@ public class CommunityDynamicsRequestHelpGuard extends GuardBESA  {
                                     5
                             ))
             );
+            wpsReport.interaction("CommunityDynamics", agentContractor, "HELPER_ASSIGNED", "helper=" + agentHelper);
         } catch (ExceptionBESA ex) {
             System.out.println(ex.getMessage());
         }

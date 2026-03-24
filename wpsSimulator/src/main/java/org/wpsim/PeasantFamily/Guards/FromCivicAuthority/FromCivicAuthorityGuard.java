@@ -50,6 +50,7 @@ public class FromCivicAuthorityGuard extends GuardBESA {
             believes.getPeasantProfile().setPeasantFamilyLandAlias(landName);
             believes.setAssignedLands(assignedLands);
             believes.getPeasantProfile().increaseToolsNeeded(fromCivicAuthorityMessage.getAssignedLands().size());
+            believes.getPeasantProfile().setFarmName(true);
         }
     }
 }

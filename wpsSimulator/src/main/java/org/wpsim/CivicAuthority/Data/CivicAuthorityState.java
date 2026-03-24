@@ -55,12 +55,6 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
     public CivicAuthorityState() {
         super();
         this.landOwnership = new HashMap<>();
-        
-        if (params.world.equals("100")) this.gridSize = 10;
-        else if (params.world.equals("400")) this.gridSize = 20;
-        else if (params.world.equals("800")) this.gridSize = 40; // 40x20
-        else this.gridSize = 70; // Mapas reales / mediumworld
-        
         this.initialTrainingSlots = (params.trainingSlots != -1) 
                 ? params.trainingSlots 
                 : wpsConfig.getInstance().getIntProperty("civicauthority.trainingSlots");
@@ -88,6 +82,15 @@ public class CivicAuthorityState extends StateBESA implements Serializable {
                 // Usar la estructura LandInfo para almacenar el tipo de tierra y la finca
                 LandInfo landInfo = new LandInfo(landName, kind);
                 landOwnership.put(landName, landInfo);
+            }
+            // Derive gridSize (grid width = number of columns) from the actual world data.
+            // For square grids sqrt(N) gives the side length. For the 40x20 "800" world
+            // the width is 40, so we keep that explicit case.
+            int totalCells = landsArray.length();
+            if (params.world != null && params.world.equals("800")) {
+                this.gridSize = 40;
+            } else {
+                this.gridSize = (int) Math.round(Math.sqrt(totalCells));
             }
         } catch (Exception e) {
             e.printStackTrace();

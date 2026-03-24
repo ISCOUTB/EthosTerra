@@ -155,21 +155,13 @@ public class MarketPlaceState extends StateBESA implements Serializable {
     }
 
     public void decreaseCropPrice(int factor) {
-        String productName;
-        if (Coin.flipCoin()) {
-            productName = "rice";
-        } else {
-            productName = "roots";
-        }
+        String[] crops = {"rice", "roots", "maiz", "frijol", "cafe", "platano"};
+        String productName = crops[new java.util.Random().nextInt(crops.length)];
         changePrice(productName, factor * -1);
     }
     public synchronized void increaseCropPrice(int factor) {
-        String productName;
-        if (Coin.flipCoin()) {
-            productName = "rice";
-        } else {
-            productName = "roots";
-        }
+        String[] crops = {"rice", "roots", "maiz", "frijol", "cafe", "platano"};
+        String productName = crops[new java.util.Random().nextInt(crops.length)];
         changePrice(productName, factor);
     }
 

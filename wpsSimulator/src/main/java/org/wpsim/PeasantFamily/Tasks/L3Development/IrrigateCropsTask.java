@@ -75,7 +75,6 @@ public class IrrigateCropsTask extends wpsTask {
                             )
                     );
                     believes.addTaskToLog(believes.getInternalCurrentDate());
-                    //wpsReport.info("🚰🚰🚰🚰 Irrigación de cultivo " + currentLandInfo.getLandName() + " con " + waterUsed, believes.getPeasantProfile().getPeasantFamilyAlias());
                 } catch (ExceptionBESA ex) {
                     wpsReport.error(ex, believes.getPeasantProfile().getPeasantFamilyAlias());
                 }

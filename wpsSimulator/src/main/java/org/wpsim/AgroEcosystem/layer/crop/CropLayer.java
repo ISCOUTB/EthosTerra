@@ -302,4 +302,21 @@ public class CropLayer extends GenericWorldLayer {
         //wpsReport.debug(this.cropCellMap.values());
         return (List<CropCell>) new ArrayList<CropCell>(this.cropCellMap.values());
     }
+
+    /**
+     * Resets the harvest cycle for perennial crops without destroying the agent.
+     * Clears GDD, biomass, and harvestReady so the next growth cycle begins naturally.
+     */
+    public void resetHarvestCycle() {
+        cropCellMap.values().forEach(cell -> {
+            CropCellState state = (CropCellState) cell.getCellState();
+            if (state != null) {
+                state.setGrowingDegreeDays(0);
+                state.setAboveGroundBiomass(0);
+                state.setCumulatedEvapotranspiration(0);
+                state.setWaterStress(false);
+            }
+            cell.setHarvestReady(false);
+        });
+    }
 }

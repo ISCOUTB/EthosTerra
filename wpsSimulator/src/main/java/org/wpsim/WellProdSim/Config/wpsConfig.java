@@ -139,7 +139,9 @@ public final class wpsConfig {
         try {
             String[] resourceNames = {
                     "water", "seeds", "pesticides",
-                    "tools", "livestock", "rice", "roots"
+                    "tools", "livestock",
+                    "rice", "roots", "maiz", "frijol",
+                    "cafe", "platano"
             };
 
             for (String resourceName : resourceNames) {
