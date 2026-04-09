@@ -86,13 +86,35 @@ public class wpsGoalBDI extends GoalBDI {
      */
     public double evaluateEmotionalContribution(StateBDI stateBDI, double contribution) throws KernellAgentEventExceptionBESA {
         PeasantFamilyBelieves believes = (PeasantFamilyBelieves) stateBDI.getBelieves();
+        double finalContribution;
+        
         EmotionalEvaluator evaluator = new EmotionalEvaluator("EmotionalRulesFull");
         if (believes.isHaveEmotions()) {
-            return (evaluator.evaluate(believes.getEmotionsListCopy()) + contribution) / 2;
+            finalContribution = (evaluator.evaluate(believes.getEmotionsListCopy()) + contribution) / 2;
         } else {
-            return contribution;
+            finalContribution = contribution;
         }
+        
+        return applyLLMInfluence(believes, finalContribution);
     }
+    
+    /**
+     * Boosts the priority of the LLM-selected target goal
+     */
+    protected double applyLLMInfluence(PeasantFamilyBelieves believes, double finalContribution) {
+        if (believes.isLlmActive()) {
+            String target = believes.getLlmIntention();
+            String myClass = this.getClass().getSimpleName();
+            
+            // Check for exact match or suffix-agnostic match (e.g. DoVitalsTask vs DoVitalsGoal)
+            if (myClass.equals(target) || myClass.replace("Goal", "Task").equals(target)) {
+                // If it's the intended goal, ensure it wins by pushing contribution to near 1.0 (with slight variation via confidence)
+                return 0.999 + (believes.getLlmConfidence() * 0.0001);
+            }
+        }
+        return finalContribution;
+    }
+
     public double evaluateInvertedEmotionalContribution(StateBDI stateBDI, double contribution) throws KernellAgentEventExceptionBESA {
         PeasantFamilyBelieves believes = (PeasantFamilyBelieves) stateBDI.getBelieves();
         EmotionalEvaluator evaluator = new EmotionalEvaluator("EmotionalRulesFull");

@@ -65,8 +65,24 @@ public class HeartBeatGuard extends PeriodicGuardBESA {
         // Check if the simulation has finished
         if (checkFinish(believes)) return;
         // Send BDI Pulse to BDI Information Flow
+        sendLLMPulse(this.agent.getAlias());
         sendBDIPulse(this.agent.getAlias());
         //wpsReport.info("Tiempo restante " + believes.getTimeLeftOnDay() + " Ya ejecutadas: " + believes.getTasksBySpecificDate(believes.getInternalCurrentDate()), believes.getAlias());
+    }
+
+    private static void sendLLMPulse(String alias) {
+        try {
+            AdmBESA.getInstance().getHandlerByAlias(
+                    alias
+            ).sendEvent(
+                    new EventBESA(
+                            LLMPulseGuard.class.getName(),
+                            null
+                    )
+            );
+        } catch (ExceptionBESA ex) {
+            ReportBESA.error(ex);
+        }
     }
 
     private static void sendBDIPulse(String alias) {

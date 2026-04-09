@@ -61,8 +61,35 @@ RUN jar tf /build/wpsSimulator/target/wps-simulator-3.6.0.jar | head -5 && \
     echo "=== JAR verification passed ==="
 
 # ============================================================
-# Stage 2: Aplicación web (Next.js + JRE 21)
-#           Base: eclipse-temurin ya incluye JRE 21 → instalamos Node.js encima
+# Stage 2: Headless Simulator (Pure Java)
+# ============================================================
+FROM eclipse-temurin:21-jre-jammy AS headless
+RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+
+# Crear usuario no-root (necesario si no se hereda)
+RUN groupadd -r wpsuser && useradd -r -g wpsuser -d /app -s /sbin/nologin wpsuser
+
+WORKDIR /app
+
+# Copiar el JAR compilado
+COPY --from=java-build /build/wpsSimulator/target/wps-simulator-3.6.0.jar /app/wps-simulator.jar
+
+# Crear estructura de datos del simulador
+RUN mkdir -p /app/logs /app/web/data
+
+# Inyectar archivos de configuración del mundo (renombrando para compatibilidad)
+COPY wpsUI/public/mediumworld.json /app/web/data/world.mediumworld.json
+COPY wpsUI/public/*.json /app/web/data/
+
+# Ajustar permisos para wpsuser
+RUN chown -R wpsuser:wpsuser /app
+
+USER wpsuser
+
+CMD ["java", "-jar", "wps-simulator.jar"]
+
+# ============================================================
+# Stage 3: Aplicación web (Next.js + JRE 21)
 # ============================================================
 FROM eclipse-temurin:21-jre-jammy AS webapp
 

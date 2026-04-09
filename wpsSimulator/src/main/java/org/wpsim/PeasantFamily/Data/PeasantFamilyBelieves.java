@@ -81,6 +81,19 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
     private double trainingLevel;
     private boolean trainingAvailable;
 
+    // ── WPSnext: Campos de doble registro BDI Pulse LLM ──────────────────────
+    // Motor LLM (Gemma 4 E4B vía sidecar Python)
+    private String llmIntention = "";
+    private String llmJustification = "";
+    private double llmConfidence = 0.0;
+    private boolean llmActive = false;
+    private int lastLlmTtftMs = 0;
+    private int lastLlmTotalMs = 0;
+    // Motor numérico eBDI original (doble registro para comparación empírica)
+    private String numericWinnerGoal = "";
+    private double numericWinnerContribution = 0.0;
+    private java.util.Map<String, Double> numericAllScores = new java.util.HashMap<>();
+
     /**
      * @param alias          Peasant Family Alias
      * @param peasantProfile profile of the peasant family
@@ -893,5 +906,32 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
     public void setPersonality(Double personality) {
         this.personality = personality;
     }
-}
 
+    // ── WPSnext: Getters y Setters para BDI Pulse LLM ────────────────────────
+    public String getLlmIntention() { return llmIntention; }
+    public void setLlmIntention(String llmIntention) { this.llmIntention = llmIntention; }
+
+    public String getLlmJustification() { return llmJustification; }
+    public void setLlmJustification(String llmJustification) { this.llmJustification = llmJustification; }
+
+    public double getLlmConfidence() { return llmConfidence; }
+    public void setLlmConfidence(double llmConfidence) { this.llmConfidence = llmConfidence; }
+
+    public boolean isLlmActive() { return llmActive; }
+    public void setLlmActive(boolean llmActive) { this.llmActive = llmActive; }
+
+    public int getLastLlmTtftMs() { return lastLlmTtftMs; }
+    public void setLastLlmTtftMs(int lastLlmTtftMs) { this.lastLlmTtftMs = lastLlmTtftMs; }
+
+    public int getLastLlmTotalMs() { return lastLlmTotalMs; }
+    public void setLastLlmTotalMs(int lastLlmTotalMs) { this.lastLlmTotalMs = lastLlmTotalMs; }
+
+    public String getNumericWinnerGoal() { return numericWinnerGoal; }
+    public void setNumericWinnerGoal(String numericWinnerGoal) { this.numericWinnerGoal = numericWinnerGoal; }
+
+    public double getNumericWinnerContribution() { return numericWinnerContribution; }
+    public void setNumericWinnerContribution(double numericWinnerContribution) { this.numericWinnerContribution = numericWinnerContribution; }
+
+    public java.util.Map<String, Double> getNumericAllScores() { return numericAllScores; }
+    public void setNumericAllScores(java.util.Map<String, Double> numericAllScores) { this.numericAllScores = numericAllScores; }
+}

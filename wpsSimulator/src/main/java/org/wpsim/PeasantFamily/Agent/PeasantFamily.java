@@ -60,6 +60,7 @@ import org.wpsim.PeasantFamily.Guards.FromCommunityDynamics.SocietyWorkerContrac
 import org.wpsim.PeasantFamily.Guards.FromCommunityDynamics.SocietyWorkerContractorGuard;
 import org.wpsim.PeasantFamily.Guards.FromAgroEcosystem.FromAgroEcosystemGuard;
 import org.wpsim.PeasantFamily.PeriodicGuards.HeartBeatGuard;
+import org.wpsim.PeasantFamily.PeriodicGuards.LLMPulseGuard;
 import org.wpsim.PeasantFamily.Guards.Status.StatusGuard;
 import org.wpsim.WellProdSim.wpsStart;
 import org.wpsim.ViewerLens.Util.wpsReport;
@@ -93,6 +94,7 @@ public class PeasantFamily extends AgentBDI {
         structBESA.addBehavior("PeasantBehavior");
 
         structBESA.bindGuard("PeasantBehavior", HeartBeatGuard.class);
+        structBESA.bindGuard("PeasantBehavior", LLMPulseGuard.class); // WPSnext: LLM BDI Pulse
 
         //structBESA.addBehavior("FromWorldBehavior");
         structBESA.bindGuard("PeasantBehavior", FromAgroEcosystemGuard.class);
