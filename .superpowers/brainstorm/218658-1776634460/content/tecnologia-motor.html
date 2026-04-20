@@ -1,0 +1,76 @@
+<h2>¿Qué motor de juego usamos dentro de Next.js?</h2>
+<p class="subtitle">Pixel Art isométrico · Panel lateral · Mundo con edificios y rutas</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="phaser" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d1117;padding:16px;height:150px;display:flex;align-items:center;justify-content:center">
+      <div style="text-align:center">
+        <div style="font-size:40px;margin-bottom:8px">🎮</div>
+        <div style="color:#f1c40f;font-family:monospace;font-size:14px;font-weight:bold">Phaser 3</div>
+        <div style="color:#aaa;font-family:monospace;font-size:10px;margin-top:4px">phaser.io</div>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center">
+          <span style="background:#2ecc71;color:#000;font-size:9px;padding:2px 6px;border-radius:3px;font-family:monospace">ISOMÉTRICO ✓</span>
+          <span style="background:#3498db;color:#000;font-size:9px;padding:2px 6px;border-radius:3px;font-family:monospace">TILES ✓</span>
+          <span style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 6px;border-radius:3px;font-family:monospace">PIXEL ✓</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Phaser 3</h3>
+      <p>Motor 2D maduro con soporte nativo para tilemaps isométricos, sprites animados, pathfinding (plugin A*), y fácil integración en React via canvas. Ecosistema muy rico para juegos 2D.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Diseñado para esto exactamente</li><li>Tilemaps Tiled (.tmx) nativos</li><li>A* pathfinding disponible</li><li>Gran comunidad y docs</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>Integración con React requiere wrapper</li><li>Canvas separado del DOM</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="canvas-propio" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d1117;padding:16px;height:150px;display:flex;align-items:center;justify-content:center">
+      <div style="text-align:center">
+        <div style="font-size:40px;margin-bottom:8px">🎨</div>
+        <div style="color:#e67e22;font-family:monospace;font-size:14px;font-weight:bold">Canvas API</div>
+        <div style="color:#aaa;font-family:monospace;font-size:10px;margin-top:4px">React + useRef + requestAnimationFrame</div>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center">
+          <span style="background:#27ae60;color:#000;font-size:9px;padding:2px 6px;border-radius:3px;font-family:monospace">CONTROL TOTAL</span>
+          <span style="background:#8e44ad;color:#fff;font-size:9px;padding:2px 6px;border-radius:3px;font-family:monospace">SIN DEPS</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Canvas API puro</h3>
+      <p>Renderizado isométrico hecho a mano con useRef y requestAnimationFrame. Control total, sin dependencias externas, fácil de integrar con el estado React. Mayor esfuerzo inicial.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Integración React perfecta</li><li>Sin dependencias pesadas</li><li>Control total del render</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>Hay que implementar todo desde cero</li><li>Pathfinding manual</li><li>Más tiempo de desarrollo</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="pixijs" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d1117;padding:16px;height:150px;display:flex;align-items:center;justify-content:center">
+      <div style="text-align:center">
+        <div style="font-size:40px;margin-bottom:8px">⚡</div>
+        <div style="color:#e74c3c;font-family:monospace;font-size:14px;font-weight:bold">PixiJS 8</div>
+        <div style="color:#aaa;font-family:monospace;font-size:10px;margin-top:4px">pixijs.com — WebGL acelerado</div>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center">
+          <span style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 6px;border-radius:3px;font-family:monospace">WEBGL</span>
+          <span style="background:#f39c12;color:#000;font-size:9px;padding:2px 6px;border-radius:3px;font-family:monospace">+RÁPIDO</span>
+          <span style="background:#3498db;color:#000;font-size:9px;padding:2px 6px;border-radius:3px;font-family:monospace">SPRITES</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — PixiJS 8</h3>
+      <p>Renderer WebGL de alto rendimiento ideal para muchos sprites simultáneos. Perfecto para 20-150 agentes animados. Más liviano que Phaser, más potente que Canvas puro.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Muy performante con muchos agentes</li><li>Sprites y animaciones pixel art</li><li>Integra bien con React</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>No tiene tilemaps isométricos nativos</li><li>Pathfinding hay que añadirlo</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Mi recomendación: <strong>Phaser 3</strong> — tiene todo lo que necesita este proyecto de caja.</p>

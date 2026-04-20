@@ -1,0 +1,125 @@
+<h2>¿Qué estilo visual quieres para el juego 2D isométrico?</h2>
+<p class="subtitle">Cada estilo define la atmósfera y la complejidad de implementación</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="pixel-art" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1a1a2e;padding:16px;font-family:monospace;height:160px;overflow:hidden;position:relative">
+      <!-- Pixel art isometric mockup -->
+      <svg viewBox="0 0 220 140" width="100%" style="display:block">
+        <!-- Sky -->
+        <rect width="220" height="140" fill="#1a1a2e"/>
+        <!-- Ground tiles isometric -->
+        <polygon points="110,30 150,50 110,70 70,50" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="150,50 190,70 150,90 110,70" fill="#5a8c69" stroke="#4a7c59" stroke-width="1"/>
+        <polygon points="70,50 110,70 70,90 30,70" fill="#5a8c69" stroke="#4a7c59" stroke-width="1"/>
+        <polygon points="110,70 150,90 110,110 70,90" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <!-- Pixelated house -->
+        <rect x="100" y="38" width="20" height="16" fill="#c0392b"/>
+        <polygon points="95,38 110,28 125,38" fill="#e74c3c"/>
+        <!-- Pixel character -->
+        <rect x="72" y="74" width="8" height="8" fill="#f39c12"/>
+        <rect x="74" y="72" width="4" height="4" fill="#f1c40f"/>
+        <!-- Pixel crop -->
+        <rect x="118" y="86" width="4" height="6" fill="#27ae60"/>
+        <rect x="124" y="84" width="4" height="8" fill="#2ecc71"/>
+        <rect x="130" y="86" width="4" height="6" fill="#27ae60"/>
+        <!-- HUD overlay -->
+        <rect x="4" y="4" width="60" height="16" fill="#000" opacity="0.7" rx="2"/>
+        <text x="8" y="15" fill="#2ecc71" font-size="8" font-family="monospace">❤ 85  💰 $1.2M</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A — Pixel Art Retro</h3>
+      <p>Estética 8/16-bit con tiles cuadriculados, personajes pixelados. Fácil de implementar con Phaser.js o similar. Evoca juegos como Stardew Valley pero más simple.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Implementación más rápida</li><li>Bajo costo gráfico</li><li>Performante con muchos agentes</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>Menos realista visualmente</li><li>Requiere artista pixel art</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="low-poly" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#2d4a22;padding:16px;height:160px;overflow:hidden;position:relative">
+      <svg viewBox="0 0 220 140" width="100%" style="display:block">
+        <!-- Sky gradient -->
+        <defs>
+          <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#87CEEB"/>
+            <stop offset="100%" style="stop-color:#B0E0E6"/>
+          </linearGradient>
+        </defs>
+        <rect width="220" height="140" fill="url(#sky)"/>
+        <!-- Ground isometric low poly -->
+        <polygon points="110,25 175,55 110,85 45,55" fill="#6ab04c"/>
+        <polygon points="110,55 175,85 110,115 45,85" fill="#78c859"/>
+        <!-- Elevation left -->
+        <polygon points="45,55 110,85 110,115 45,85" fill="#4a9235"/>
+        <!-- Elevation right -->
+        <polygon points="175,55 110,85 110,115 175,85" fill="#5aad42"/>
+        <!-- Low poly tree -->
+        <polygon points="60,50 72,25 84,50" fill="#2d6a1e"/>
+        <polygon points="63,50 72,30 81,50" fill="#3d8a2e"/>
+        <rect x="69" y="50" width="6" height="10" fill="#8B4513"/>
+        <!-- Low poly house -->
+        <polygon points="100,50 120,50 120,68 100,68" fill="#e8d5b0"/>
+        <polygon points="95,50 110,35 125,50" fill="#c0392b"/>
+        <!-- Agent figure low poly -->
+        <polygon points="148,70 155,55 162,70" fill="#f39c12"/>
+        <circle cx="155" cy="53" r="5" fill="#f1c40f"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B — Low Poly Moderno</h3>
+      <p>Polígonos geométricos limpios, colores planos con sombras facetadas. Estilo popular en juegos indie modernos. Balance entre claridad y estética contemporánea.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Estética atractiva y limpia</li><li>Escalable visualmente</li><li>Funciona bien con Three.js</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>Complejidad media-alta</li><li>Renderizado 3D puede ser pesado</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="ilustrado" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8f4e6;padding:16px;height:160px;overflow:hidden;position:relative">
+      <svg viewBox="0 0 220 140" width="100%" style="display:block">
+        <!-- Warm background -->
+        <rect width="220" height="140" fill="#f8f4e6"/>
+        <!-- Illustrated isometric ground -->
+        <ellipse cx="110" cy="90" rx="90" ry="40" fill="#c8e6c9" stroke="#81c784" stroke-width="2"/>
+        <!-- Terrain lines hand-drawn style -->
+        <path d="M 30,90 Q 70,75 110,80 Q 150,85 190,90" stroke="#a5d6a7" stroke-width="2" fill="none"/>
+        <!-- Illustrated house -->
+        <rect x="90" y="52" width="40" height="28" fill="#ffccbc" stroke="#ff7043" stroke-width="2" rx="2"/>
+        <polygon points="85,52 110,35 135,52" fill="#ef5350" stroke="#b71c1c" stroke-width="1.5"/>
+        <!-- Windows -->
+        <rect x="95" y="58" width="8" height="8" fill="#81d4fa" stroke="#0288d1" stroke-width="1"/>
+        <rect x="117" y="58" width="8" height="8" fill="#81d4fa" stroke="#0288d1" stroke-width="1"/>
+        <!-- Illustrated tree -->
+        <circle cx="55" cy="62" r="16" fill="#66bb6a" stroke="#43a047" stroke-width="2"/>
+        <circle cx="48" cy="68" r="10" fill="#4caf50"/>
+        <rect x="52" y="76" width="6" height="12" fill="#795548" stroke="#5d4037" stroke-width="1"/>
+        <!-- Illustrated peasant -->
+        <circle cx="165" cy="76" r="7" fill="#ffcc80" stroke="#ff8f00" stroke-width="1.5"/>
+        <rect x="158" y="83" width="14" height="12" fill="#e53935" stroke="#b71c1c" stroke-width="1"/>
+        <!-- Hat -->
+        <ellipse cx="165" cy="70" rx="9" ry="4" fill="#795548"/>
+        <rect x="163" y="64" width="4" height="7" fill="#8d6e63"/>
+        <!-- Crops with warmth -->
+        <path d="M 140,96 Q 142,88 144,96" stroke="#66bb6a" stroke-width="3" fill="none"/>
+        <path d="M 148,94 Q 150,86 152,94" stroke="#4caf50" stroke-width="3" fill="none"/>
+        <path d="M 156,96 Q 158,88 160,96" stroke="#66bb6a" stroke-width="3" fill="none"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>C — Ilustrado / Artesanal</h3>
+      <p>Estilo cálido e ilustrado, evoca artesanías colombianas. Personajes expresivos con detalles culturales (sombreros, ruanas). Más narrativo y empático con el tema.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Muy alineado con el tema rural</li><li>Identidad visual única</li><li>Atractivo para presentaciones académicas</li></ul></div>
+        <div class="cons"><h4>Contras</h4><ul><li>Mayor costo de assets</li><li>Difícil sin diseñador dedicado</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Haz clic en el estilo que prefieras, o dime en el terminal si quieres una combinación.</p>

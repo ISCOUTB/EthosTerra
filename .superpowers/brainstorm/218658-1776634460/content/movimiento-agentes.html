@@ -1,0 +1,106 @@
+<h2>¿Cómo se comportan los agentes en el mapa?</h2>
+<p class="subtitle">Pixel Art · Panel lateral · Next.js — ¿cómo se ven moverse los campesinos?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="posicion-fija" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1a1a2e;padding:12px;height:160px">
+      <svg viewBox="0 0 220 140" width="100%" style="display:block">
+        <rect width="220" height="140" fill="#1a1a2e"/>
+        <!-- Grid tiles -->
+        <polygon points="50,50 80,65 50,80 20,65" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="80,65 110,80 80,95 50,80" fill="#5a8c69" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="110,50 140,65 110,80 80,65" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="140,65 170,80 140,95 110,80" fill="#5a8c69" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="80,35 110,50 80,65 50,50" fill="#6aac79" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="110,80 140,95 110,110 80,95" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <!-- Agent on tile — no movement arrow -->
+        <rect x="76" y="54" width="8" height="10" fill="#e74c3c"/>
+        <rect x="78" y="51" width="4" height="4" fill="#f1c40f"/>
+        <!-- Activity icon above -->
+        <text x="73" y="48" font-size="10">🌱</text>
+        <!-- Second agent fixed -->
+        <rect x="136" y="69" width="8" height="10" fill="#3498db"/>
+        <rect x="138" y="66" width="4" height="4" fill="#f1c40f"/>
+        <text x="133" y="63" font-size="10">🪓</text>
+        <!-- State label -->
+        <rect x="30" y="110" width="160" height="20" fill="#000" opacity="0.6" rx="2"/>
+        <text x="35" y="123" fill="#aaa" font-size="7" font-family="monospace">Posición fija en su parcela · Icono cambia por actividad</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A — Posición fija + ícono de actividad</h3>
+      <p>Cada agente está anclado a su parcela. Un ícono animado sobre él indica su actividad actual (🌱 sembrar, 🪓 trabajar, 💤 descansar). Simple, claro, muy performante.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="movimiento-simple" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1a1a2e;padding:12px;height:160px">
+      <svg viewBox="0 0 220 140" width="100%" style="display:block">
+        <rect width="220" height="140" fill="#1a1a2e"/>
+        <polygon points="50,50 80,65 50,80 20,65" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="80,65 110,80 80,95 50,80" fill="#5a8c69" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="110,50 140,65 110,80 80,65" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="140,65 170,80 140,95 110,80" fill="#5a8c69" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="80,35 110,50 80,65 50,50" fill="#6aac79" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="110,80 140,95 110,110 80,95" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <!-- Agent with movement trail -->
+        <circle cx="52" cy="65" r="3" fill="#e74c3c" opacity="0.2"/>
+        <circle cx="62" cy="68" r="3" fill="#e74c3c" opacity="0.4"/>
+        <circle cx="72" cy="72" r="3" fill="#e74c3c" opacity="0.6"/>
+        <rect x="78" y="69" width="8" height="10" fill="#e74c3c"/>
+        <rect x="80" y="66" width="4" height="4" fill="#f1c40f"/>
+        <!-- Arrow to destination -->
+        <line x1="86" y1="74" x2="106" y2="62" stroke="#f1c40f" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <polygon points="106,62 100,64 103,58" fill="#f1c40f"/>
+        <!-- Destination tile highlight -->
+        <polygon points="110,50 140,65 110,80 80,65" fill="#6aac79" stroke="#f1c40f" stroke-width="2"/>
+        <!-- Second agent static -->
+        <rect x="142" y="69" width="8" height="10" fill="#9b59b6"/>
+        <rect x="144" y="66" width="4" height="4" fill="#f1c40f"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B — Movimiento entre tiles</h3>
+      <p>Los agentes se desplazan visualmente entre su parcela, el mercado y otros destinos según su actividad BDI. Animación de caminar entre tiles. Más dinámico y narrativo.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="movimiento-fluido" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1a1a2e;padding:12px;height:160px">
+      <svg viewBox="0 0 220 140" width="100%" style="display:block">
+        <rect width="220" height="140" fill="#1a1a2e"/>
+        <!-- More tiles for richer world -->
+        <polygon points="50,50 80,65 50,80 20,65" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="80,65 110,80 80,95 50,80" fill="#5a8c69" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="110,50 140,65 110,80 80,65" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="140,65 170,80 140,95 110,80" fill="#5a8c69" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="80,35 110,50 80,65 50,50" fill="#6aac79" stroke="#3a6b49" stroke-width="1"/>
+        <polygon points="110,20 140,35 110,50 80,35" fill="#4a7c59" stroke="#3a6b49" stroke-width="1"/>
+        <!-- Marketplace building -->
+        <rect x="150" y="28" width="22" height="18" fill="#8B4513"/>
+        <polygon points="146,28 161,18 176,28" fill="#c0392b"/>
+        <text x="151" y="52" font-size="8">🏪</text>
+        <!-- Bank -->
+        <rect x="15" y="35" width="20" height="14" fill="#7f8c8d"/>
+        <polygon points="12,35 25,25 38,35" fill="#95a5a6"/>
+        <text x="16" y="58" font-size="8">🏦</text>
+        <!-- Agent mid-walk with smooth trail -->
+        <ellipse cx="95" cy="57" rx="4" ry="2" fill="#e74c3c" opacity="0.3"/>
+        <rect x="90" y="51" width="8" height="10" fill="#e74c3c"/>
+        <rect x="92" y="48" width="4" height="4" fill="#f1c40f"/>
+        <!-- Path curve to market -->
+        <path d="M 94,56 Q 120,45 148,38" stroke="#f1c40f" stroke-width="1" fill="none" stroke-dasharray="2,2" opacity="0.7"/>
+        <!-- Second agent near bank -->
+        <rect x="22" y="42" width="8" height="10" fill="#27ae60"/>
+        <rect x="24" y="39" width="4" height="4" fill="#f1c40f"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>C — Mundo con edificios + rutas</h3>
+      <p>Mapa rico con parcelas, mercado, banco, autoridad cívica. Agentes viajan entre ubicaciones siguiendo sus metas BDI. Más complejo pero representa fielmente la simulación.</p>
+    </div>
+  </div>
+
+</div>
+<p class="subtitle" style="margin-top:16px">Para un primer MVP, A o B son más alcanzables. C es la visión a largo plazo.</p>
