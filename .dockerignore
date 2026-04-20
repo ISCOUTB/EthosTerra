@@ -25,7 +25,8 @@ wpsUI/main
 # Archivos innecesarios para la imagen Docker
 **/*.md
 **/*.bat
-**/*.sh
+# Nota: entrypoint.sh es necesario para Docker, no lo ignoramos
+# **/*.sh
 **/*.ps1
 **/*.nsi
 **/INFORME.md

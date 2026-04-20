@@ -104,7 +104,7 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && node --version && npm --version && npx --version
 
 # Crear usuario no-root para eliminar privilegios de root en producción
-RUN groupadd -r wpsuser && useradd -r -g wpsuser -d /app -s /sbin/nologin wpsuser
+RUN groupadd -r wpsuser && useradd -r -g wpsuser -d /app -s /bin/bash wpsuser
 
 WORKDIR /app
 
@@ -118,13 +118,18 @@ COPY --from=java-build \
 COPY wpsUI/package.json wpsUI/tsconfig.json wpsUI/next.config.mjs wpsUI/tailwind.config.ts wpsUI/postcss.config.mjs ./
 COPY wpsUI/src/ ./src/
 COPY wpsUI/public/ ./public/
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-# Crear directorio de logs del simulador
-RUN mkdir -p /app/src/wps/logs
+# Crear estructura de datos del simulador y copiar archivos de configuración
+RUN mkdir -p /app/src/wps/logs /app/logs /app/web/data
+COPY wpsUI/public/mediumworld.json /app/web/data/world.mediumworld.json
+COPY wpsUI/public/*.json /app/web/data/
 
 # Symlink: Java escribe a "logs/" (relativo a CWD=/app) → /app/logs → /app/src/wps/logs
 # Así el CSV queda en /app/src/wps/logs/wpsSimulator.csv donde la API lo espera
-RUN ln -s /app/src/wps/logs /app/logs
+# Nota: rm primero por si acaso existe como directorio
+RUN rm -rf /app/logs && ln -s /app/src/wps/logs /app/logs
 
 # Eliminar dependencias dummy "file:" que causan error en npm install
 RUN npm pkg delete dependencies.wellprodsim dependencies.WellProdSim 2>/dev/null; true
@@ -142,14 +147,16 @@ RUN cp -r /app/public /app/.next/standalone/public && \
 # Copiar el JAR al standalone para que WPS_JAR_PATH=/app/wps-simulator.jar siga válido
 RUN cp /app/wps-simulator.jar /app/.next/standalone/wps-simulator.jar
 
-# Transferir propiedad al usuario no-root sólo en los directorios necesarios:
+# Transferir propiedad al usuario no-root:
 # - .next/   → Next.js necesita leer los artefactos compilados
 # - src/      → la API escribe el CSV de resultados en src/wps/logs/
 # - logs      → symlink a src/wps/logs
+# - wps-simulator.jar → el JAR de Java
 # NO chowneamos node_modules (sólo-lectura en runtime) → ahorra ~7 min de build
 RUN chown -R wpsuser:wpsuser /app/.next /app/src /app/logs /app/wps-simulator.jar
 
-USER wpsuser
+# NOTE: Do NOT set USER wpsuser here - the entrypoint.sh needs to run as root
+# to fix permissions, then it will switch to wpsuser before running the services
 
 EXPOSE 3000
 # WebSocket server de Java (Undertow) - ViewerLens/Server/WebsocketServer.java
@@ -160,4 +167,4 @@ EXPOSE 8000
 # Las variables de entorno de negocio se gestionan vía docker-compose.yml / env_file
 ENV HOSTNAME=0.0.0.0
 
-CMD ["node", ".next/standalone/server.js"]
+ENTRYPOINT ["/app/entrypoint.sh"]
