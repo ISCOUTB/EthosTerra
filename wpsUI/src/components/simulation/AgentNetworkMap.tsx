@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Landmark, Gavel, Users, ShoppingCart, Tractor, Activity,
   RadioTower, Wifi, WifiOff, X, Inbox, ArrowDownLeft, Calendar,
-  Skull, User, Sprout, Zap, DollarSign
+  Skull, User, Sprout, Zap, DollarSign, Hammer, Package,
+  Heart, BookOpen, Home, Crown, UserCog
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,13 +37,95 @@ export const INTERACTION_CATEGORIES = [
 
 export type CategoryKey = typeof INTERACTION_CATEGORIES[number]["key"];
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Roles de Persona
+   ──────────────────────────────────────────────────────────────────────────── */
+const ROLE_ICONS: Record<string, React.ElementType> = {
+  AGRICULTOR:        Sprout,
+  JORNALERO:         Hammer,
+  COMERCIANTE:       Package,
+  CURANDERA:         Heart,
+  MAESTRA:           BookOpen,
+  AMA_DE_CASA:       Home,
+  LIDER_COMUNITARIO: Crown,
+  EMPLEADO_PUBLICO:  UserCog,
+  RENTISTA:          DollarSign,
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  AGRICULTOR:        "Agricultor",
+  JORNALERO:         "Jornalero",
+  COMERCIANTE:       "Comerciante",
+  CURANDERA:         "Curandera",
+  MAESTRA:           "Maestra",
+  AMA_DE_CASA:       "Ama de Casa",
+  LIDER_COMUNITARIO: "Líder",
+  EMPLEADO_PUBLICO:  "Empleado",
+  RENTISTA:          "Rentista",
+};
+
+/* Colores de persona según salud */
+function personNodeColor(health: number): string {
+  if (health <= 0)  return "text-slate-400 border-slate-600 bg-slate-600/20";
+  if (health < 30)  return "text-red-400 border-red-600 bg-red-600/20";
+  if (health < 60)  return "text-yellow-400 border-yellow-600 bg-yellow-600/20";
+  return "text-violet-400 border-violet-500 bg-violet-500/20";
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Estado de agentes
+   ──────────────────────────────────────────────────────────────────────────── */
+interface FamilyState {
+  health: number;
+  farmId: string;
+  money: number;
+  // FamilyCoordinator-specific (optional — not present for legacy PeasantFamily)
+  familyMoney?: number;
+  memberCount?: number;
+  members?: string[];
+}
+
+interface PersonState {
+  role: string;
+  familyAlias: string;
+  health: number;
+  skills: number;
+  reputation: number;
+  money: number;
+  currentActivity: string;
+  socialNetworkSize: number;
+  totalInteractions: number;
+  age: number;
+  sex: string;
+  etapaVida: string;
+  spouseAlias: string;
+  socialNetwork: string[];
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Nodos del grafo
+   ──────────────────────────────────────────────────────────────────────────── */
+interface AgentNode {
+  id: string;
+  label: string;
+  type: "hub" | "family" | "person";
+  x: number;
+  y: number;
+  icon: React.ElementType;
+  color: string;
+  parentId?: string; // sólo para nodos persona
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Clasificación de mensajes
+   ──────────────────────────────────────────────────────────────────────────── */
 function classifyMessage(sourceId: string, targetId: string, action: string): CategoryKey | null {
   const ids = [sourceId, targetId];
   if (ids.some(id => id.includes("AgroEcosystem"))) {
     const a = action.toLowerCase();
     if (a.includes("harvest") || a.includes("crop_harvest")) return "AgroEcosystem_harvest";
     if (a.includes("pest") || a.includes("pesticide") || a.includes("managepest")) return "AgroEcosystem_pests";
-    return "AgroEcosystem_planting"; // PlantCrop / CROP_INIT / irrigate / check
+    return "AgroEcosystem_planting";
   }
   if (ids.some(id => id.includes("Perturbation") || id.includes("wpsPerturbation"))) return "Perturbation";
   if (ids.some(id => id.includes("MarketPlace")))       return "MarketPlace";
@@ -55,16 +138,6 @@ function classifyMessage(sourceId: string, targetId: string, action: string): Ca
 function categoryColor(category: CategoryKey | null): string {
   if (!category) return "#38bdf8";
   return INTERACTION_CATEGORIES.find(c => c.key === category)?.particleColor ?? "#38bdf8";
-}
-
-interface AgentNode {
-  id: string;
-  label: string;
-  type: "hub" | "family";
-  x: number;
-  y: number;
-  icon: React.ElementType;
-  color: string;
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -81,40 +154,70 @@ const HUBS: AgentNode[] = [
 
 const HUB_IDS = new Set(HUBS.map((h) => h.id));
 
+const FAMILY_ORBIT_RADIUS = 42;
+const PERSON_ORBIT_RADIUS = 7; // % alrededor del nodo de familia
+
 /* ────────────────────────────────────────────────────────────────────────────
-   Helper: posicionar N familias en un círculo
+   Helpers de posicionamiento
    ──────────────────────────────────────────────────────────────────────────── */
 function buildFamilyNodes(familyIds: string[]): AgentNode[] {
   const count = familyIds.length;
   if (count === 0) return [];
-  const radius = 42;
   return familyIds.map((id, i) => {
-    const angle = (i / count) * 2 * Math.PI - Math.PI / 2; // empieza arriba
-    const num = id.replace(/\D+/g, "") || `${i + 1}`;
+    const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
+    // Extract index from both "PeasantFamily3" and "Family3Coordinator" patterns
+    const numMatch = id.match(/Family(\d+)/i) || id.match(/(\d+)/);
+    const num = numMatch ? numMatch[1] : `${i + 1}`;
     return {
       id,
       label: `Familia ${num}`,
       type: "family" as const,
-      x: 50 + radius * Math.cos(angle),
-      y: 50 + radius * Math.sin(angle),
+      x: 50 + FAMILY_ORBIT_RADIUS * Math.cos(angle),
+      y: 50 + FAMILY_ORBIT_RADIUS * Math.sin(angle),
       icon: Tractor,
       color: "text-blue-400 border-blue-500 bg-blue-900/30",
     };
   });
 }
 
+function buildPersonNodes(
+  familyNodes: AgentNode[],
+  personStates: Record<string, PersonState>,
+): AgentNode[] {
+  const nodes: AgentNode[] = [];
+  for (const famNode of familyNodes) {
+    const persons = Object.entries(personStates).filter(([, ps]) => ps.familyAlias === famNode.id);
+    const count = persons.length;
+    if (count === 0) continue;
+    persons.forEach(([name, ps], i) => {
+      const angle = (i / count) * 2 * Math.PI;
+      nodes.push({
+        id: name,
+        label: ROLE_LABELS[ps.role] || ps.role,
+        type: "person",
+        x: famNode.x + PERSON_ORBIT_RADIUS * Math.cos(angle),
+        y: famNode.y + PERSON_ORBIT_RADIUS * Math.sin(angle),
+        icon: ROLE_ICONS[ps.role] || User,
+        color: personNodeColor(ps.health),
+        parentId: famNode.id,
+      });
+    });
+  }
+  return nodes;
+}
+
 /* ────────────────────────────────────────────────────────────────────────────
    Componente principal
    ──────────────────────────────────────────────────────────────────────────── */
-
 export function AgentNetworkMap() {
-  const [messages, setMessages] = useState<BesaMessage[]>([]);
-  const [log, setLog] = useState<BesaMessage[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [currentDate, setCurrentDate] = useState<string>("Esperando...");
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [messages, setMessages]               = useState<BesaMessage[]>([]);
+  const [log, setLog]                         = useState<BesaMessage[]>([]);
+  const [isConnected, setIsConnected]         = useState(false);
+  const [currentDate, setCurrentDate]         = useState<string>("Esperando...");
+  const [selectedNodeId, setSelectedNodeId]   = useState<string | null>(null);
   const [discoveredFamilies, setDiscoveredFamilies] = useState<string[]>([]);
-  const [agentStates, setAgentStates] = useState<Record<string, { health: number; farmId: string; money: number }>>({});
+  const [agentStates, setAgentStates]         = useState<Record<string, FamilyState>>({});
+  const [personStates, setPersonStates]       = useState<Record<string, PersonState>>({});
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // ── Métricas derivadas ────────────────────────────────────────────────
@@ -129,6 +232,8 @@ export function AgentNetworkMap() {
     return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
   }, [agentStates]);
 
+  const totalPersons = useMemo(() => Object.keys(personStates).length, [personStates]);
+
   // ── Filtros de interacción ─────────────────────────────────────────────
   const [filters, setFilters] = useState<Record<CategoryKey, boolean>>(
     () => Object.fromEntries(INTERACTION_CATEGORIES.map(c => [c.key, c.defaultOn])) as Record<CategoryKey, boolean>
@@ -141,20 +246,20 @@ export function AgentNetworkMap() {
   const isVisible = (msg: BesaMessage) => msg.category === null || filters[msg.category];
 
   // ── Nodos dinámicos ───────────────────────────────────────────────────
-  const familyNodes = useMemo(
-    () => buildFamilyNodes(discoveredFamilies),
-    [discoveredFamilies]
+  const familyNodes = useMemo(() => buildFamilyNodes(discoveredFamilies), [discoveredFamilies]);
+
+  const personNodes = useMemo(
+    () => buildPersonNodes(familyNodes, personStates),
+    [familyNodes, personStates]
   );
 
-  const allNodes = useMemo(() => [...HUBS, ...familyNodes], [familyNodes]);
+  const allNodes = useMemo(() => [...HUBS, ...familyNodes, ...personNodes], [familyNodes, personNodes]);
 
   // ── Resolución flexible de nodos ──────────────────────────────────────
   const resolveNode = useCallback(
     (alias: string) => {
-      // First try exact match
       const exact = allNodes.find((n) => n.id === alias);
       if (exact) return exact;
-      // Then try hub substring match (hub IDs like "MarketPlace" may appear as substrings of messages)
       return allNodes.find((n) => n.type === "hub" && (alias.includes(n.id) || n.id.includes(alias)));
     },
     [allNodes]
@@ -173,12 +278,24 @@ export function AgentNetworkMap() {
     const map: Record<string, number> = {};
     for (const m of log) {
       const target = resolveNode(m.targetId);
-      if (target) {
-        map[target.id] = (map[target.id] || 0) + 1;
-      }
+      if (target) map[target.id] = (map[target.id] || 0) + 1;
     }
     return map;
   }, [log, resolveNode]);
+
+  // ── Personas agrupadas por familia (para panel derecho) ───────────────
+  const personsForSelectedFamily = useMemo(() => {
+    if (!selectedNodeId) return [];
+    return Object.entries(personStates)
+      .filter(([, ps]) => ps.familyAlias === selectedNodeId)
+      .map(([name, ps]) => ({ name, ...ps }));
+  }, [selectedNodeId, personStates]);
+
+  // ── Persona seleccionada (si el nodo es de tipo person) ───────────────
+  const selectedPersonState = useMemo(() => {
+    if (!selectedNodeId) return null;
+    return personStates[selectedNodeId] ?? null;
+  }, [selectedNodeId, personStates]);
 
   // ── Conexión al WebSocket de ViewerLens ───────────────────────────────
   useEffect(() => {
@@ -207,9 +324,11 @@ export function AgentNetworkMap() {
             try {
               const data = JSON.parse(payload);
               if (data && data.from && data.to) {
-                // Descubrir agentes a partir de interacciones también
+                // Descubrir familias (PeasantFamily legado o FamilyCoordinator nuevo)
                 [data.from, data.to].forEach(agentName => {
-                  if (agentName && !HUB_IDS.has(agentName)) {
+                  if (agentName && !HUB_IDS.has(agentName)
+                      && (agentName.includes("PeasantFamily") || agentName.includes("Coordinator"))
+                      && !agentName.includes("Person")) {
                     setDiscoveredFamilies((prev) => {
                       if (prev.includes(agentName)) return prev;
                       return [...prev, agentName].sort((a, b) => {
@@ -243,33 +362,81 @@ export function AgentNetworkMap() {
             break;
           }
 
-          // ── Estado JSON del agente → descubrir familias activas ───
+          // ── Estado JSON del agente ────────────────────────────────
           case "j=": {
             try {
               const data = JSON.parse(payload);
               if (data && data.name) {
                 const agentName: string = data.name;
                 const parsedState = typeof data.state === "string" ? JSON.parse(data.state) : data.state;
-                
-                const health: number = parsedState.health ?? 100;
-                const farmId: string = parsedState.peasantFamilyLandAlias || "";
-                const money: number = parsedState.money ?? 0;
 
-                setAgentStates(prev => ({
-                  ...prev,
-                  [agentName]: { health, farmId, money }
-                }));
+                const isPersonAgent     = agentName.includes("Person");
+                const isCoordinator     = agentName.includes("Coordinator") || parsedState.familyAlias !== undefined;
+                const isPeasantFamily   = agentName.includes("PeasantFamily");
 
-                // Solo agregar si es familia (no un hub) y no ya descubierta
-                if (!HUB_IDS.has(agentName)) {
-                  setDiscoveredFamilies((prev) => {
-                    if (prev.includes(agentName)) return prev;
-                    return [...prev, agentName].sort((a, b) => {
-                      const na = parseInt(a.replace(/\D+/g, "") || "0");
-                      const nb = parseInt(b.replace(/\D+/g, "") || "0");
-                      return na - nb;
+                if (isPersonAgent && !isCoordinator) {
+                  // ── Agente Person individual ─────────────────────
+                  setPersonStates(prev => ({
+                    ...prev,
+                    [agentName]: {
+                      role:              parsedState.role              ?? "AGRICULTOR",
+                      familyAlias:       parsedState.familyAlias       ?? "",
+                      health:            parsedState.health            ?? 100,
+                      skills:            parsedState.skills            ?? 0,
+                      reputation:        parsedState.reputation        ?? 0,
+                      money:             parsedState.money             ?? 0,
+                      currentActivity:   parsedState.currentActivity   ?? "",
+                      socialNetworkSize: parsedState.socialNetworkSize ?? 0,
+                      totalInteractions: parsedState.totalInteractions ?? 0,
+                      age:               parsedState.age               ?? 0,
+                      sex:               parsedState.sex               ?? "",
+                      etapaVida:         parsedState.etapaVida         ?? "",
+                      spouseAlias:       parsedState.spouseAlias       ?? "",
+                      socialNetwork:     Array.isArray(parsedState.socialNetwork) ? parsedState.socialNetwork : [],
+                    }
+                  }));
+                } else if (isCoordinator) {
+                  // ── FamilyCoordinator — nuevo modelo ────────────
+                  setAgentStates(prev => ({
+                    ...prev,
+                    [agentName]: {
+                      health:      100,
+                      farmId:      parsedState.landAlias    ?? "",
+                      money:       parsedState.familyMoney  ?? 0,
+                      familyMoney: parsedState.familyMoney  ?? 0,
+                      memberCount: parsedState.memberCount  ?? 0,
+                      members:     parsedState.members      ?? [],
+                    }
+                  }));
+
+                  if (!HUB_IDS.has(agentName)) {
+                    setDiscoveredFamilies((prev) => {
+                      if (prev.includes(agentName)) return prev;
+                      return [...prev, agentName].sort((a, b) => {
+                        const na = parseInt(a.match(/Family(\d+)/i)?.[1] || a.replace(/\D+/g, "") || "0");
+                        const nb = parseInt(b.match(/Family(\d+)/i)?.[1] || b.replace(/\D+/g, "") || "0");
+                        return na - nb;
+                      });
                     });
-                  });
+                  }
+                } else if (isPeasantFamily) {
+                  // ── Agente PeasantFamily (legado) ────────────────
+                  const health: number = parsedState.health ?? 100;
+                  const farmId: string = parsedState.peasantFamilyLandAlias || "";
+                  const money: number  = parsedState.money ?? 0;
+
+                  setAgentStates(prev => ({ ...prev, [agentName]: { health, farmId, money } }));
+
+                  if (!HUB_IDS.has(agentName)) {
+                    setDiscoveredFamilies((prev) => {
+                      if (prev.includes(agentName)) return prev;
+                      return [...prev, agentName].sort((a, b) => {
+                        const na = parseInt(a.replace(/\D+/g, "") || "0");
+                        const nb = parseInt(b.replace(/\D+/g, "") || "0");
+                        return na - nb;
+                      });
+                    });
+                  }
                 }
               }
             } catch { /* ignore */ }
@@ -280,6 +447,7 @@ export function AgentNetworkMap() {
           case "q=": {
             setDiscoveredFamilies([]);
             setAgentStates({});
+            setPersonStates({});
             setLog([]);
             setMessages([]);
             setSelectedNodeId(null);
@@ -297,9 +465,7 @@ export function AgentNetworkMap() {
 
       ws.onclose = () => {
         setIsConnected(false);
-        if (alive) {
-          reconnectTimer.current = setTimeout(connect, 3000);
-        }
+        if (alive) reconnectTimer.current = setTimeout(connect, 3000);
       };
 
       ws.onerror = () => ws.close();
@@ -315,9 +481,32 @@ export function AgentNetworkMap() {
   }, []);
 
   // ── Info del nodo seleccionado ─────────────────────────────────────────
-  const selectedNode = selectedNodeId
-    ? allNodes.find((n) => n.id === selectedNodeId)
-    : null;
+  const selectedNode = selectedNodeId ? allNodes.find((n) => n.id === selectedNodeId) : null;
+
+  // ── Personas de cada familia para badges ──────────────────────────────
+  const personCountPerFamily = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const ps of Object.values(personStates)) {
+      if (ps.familyAlias) map[ps.familyAlias] = (map[ps.familyAlias] || 0) + 1;
+    }
+    return map;
+  }, [personStates]);
+
+  // ── Aristas de red social (para el nodo persona seleccionado) ──────────
+  // Cuando se selecciona una persona, mostramos líneas a cada contacto de
+  // su socialNetwork que sea visible como nodo en el mapa.
+  const socialEdges = useMemo(() => {
+    if (!selectedNodeId) return [];
+    const ps = personStates[selectedNodeId];
+    if (!ps || !ps.socialNetwork.length) return [];
+    const sourceNode = allNodes.find(n => n.id === selectedNodeId);
+    if (!sourceNode) return [];
+
+    return ps.socialNetwork
+      .map(alias => allNodes.find(n => n.id === alias))
+      .filter((n): n is AgentNode => n !== undefined)
+      .map(targetNode => ({ source: sourceNode, target: targetNode }));
+  }, [selectedNodeId, personStates, allNodes]);
 
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-[#0f1417] text-white p-2 pl-20 lg:pl-24 gap-2 font-archivo overflow-hidden">
@@ -343,10 +532,17 @@ export function AgentNetworkMap() {
             </div>
             <div className="w-[1px] h-8 bg-gray-700 mx-2" />
             <div className="flex items-center gap-2 text-xs text-gray-400">
-              <Users className="w-3.5 h-3.5" />
-              <span>{discoveredFamilies.length} agentes</span>
+              <Tractor className="w-3.5 h-3.5 text-blue-400" />
+              <span>{discoveredFamilies.length} familias</span>
+              {totalPersons > 0 && (
+                <>
+                  <div className="w-[1px] h-4 bg-gray-700 mx-1" />
+                  <User className="w-3.5 h-3.5 text-violet-400" />
+                  <span className="text-violet-300 font-semibold">{totalPersons} personas</span>
+                </>
+              )}
               <div className="w-[1px] h-4 bg-gray-700 mx-1" />
-              <Tractor className="w-3.5 h-3.5 text-lime-400" />
+              <Sprout className="w-3.5 h-3.5 text-lime-400" />
               <span className="text-lime-300 font-semibold">{workingAgents} con tierra</span>
               <div className="w-[1px] h-4 bg-gray-700 mx-1" />
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
@@ -421,6 +617,33 @@ export function AgentNetworkMap() {
             ))
           )}
 
+          {/* Líneas punteadas familia↔persona */}
+          {personNodes.map((pNode) => {
+            const famNode = familyNodes.find(f => f.id === pNode.parentId);
+            if (!famNode) return null;
+            return (
+              <line
+                key={`pline-${pNode.id}`}
+                x1={`${famNode.x}%`} y1={`${famNode.y}%`}
+                x2={`${pNode.x}%`}   y2={`${pNode.y}%`}
+                stroke="#7c3aed" strokeWidth="0.8" opacity="0.5"
+                strokeDasharray="2 2"
+              />
+            );
+          })}
+
+          {/* Líneas de red social (cuando hay persona seleccionada) */}
+          {socialEdges.map(({ source, target }) => (
+            <line
+              key={`social-${source.id}-${target.id}`}
+              x1={`${source.x}%`} y1={`${source.y}%`}
+              x2={`${target.x}%`} y2={`${target.y}%`}
+              stroke="#22d3ee" strokeWidth="1" opacity="0.7"
+              strokeDasharray="3 3"
+              filter="url(#glow)"
+            />
+          ))}
+
           {/* Líneas activas cuando hay mensajes en tránsito */}
           {messages.filter(isVisible).map((msg) => {
             const source = resolveNode(msg.sourceId);
@@ -463,14 +686,15 @@ export function AgentNetworkMap() {
 
         {/* Nodos de Agentes */}
         {allNodes.map((node) => {
-          const isHub = node.type === "hub";
+          const isHub    = node.type === "hub";
+          const isPerson = node.type === "person";
           const isSelected = selectedNodeId === node.id;
           const count = nodeIncomingCount[node.id] || 0;
-          
-          let nodeColor = node.color;
-          let nodeIcon = node.icon;
 
-          if (!isHub) {
+          let nodeColor = node.color;
+          let nodeIcon  = node.icon;
+
+          if (node.type === "family") {
             const state = agentStates[node.id];
             if (state) {
               const { health, farmId } = state;
@@ -486,7 +710,14 @@ export function AgentNetworkMap() {
             }
           }
 
+          if (isPerson) {
+            const ps = personStates[node.id];
+            if (ps) nodeColor = personNodeColor(ps.health);
+            nodeIcon = node.icon;
+          }
+
           const IconComponent = nodeIcon;
+          const personBadge = node.type === "family" ? (personCountPerFamily[node.id] || 0) : 0;
 
           return (
             <motion.div
@@ -499,28 +730,45 @@ export function AgentNetworkMap() {
               )}
               style={{ left: `${node.x}%`, top: `${node.y}%` }}
               onClick={() => setSelectedNodeId(isSelected ? null : node.id)}
+              title={isPerson ? `${node.label} (${node.id})` : undefined}
             >
               <div className="relative">
                 <div
                   className={cn(
-                    "p-1.5 rounded-full border shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all",
+                    "rounded-full border shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all",
                     nodeColor,
-                    isHub ? "w-12 h-12 border-2" : "w-8 h-8",
+                    isHub    && "p-1.5 w-12 h-12 border-2",
+                    !isHub && !isPerson && "p-1.5 w-8 h-8",
+                    isPerson && "p-1 w-5 h-5",
                     isSelected && "ring-2 ring-sky-400 ring-offset-2 ring-offset-[#14181c]",
-                    !isHub && agentStates[node.id]?.health <= 0 && "opacity-25"
+                    node.type === "family" && agentStates[node.id]?.health <= 0 && "opacity-25",
+                    isPerson  && (personStates[node.id]?.health ?? 100) <= 0 && "opacity-25"
                   )}
                 >
-                  <IconComponent className={isHub ? "w-6 h-6" : "w-4 h-4"} />
+                  <IconComponent className={cn(isHub ? "w-6 h-6" : isPerson ? "w-2.5 h-2.5" : "w-4 h-4")} />
                 </div>
-                {count > 0 && (
+
+                {/* Badge de mensajes recibidos */}
+                {count > 0 && !isPerson && (
                   <span className="absolute -top-1 -right-1 bg-sky-500 text-white text-[8px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-lg border border-[#14181c]">
                     {count > 99 ? "99+" : count}
                   </span>
                 )}
+
+                {/* Badge de personas (sólo en nodos familia) */}
+                {personBadge > 0 && (
+                  <span className="absolute -bottom-1 -right-1 bg-violet-600 text-white text-[8px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-lg border border-[#14181c]">
+                    {personBadge}
+                  </span>
+                )}
               </div>
-              <span className="text-[9px] mt-1 font-bold bg-[#0f1417]/80 border border-gray-800 px-1.5 py-0.5 rounded shadow whitespace-nowrap">
-                {node.label}
-              </span>
+
+              {/* Etiqueta de texto (no se muestra en nodos persona para evitar saturación) */}
+              {!isPerson && (
+                <span className="text-[9px] mt-1 font-bold bg-[#0f1417]/80 border border-gray-800 px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+                  {node.label}
+                </span>
+              )}
             </motion.div>
           );
         })}
@@ -585,9 +833,9 @@ export function AgentNetworkMap() {
                       {msg.detail && <p className="text-gray-400 truncate">{msg.detail}</p>}
                       <div className="flex items-center gap-1.5 text-gray-500 mt-1">
                         <ArrowDownLeft className="w-3 h-3 text-sky-500" />
-                        <span className="text-blue-300 truncate">{msg.sourceId.replace("PeasantFamily_", "Fam_")}</span>
+                        <span className="text-blue-300 truncate">{msg.sourceId}</span>
                         <span className="text-gray-700">→</span>
-                        <span className="text-amber-300 truncate">{msg.targetId.replace("PeasantFamily_", "Fam_")}</span>
+                        <span className="text-amber-300 truncate">{msg.targetId}</span>
                       </div>
                     </motion.div>
                   ))
@@ -595,7 +843,7 @@ export function AgentNetworkMap() {
               </div>
 
               <div className="px-4 py-2 border-t border-gray-800 bg-black/20 text-[10px] text-gray-500 flex justify-between">
-                <span>{selectedNodeMessages.length} mensajes recibidos</span>
+                <span>{selectedNodeMessages.length} mensajes</span>
                 <span>Click para cerrar</span>
               </div>
             </motion.div>
@@ -617,8 +865,8 @@ export function AgentNetworkMap() {
                   <h3 className="font-bold text-sm text-white truncate max-w-[160px]">
                     {resolveNode(selectedNodeId)?.label || selectedNodeId}
                   </h3>
-                  <p className="text-[10px] text-gray-500 font-mono italic">
-                    {selectedNodeId.replace("PeasantFamily_", "Fam_")}
+                  <p className="text-[10px] text-gray-500 font-mono italic truncate max-w-[160px]">
+                    {selectedNodeId}
                   </p>
                 </div>
               </div>
@@ -631,32 +879,230 @@ export function AgentNetworkMap() {
               </button>
             </div>
 
-            {/* Información de Estado (Solo Familia) */}
+            {/* ── Información de Estado: Familia ── */}
             {agentStates[selectedNodeId] && (
-              <div className="p-3 bg-black/20 border-b border-gray-800 grid grid-cols-3 gap-2">
-                <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
-                  <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Vitalidad</p>
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full",
-                      agentStates[selectedNodeId].health > 0 ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" : "bg-gray-600"
-                    )} />
-                    <span className="text-xs font-mono font-bold">
-                      {agentStates[selectedNodeId].health}%
-                    </span>
+              <div className="p-3 bg-black/20 border-b border-gray-800 space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  {agentStates[selectedNodeId].memberCount !== undefined ? (
+                    /* FamilyCoordinator card */
+                    <>
+                      <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Miembros</p>
+                        <p className="text-xs font-mono font-bold text-violet-300">
+                          {agentStates[selectedNodeId].memberCount}
+                        </p>
+                      </div>
+                      <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Fondo Fam.</p>
+                        <p className="text-xs font-mono text-emerald-400 font-bold truncate">
+                          ${(agentStates[selectedNodeId].familyMoney ?? 0).toLocaleString("es-CO")}
+                        </p>
+                      </div>
+                      <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Tierra</p>
+                        <p className="text-xs font-mono text-amber-500 truncate">
+                          {agentStates[selectedNodeId].farmId || "Sin Tierras"}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    /* PeasantFamily legacy card */
+                    <>
+                      <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Vitalidad</p>
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            agentStates[selectedNodeId].health > 0 ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" : "bg-gray-600"
+                          )} />
+                          <span className="text-xs font-mono font-bold">{agentStates[selectedNodeId].health}%</span>
+                        </div>
+                      </div>
+                      <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Dinero</p>
+                        <p className="text-xs font-mono text-emerald-400 font-bold truncate">
+                          ${agentStates[selectedNodeId].money.toLocaleString("es-CO")}
+                        </p>
+                      </div>
+                      <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Tierra</p>
+                        <p className="text-xs font-mono text-amber-500 truncate">
+                          {agentStates[selectedNodeId].farmId || "Sin Tierras"}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Información de Estado: Persona ── */}
+            {selectedPersonState && (
+              <div className="p-3 bg-black/20 border-b border-gray-800 space-y-2">
+                {/* Rol */}
+                <div className="flex items-center gap-2">
+                  <div className={cn("p-1 rounded-full border", personNodeColor(selectedPersonState.health))}>
+                    {React.createElement(ROLE_ICONS[selectedPersonState.role] || User, { className: "w-3 h-3" })}
                   </div>
+                  <span className="text-xs font-bold text-violet-300">
+                    {ROLE_LABELS[selectedPersonState.role] || selectedPersonState.role}
+                  </span>
+                  <span className="ml-auto text-[10px] text-gray-500 font-mono">
+                    {selectedPersonState.familyAlias}
+                  </span>
                 </div>
-                <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
-                  <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Dinero</p>
-                  <p className="text-xs font-mono text-emerald-400 font-bold truncate">
-                    ${agentStates[selectedNodeId].money.toLocaleString("es-CO")}
-                  </p>
+                {/* Demographics row */}
+                {(selectedPersonState.age > 0 || selectedPersonState.etapaVida) && (
+                  <div className="flex items-center gap-2 text-[10px]">
+                    {selectedPersonState.age > 0 && (
+                      <span className="bg-[#14181c] border border-gray-800 px-2 py-0.5 rounded font-mono text-gray-300">
+                        {selectedPersonState.age} años
+                      </span>
+                    )}
+                    {selectedPersonState.sex && (
+                      <span className={cn(
+                        "px-2 py-0.5 rounded font-bold",
+                        selectedPersonState.sex === "MASCULINO"
+                          ? "bg-blue-900/40 text-blue-300 border border-blue-800"
+                          : "bg-pink-900/40 text-pink-300 border border-pink-800"
+                      )}>
+                        {selectedPersonState.sex === "MASCULINO" ? "♂" : "♀"}
+                      </span>
+                    )}
+                    {selectedPersonState.etapaVida && (
+                      <span className="bg-[#14181c] border border-gray-800 px-2 py-0.5 rounded text-violet-300 italic truncate">
+                        {selectedPersonState.etapaVida.replace(/_/g, " ").toLowerCase()}
+                      </span>
+                    )}
+                    {selectedPersonState.spouseAlias && (
+                      <span className="ml-auto text-[9px] text-pink-400 truncate" title={selectedPersonState.spouseAlias}>
+                        ♥ {selectedPersonState.spouseAlias.split("_").pop()}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Stats grid */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { label: "Salud",      value: `${selectedPersonState.health}%`,      color: "text-red-400" },
+                    { label: "Skills",     value: selectedPersonState.skills.toFixed(2),  color: "text-amber-400" },
+                    { label: "Reputación", value: `${Math.round(selectedPersonState.reputation * 100)}%`, color: "text-purple-400" },
+                    { label: "Dinero",     value: `$${selectedPersonState.money.toLocaleString("es-CO")}`, color: "text-emerald-400" },
+                    { label: "Red Social", value: `${selectedPersonState.socialNetworkSize} p.`, color: "text-pink-400" },
+                    { label: "Interacc.",  value: `${selectedPersonState.totalInteractions}`, color: "text-sky-400" },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} className="p-1.5 bg-[#14181c] rounded border border-gray-800">
+                      <p className="text-[8px] text-gray-500 uppercase font-bold">{label}</p>
+                      <p className={cn("text-[10px] font-mono font-bold truncate", color)}>{value}</p>
+                    </div>
+                  ))}
                 </div>
-                <div className="p-2 bg-[#14181c] rounded-lg border border-gray-800">
-                  <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">Tierra</p>
-                  <p className="text-xs font-mono text-amber-500 truncate">
-                    {agentStates[selectedNodeId].farmId || "Sin Tierras"}
+                {selectedPersonState.currentActivity && (
+                  <p className="text-[10px] text-gray-400 italic bg-black/20 px-2 py-1 rounded truncate">
+                    ▶ {selectedPersonState.currentActivity}
                   </p>
+                )}
+              </div>
+            )}
+
+            {/* ── Red Social de la persona seleccionada ── */}
+            {selectedPersonState && selectedPersonState.socialNetwork.length > 0 && (
+              <div className="border-b border-gray-800">
+                <div className="px-4 py-2 text-[10px] uppercase font-bold text-cyan-400 bg-[#14181c] border-b border-gray-800 flex items-center gap-2">
+                  <Users className="w-3 h-3" />
+                  <span>Red Social ({selectedPersonState.socialNetwork.length})</span>
+                  <span className="ml-auto text-[9px] text-gray-600 normal-case font-normal italic">
+                    líneas cyan en el mapa
+                  </span>
+                </div>
+                <div className="max-h-32 overflow-y-auto custom-scrollbar">
+                  {selectedPersonState.socialNetwork.map(alias => {
+                    const contact = personStates[alias];
+                    const isOnMap  = allNodes.some(n => n.id === alias);
+                    const RoleIcon = contact ? (ROLE_ICONS[contact.role] || User) : User;
+                    const isSpouse = selectedPersonState.spouseAlias === alias;
+                    return (
+                      <button
+                        key={alias}
+                        onClick={() => isOnMap ? setSelectedNodeId(alias) : undefined}
+                        disabled={!isOnMap}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 transition-colors text-left border-b border-gray-800/30 last:border-0 disabled:opacity-40 disabled:cursor-default"
+                      >
+                        {contact ? (
+                          <div className={cn("p-0.5 rounded-full border flex-shrink-0", personNodeColor(contact.health))}>
+                            <RoleIcon className="w-2 h-2" />
+                          </div>
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded-full bg-gray-700 flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[9px] font-mono text-gray-300 truncate">{alias}</p>
+                          {contact && (
+                            <p className="text-[8px] text-gray-500">
+                              {ROLE_LABELS[contact.role] || contact.role}
+                              {contact.age > 0 && ` · ${contact.age}a`}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex-shrink-0 flex items-center gap-1">
+                          {isSpouse && <span className="text-[9px] text-pink-400">♥</span>}
+                          {isOnMap && <span className="text-[8px] text-cyan-600">→</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Lista de personas en la familia seleccionada ── */}
+            {personsForSelectedFamily.length > 0 && (
+              <div className="border-b border-gray-800">
+                <div className="px-4 py-2 text-[10px] uppercase font-bold text-violet-400 bg-[#14181c] border-b border-gray-800 flex items-center gap-2">
+                  <User className="w-3 h-3" />
+                  <span>Personas de esta familia ({personsForSelectedFamily.length})</span>
+                </div>
+                <div className="max-h-40 overflow-y-auto custom-scrollbar">
+                  {personsForSelectedFamily.map(p => {
+                    const RoleIcon = ROLE_ICONS[p.role] || User;
+                    return (
+                      <button
+                        key={p.name}
+                        onClick={() => setSelectedNodeId(p.name)}
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 transition-colors text-left border-b border-gray-800/50 last:border-0"
+                      >
+                        <div className={cn("p-1 rounded-full border flex-shrink-0", personNodeColor(p.health))}>
+                          <RoleIcon className="w-2.5 h-2.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-[10px] font-semibold text-gray-200 truncate">
+                              {ROLE_LABELS[p.role] || p.role}
+                            </p>
+                            {p.sex && (
+                              <span className={cn("text-[8px] font-bold",
+                                p.sex === "MASCULINO" ? "text-blue-400" : "text-pink-400"
+                              )}>
+                                {p.sex === "MASCULINO" ? "♂" : "♀"}
+                              </span>
+                            )}
+                            {p.age > 0 && (
+                              <span className="text-[8px] text-gray-500 font-mono">{p.age}a</span>
+                            )}
+                          </div>
+                          {p.etapaVida && (
+                            <p className="text-[8px] text-violet-400/70 italic">
+                              {p.etapaVida.replace(/_/g, " ").toLowerCase()}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          <p className="text-[9px] text-red-400 font-mono">{p.health}%</p>
+                          <p className="text-[8px] text-gray-600">{p.totalInteractions} int.</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -695,9 +1141,9 @@ export function AgentNetworkMap() {
                           </div>
                           <div className="text-[11px] text-gray-300 leading-tight">
                             {msg.sourceId === selectedNodeId ? (
-                              <p>Envió a <span className="text-amber-500 italic">{msg.targetId.replace("PeasantFamily_", "Fam_")}</span></p>
+                              <p>Envió a <span className="text-amber-500 italic">{msg.targetId}</span></p>
                             ) : (
-                              <p>Recibió de <span className="text-sky-400 italic">{msg.sourceId.replace("PeasantFamily_", "Fam_")}</span></p>
+                              <p>Recibió de <span className="text-sky-400 italic">{msg.sourceId}</span></p>
                             )}
                           </div>
                           {msg.detail && (
@@ -748,13 +1194,9 @@ export function AgentNetworkMap() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-400 mt-1">
-                        <span className="truncate max-w-[100px] text-blue-300">
-                          {msg.sourceId.replace("PeasantFamily_", "Fam_")}
-                        </span>
+                        <span className="truncate max-w-[100px] text-blue-300">{msg.sourceId}</span>
                         <span className="text-gray-700">→</span>
-                        <span className="truncate max-w-[100px] text-amber-300">
-                          {msg.targetId.replace("PeasantFamily_", "Fam_")}
-                        </span>
+                        <span className="truncate max-w-[100px] text-amber-300">{msg.targetId}</span>
                       </div>
                     </motion.div>
                   );

@@ -106,6 +106,7 @@ interface ExperimentTemplate {
     steptime?: number;
     perturbation?: string;
     trainingSlots?: number;
+    personsPerFamily?: number;
   };
 }
 
@@ -262,6 +263,7 @@ export default function SimulatorConfigPage() {
   const [criminality, setCriminality] = useState(3);
   const [steptime, setSteptime] = useState(40);
   const [perturbation, setPerturbation] = useState("");
+  const [personsPerFamily, setPersonsPerFamily] = useState(0);
   const [trainingSlots, setTrainingSlots] = useState(50);
   const [showTourButton, setShowTourButton] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -284,6 +286,7 @@ export default function SimulatorConfigPage() {
     if (template.config.steptime !== undefined) setSteptime(template.config.steptime);
     if (template.config.perturbation !== undefined) setPerturbation(template.config.perturbation);
     if (template.config.trainingSlots !== undefined) setTrainingSlots(template.config.trainingSlots);
+    if (template.config.personsPerFamily !== undefined) setPersonsPerFamily(template.config.personsPerFamily);
     setWater(template.config.water);
     setSeeds(template.config.seeds);
     setTools(template.config.tools);
@@ -325,6 +328,7 @@ export default function SimulatorConfigPage() {
       step: steptime,
       perturbation: perturbation || "none",
       trainingslots: trainingSlots,
+      persons: personsPerFamily,
     };
     return Object.entries(argsObj)
       .filter(([_, value]) => value !== undefined && value !== null)
@@ -551,6 +555,19 @@ export default function SimulatorConfigPage() {
                     <span className="font-mono bg-black px-2 py-0.5 rounded text-primary text-xs">{agents}</span>
                   </div>
                   <Slider value={[agents]} onValueChange={(v) => setAgents(v[0])} min={1} max={500} step={1} />
+                </div>
+
+                {/* Personas por Familia Slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-gray-300 flex items-center gap-2 text-xs">
+                      Personas / Familia
+                    </Label>
+                    <span className="font-mono bg-black px-2 py-0.5 rounded text-violet-400 text-xs">
+                      {personsPerFamily === 0 ? "off" : personsPerFamily}
+                    </span>
+                  </div>
+                  <Slider value={[personsPerFamily]} onValueChange={(v) => setPersonsPerFamily(v[0])} min={0} max={10} step={1} />
                 </div>
 
                 {/* Dinero Slider */}

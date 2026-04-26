@@ -41,5 +41,14 @@ public class SimulationParams {
     public String perturbation = null;
     public int trainingSlots = -1;
     public String world;
+    /** Number of individual Person agents to spawn per PeasantFamily. 0 = disabled. */
+    public int personsPerFamily = 0;
+
+    /**
+     * Number of family containers (FamilyCoordinator + 8 persons each) to create.
+     * When > 0, FamilyFactory is used instead of plain Person agents.
+     * 0 = disabled (legacy mode).
+     */
+    public int families = 0;
 
 }

@@ -26,21 +26,29 @@ RUN cd KernelBESA   && mvn install -N -q -DskipTests \
     && cd ../wpsSimulator && mvn dependency:go-offline -q -P docker \
     && find /root/.m2/repository/io/github/iscoutb -name "*.jar" -delete 2>/dev/null || true
 
-# -- Fuentes completas --
-COPY KernelBESA/    ./KernelBESA/
-COPY LocalBESA/     ./LocalBESA/
-COPY RemoteBESA/    ./RemoteBESA/
-COPY RationalBESA/  ./RationalBESA/
-COPY BDIBESA/       ./BDIBESA/
-COPY eBDIBESA/      ./eBDIBESA/
-COPY wpsSimulator/  ./wpsSimulator/
+# -- Fuentes por módulo: cada COPY+RUN es una capa independiente.
+#    Si sólo cambia wpsSimulator/src, las 6 capas BESA quedan en caché
+#    y sólo se recompila el simulador (~2 min en lugar de ~7 min). --
 
+COPY KernelBESA/    ./KernelBESA/
 RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY LocalBESA/     ./LocalBESA/
 RUN cd LocalBESA    && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
-RUN cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY RemoteBESA/    ./RemoteBESA/
+RUN cd RemoteBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY RationalBESA/  ./RationalBESA/
 RUN cd RationalBESA && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY BDIBESA/       ./BDIBESA/
 RUN cd BDIBESA      && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY eBDIBESA/      ./eBDIBESA/
 RUN cd eBDIBESA     && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY wpsSimulator/  ./wpsSimulator/
 RUN cd wpsSimulator && mvn package -q -DskipTests \
     -Dmaven.javadoc.skip=true -Dmaven.source.skip=true \
     -P docker

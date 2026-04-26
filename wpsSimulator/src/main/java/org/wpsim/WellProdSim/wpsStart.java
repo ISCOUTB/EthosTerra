@@ -22,6 +22,10 @@ import org.wpsim.CivicAuthority.Agent.CivicAuthority;
 import org.wpsim.CommunityDynamics.Agent.CommunityDynamics;
 import org.wpsim.MarketPlace.Agent.MarketPlace;
 import org.wpsim.PeasantFamily.Agent.PeasantFamily;
+import org.wpsim.Person.Agent.Person;
+import org.wpsim.WellProdSim.FamilyFactory;
+import org.wpsim.Person.Data.PersonProfile;
+import org.wpsim.Person.Data.SocialRole;
 import org.wpsim.PerturbationGenerator.Agent.PerturbationGenerator;
 import org.wpsim.SimulationControl.Agent.SimulationControl;
 import org.wpsim.SimulationControl.Util.ControlCurrentDate;
@@ -92,6 +96,8 @@ public class wpsStart {
         options.addOption(new Option("step", true, "Step Time"));
         options.addOption(new Option("perturbation", true, "Perturbation type"));
         options.addOption(new Option("trainingslots", true, "Training Slots per Year"));
+        options.addOption(new Option("persons", true, "Individual Person agents per family"));
+        options.addOption(new Option("families", true, "Family containers (FamilyCoordinator + 8 persons each)"));
 
         // Crear el parser para los argumentos
         CommandLineParser parser = new DefaultParser();
@@ -166,6 +172,12 @@ public class wpsStart {
             if (cmd.hasOption("trainingslots")) {
                 params.trainingSlots = Integer.parseInt(cmd.getOptionValue("trainingslots"));
             }
+            if (cmd.hasOption("persons")) {
+                params.personsPerFamily = Integer.parseInt(cmd.getOptionValue("persons"));
+            }
+            if (cmd.hasOption("families")) {
+                params.families = Integer.parseInt(cmd.getOptionValue("families"));
+            }
 
 
         } catch (Exception e) {
@@ -217,10 +229,20 @@ public class wpsStart {
                 createServices();
                 pauseThread(2000); // give services time to register before peasants start
                 createPeasants(config.peasantSerialID, peasantFamiliesAgents);
+                if (params.families > 0) {
+                    createFamilies(params.families);
+                } else if (params.personsPerFamily > 0) {
+                    createPersons(peasantFamiliesAgents, params.personsPerFamily);
+                }
                 showRunningAgents();
             }
             case "worker" -> {
                 createPeasants(config.peasantSerialID, peasantFamiliesAgents);
+                if (params.families > 0) {
+                    createFamilies(params.families);
+                } else if (params.personsPerFamily > 0) {
+                    createPersons(peasantFamiliesAgents, params.personsPerFamily);
+                }
                 showRunningAgents();
             }
             default -> System.err.println("Unknown role '" + params.role
@@ -278,6 +300,54 @@ public class wpsStart {
     }
 
     /**
+     * Role distribution for individual Person agents (cycles through in order).
+     * Reflects a typical rural Colombian community composition.
+     */
+    private static final SocialRole[] ROLE_CYCLE = {
+            SocialRole.AGRICULTOR,
+            SocialRole.JORNALERO,
+            SocialRole.AGRICULTOR,
+            SocialRole.AMA_DE_CASA,
+            SocialRole.COMERCIANTE,
+            SocialRole.AGRICULTOR,
+            SocialRole.JORNALERO,
+            SocialRole.LIDER_COMUNITARIO,
+            SocialRole.AGRICULTOR,
+            SocialRole.MAESTRA,
+    };
+
+    /**
+     * Creates individual Person agents alongside the PeasantFamily agents.
+     * Each family (identified by its alias) spawns a set of persons with
+     * complementary social roles. The count parameter controls how many
+     * persons per family are created.
+     *
+     * @param familyCount number of PeasantFamily agents already created
+     * @param personsPerFamily number of individual persons to create per family
+     */
+    public static void createPersons(int familyCount, int personsPerFamily) {
+        int personIndex = 1;
+        try {
+            for (int f = 1; f <= familyCount; f++) {
+                String familyAlias = params.mode + "PeasantFamily" + f;
+                for (int p = 0; p < personsPerFamily; p++) {
+                    SocialRole role = ROLE_CYCLE[personIndex % ROLE_CYCLE.length];
+                    String personAlias = params.mode + "Person" + personIndex;
+                    PersonProfile profile = new PersonProfile(personAlias, familyAlias, role);
+                    profile.setPersonality(params.personality != -1.0 ? params.personality : 0.5);
+                    Person person = new Person(personAlias, profile);
+                    person.start();
+                    CREATED_AGENTS++;
+                    personIndex++;
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("Error creating Person agents: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    /**
      * Creates the services for peasant family agents.
      */
     private static void createServices() {
@@ -296,6 +366,22 @@ public class wpsStart {
             System.err.println(ex.getMessage() + " wpsStart_noOK");
         }
         pauseThread(1000);
+    }
+
+    /**
+     * Creates family containers using {@link FamilyFactory}.
+     * Each family = 1 FamilyCoordinator + 8 demographically realistic Person agents.
+     *
+     * @param count number of families to create
+     */
+    public static void createFamilies(int count) {
+        double money      = params.money      != -1 ? params.money      : 1_500_000;
+        int    tools      = params.tools      != -1 ? params.tools      : 10;
+        int    seeds      = params.seeds      != -1 ? params.seeds      : 10;
+        int    water      = params.water      != -1 ? params.water      : 10;
+        double personality = params.personality != -1.0 ? params.personality : 0.5;
+
+        FamilyFactory.createFamilies(count, params.mode, money, tools, seeds, water, personality);
     }
 
     /**

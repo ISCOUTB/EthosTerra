@@ -42,6 +42,7 @@ const ALLOWED_FLAGS = new Set([
   "-step",
   "-perturbation",
   "-trainingslots",
+  "-persons",
 ]);
 
 // Caracteres que indican intento de inyección de comandos
