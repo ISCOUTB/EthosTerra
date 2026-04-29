@@ -106,6 +106,21 @@ public abstract class AdmBESA {
         }
         return INSTANCE;
     }
+    /**
+     * Programmatic instantiation of BESA ignoring external files
+     * @param config The ConfigBESA configuration object
+     * @return AdmBESA instance
+     */
+    public static AdmBESA getInstance(ConfigBESA config) {
+        if (INSTANCE == null) {
+            try {
+                createSingletonInstance(config);
+            } catch (ExceptionBESA ex) {
+                ReportBESA.error(ex);
+            }
+        }
+        return INSTANCE;
+    }
 
     /**
      * Creates a new instance of the container administrator.
@@ -147,6 +162,16 @@ public abstract class AdmBESA {
         }
     }
 
+    /**
+     * Programmatic instance creation using an already parsed/built ConfigBESA
+     * @param configBESA The configuration object
+     * @throws ExceptionBESA BESA Exception.
+     */
+    private synchronized static void createSingletonInstance(ConfigBESA configBESA) throws ExceptionBESA {
+        if (INSTANCE == null) {
+            environmentCase(configBESA);
+        }
+    }
     /**
      *
      * @param configBESA

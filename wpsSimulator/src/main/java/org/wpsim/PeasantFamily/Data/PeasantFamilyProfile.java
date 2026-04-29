@@ -1215,7 +1215,27 @@ public class PeasantFamilyProfile implements Serializable, Cloneable {
      *
      */
     public synchronized void increaseTrainingLevel() {
-        this.trainingLevel = 1;
+        if (this.trainingLevel < 1.0) {
+            this.trainingLevel = Math.min(1.0, this.trainingLevel + 0.2);
+        }
+    }
+
+    /**
+     * Returns a bonus factor for market transactions.
+     * Calculated as 10% of the training level.
+     * @return bonus factor (0.0 to 0.1)
+     */
+    public double getTrainingBonus() {
+        return this.trainingLevel * 0.1;
+    }
+
+    /**
+     * Returns an efficiency factor for resource consumption.
+     * Calculated as a 20% max reduction in usage/waste.
+     * @return efficiency factor (1.0 to 0.8)
+     */
+    public double getEfficiencyFactor() {
+        return 1.0 - (this.trainingLevel * 0.2);
     }
 
     /**

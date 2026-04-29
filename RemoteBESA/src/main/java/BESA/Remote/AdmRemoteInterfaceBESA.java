@@ -6,7 +6,6 @@
  */
 package BESA.Remote;
 
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import BESA.Kernel.Agent.StateBESA;
@@ -21,7 +20,7 @@ import BESA.Kernel.Agent.Event.EventBESA;
  * @version 2.0, 11/01/11
  * @since   JDK1.0
  */
-public interface AdmRemoteInterfaceBESA extends Remote {
+public interface AdmRemoteInterfaceBESA {
 
     /**
      * Makes the registry of an remote BESA administrator.

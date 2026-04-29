@@ -69,8 +69,8 @@ public class PingThread extends Thread {
             RemoteAdmHandlerBESA admHandler = (RemoteAdmHandlerBESA) admLocal.getAdmHandler();
             String msg = new String(msgType + RemoteAdmBESA.MULTICAST_DELIMITER
                     + admHandler.getAlias() + RemoteAdmBESA.MULTICAST_DELIMITER
-                    + admHandler.getIpRmiRegistry() + RemoteAdmBESA.MULTICAST_DELIMITER
-                    + admHandler.getPortRmiRegistry() + RemoteAdmBESA.MULTICAST_DELIMITER
+                    + "" + RemoteAdmBESA.MULTICAST_DELIMITER
+                    + "0" + RemoteAdmBESA.MULTICAST_DELIMITER
                     + (msgStamp++) + RemoteAdmBESA.MULTICAST_DELIMITER
                     + admHandler.getAdmId()
                     );

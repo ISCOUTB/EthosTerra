@@ -6,50 +6,53 @@
  */
 package BESA.Remote;
 
-import BESA.Remote.RemoteAdmBESA;
-import BESA.Remote.AdmRemoteImpBESA;
-import BESA.Remote.AdmRemoteInterfaceBESA;
-import BESA.Remote.DistributedExceptionBESA;
-import BESA.ExceptionBESA;
-import BESA.Kernel.System.SystemExceptionBESA;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.rmi.Naming;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import BESA.Kernel.Agent.AgentBESA;
 import BESA.Kernel.System.Directory.AdmHandlerBESA;
 import BESA.Kernel.System.SystemExceptionBESA;
 import BESA.Log.ReportBESA;
 import BESA.Remote.Directory.RemoteAdmHandlerBESA;
-import java.net.MalformedURLException;
+import BESA.Remote.RabbitMQ.ContainerAnnouncementBESA;
+import BESA.Remote.RabbitMQ.RabbitMQDiscoveryConsumer;
+import BESA.Remote.RabbitMQ.RabbitMQManager;
+import BESA.Remote.RabbitMQ.RabbitMQMessageConsumer;
+import com.rabbitmq.client.Channel;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
- * This class provides methods that allow initialize the associated parameters
- * to handling of remote BESA containers.
- * 
+ * Initializes distributed (multi-container) BESA using RabbitMQ.
+ *
+ * <p>Each container:
+ * <ul>
+ *   <li>Declares a durable, addressable queue {@code besa.container.<alias>}
+ *       bound to the direct exchange {@code besa.exchange}.</li>
+ *   <li>Joins the fanout exchange {@code besa.discovery} for zero-config
+ *       peer discovery.</li>
+ *   <li>Publishes its own {@link ContainerAnnouncementBESA} on startup and
+ *       every 30 s so late-joining peers can learn about it.</li>
+ * </ul>
+ *
  * @author  SIDRe - Pontificia Universidad Javeriana
  * @author  Takina  - Pontificia Universidad Javeriana
- * @version 2.0, 11/01/11
- * @since   JDK1.0
+ * @version 3.0
  */
 public class DistributedInitBESA {
 
-    /**
-     * The constructor of this class initializes the associated remote access
-     * parameters to a BESA container.
-     *
-     * @param admBesa The BESA administrator to be initialized.
-     * @param admHandler The BESA administrator handler.
-     * @param portRmiRegistry The container RPC associated port.
-     * @param multicastAddr The container multicast associated address.
-     * @param multicastPort The container multicast associated port.
-     */
-    public DistributedInitBESA(RemoteAdmBESA admBesa, RemoteAdmHandlerBESA admHandler, int portRmiRegistry, String multicastAddr, int multicastPort) throws DistributedExceptionBESA {
+    /** Interval (ms) at which each container re-broadcasts its announcement. */
+    private static final long HEARTBEAT_INTERVAL_MS = 30_000;
+
+    public DistributedInitBESA(RemoteAdmBESA admBesa, RemoteAdmHandlerBESA admHandler,
+                                int portRmiRegistry, String multicastAddr, int multicastPort)
+            throws DistributedExceptionBESA {
+
         boolean isMulticastAddress = false;
         try {
             isMulticastAddress = InetAddress.getByName(multicastAddr).isMulticastAddress();
@@ -57,185 +60,167 @@ public class DistributedInitBESA {
             ReportBESA.error("Couldn't check the multicast address");
             throw new DistributedExceptionBESA("Couldn't check the multicast address: " + e.toString());
         }
+
         if (isMulticastAddress) {
             initWithMulticast(admBesa, admHandler, portRmiRegistry, multicastAddr, multicastPort);
         } else {
-            intWithSocketsMulticast(admBesa, admHandler, portRmiRegistry, multicastAddr, multicastPort);
+            initWithSockets(admBesa, admHandler, portRmiRegistry, multicastAddr, multicastPort);
         }
     }
 
-    /**
-     * Initializes the container remote parameters if the multicast provided
-     * address is valid.
-     *
-     * @param admBesa The BESA administrator to be initialized.
-     * @param admHandler The BESA administrator handler.
-     * @param portRmiRegistry The container RPC associated port.
-     * @param multicastAddr The container multicast associated address.
-     * @param multicastPort The container multicast associated port.
-     */
-    private static void initWithMulticast(RemoteAdmBESA admBesa, RemoteAdmHandlerBESA admHandler, int portRmiRegistry, String multicastaddr, int multicastport) throws DistributedExceptionBESA {
-        // Init de multicast - puerto, dir_inet y socket
-        admBesa.setMulticastPort(multicastport);
+    // -------------------------------------------------------------------------
+    // Multicast-address path (standard Docker / cloud deployment)
+    // -------------------------------------------------------------------------
+
+    private static void initWithMulticast(RemoteAdmBESA admBesa, RemoteAdmHandlerBESA admHandler,
+                                           int portRmiRegistry, String multicastAddr, int multicastPort)
+            throws DistributedExceptionBESA {
+
+        admBesa.setMulticastPort(multicastPort);
         try {
-            admBesa.setMulticastInetAddr(InetAddress.getByName(multicastaddr));
-            admBesa.setMulticastSocket(new MulticastSocket(multicastport));
+            admBesa.setMulticastInetAddr(InetAddress.getByName(multicastAddr));
+            admBesa.setMulticastSocket(new MulticastSocket(multicastPort));
             admBesa.getMulticastSocket().joinGroup(admBesa.getMulticastInetAddr());
         } catch (UnknownHostException e) {
-            ReportBESA.error("Couldn't get the multicast address");
             throw new DistributedExceptionBESA("Couldn't get the multicast address: " + e.toString());
         } catch (IOException e) {
-            ReportBESA.error("Couldn't start the socket multicast");
-            throw new DistributedExceptionBESA("Couldn't start the socket multicast: " + e.toString());
+            throw new DistributedExceptionBESA("Couldn't start the multicast socket: " + e.toString());
         }
-        ReportBESA.trace("BESA ha inicializado socket multicast: "
-                + admBesa.getMulticastInetAddr() + ":"
-                + admBesa.getMulticastPort());
+        ReportBESA.trace("BESA multicast socket: "
+                + admBesa.getMulticastInetAddr() + ":" + admBesa.getMulticastPort());
 
-        // Init de la variable estatica admLocal compartida por todos los agentes/administradores
         AgentBESA.initAdmLocal(admBesa);
         AdmRemoteImpBESA.initAdmLocal(admBesa);
 
-        // Registro RMI para servicios de administracion remota
-        startRMIService(portRmiRegistry, admBesa);
-
-        String rmiName = admHandler.generateRmiUrl();
-
-        AdmRemoteInterfaceBESA server = null;
-        try {
-            server = new AdmRemoteImpBESA();
-            Naming.rebind(rmiName, server);
-        } catch (RemoteException ex) {
-            ReportBESA.error("Couldn't create the remote interface");
-            throw new DistributedExceptionBESA("Couldn't create the remote interface: " + ex.toString());
-        } catch (MalformedURLException ex) {
-            ReportBESA.error("Couldn't register with RMI registry");
-            throw new DistributedExceptionBESA("Couldn't register with RMI registry: " + ex.toString());
-        }
-
-        ReportBESA.trace("BESA ha registrado a: " + rmiName);
-
-        // Lanzar hilo para recibir/escuchar multicast
-
-        admBesa.setPong(new PongThread(admBesa));
-        admBesa.getPong().start();
-        // Lanzar hilo para enviar multicast
-        admBesa.setPing(new PingThread(admBesa));
-        admBesa.getPing().start();
+        initRabbitMQ(admBesa, admHandler);
     }
 
-    /**
-     * Initializes the container remote parameters if the multicast provided
-     * address isn't valid.
-     *
-     * @param admBesa The BESA administrator to be initialized.
-     * @param admHandler The BESA administrator handler.
-     * @param portRmiRegistry The container RPC associated port.
-     * @param multicastAddr The container multicast associated address.
-     * @param multicastPort The container multicast associated port.
-     */
-    private static void intWithSocketsMulticast(RemoteAdmBESA admBesa, RemoteAdmHandlerBESA admHandler, int portRmiRegistry, String multicastaddr, int multicastport) throws DistributedExceptionBESA {
-        // Init de multicast - puerto, dir_inet y socket
-        admBesa.setMulticastPort(multicastport);
+    // -------------------------------------------------------------------------
+    // Socket/unicast path (loopback or direct-IP deployments)
+    // -------------------------------------------------------------------------
+
+    private static void initWithSockets(RemoteAdmBESA admBesa, RemoteAdmHandlerBESA admHandler,
+                                         int portRmiRegistry, String multicastAddr, int multicastPort)
+            throws DistributedExceptionBESA {
+
+        admBesa.setMulticastPort(multicastPort);
         try {
-            admBesa.setMulticastInetAddr(InetAddress.getByName(multicastaddr));
+            admBesa.setMulticastInetAddr(InetAddress.getByName(multicastAddr));
         } catch (UnknownHostException ex) {
-            ReportBESA.error("[DistributedInitBESA::intWithSocketsMulticast] Couldn't get the multicast address");
-            throw new DistributedExceptionBESA("Couldn't get the multicast address: " + ex.toString());
+            throw new DistributedExceptionBESA("Couldn't get the address: " + ex.toString());
         }
 
-        //1. Identificar si el ServerSocket esta corriendo en el puerto
         if (admBesa.getMulticastInetAddr().isLoopbackAddress()) {
-            //La direcci�n es local por lo que debo iniciar el servidor
-            //Si ya existe, solo sale un mensaje de depuracion
-            SocketServer ss = new SocketServer(admBesa,
-                    admBesa.getMulticastPort());
-            //Inicia el puerto
+            SocketServer ss = new SocketServer(admBesa, admBesa.getMulticastPort());
             if (ss.startServerSocket()) {
-                //Inicia recepcion
                 ss.start();
             }
         }
 
-        //2. Conectarse al serverSocket
         Socket socket;
         try {
-            socket = new Socket(admBesa.getMulticastInetAddr(),
-                    admBesa.getMulticastPort());
+            socket = new Socket(admBesa.getMulticastInetAddr(), admBesa.getMulticastPort());
             admBesa.setSocketPingPong(socket);
         } catch (UnknownHostException e) {
-            ReportBESA.error("Don't know about host: " + multicastaddr);
-            throw new DistributedExceptionBESA("Don't know about host: " + multicastaddr + ": " + e.toString());
-
+            throw new DistributedExceptionBESA("Don't know about host: " + multicastAddr + ": " + e.toString());
         } catch (IOException e) {
-            ReportBESA.error("Couldn't get I/O for " + "the connection to: " + multicastaddr);
-            throw new DistributedExceptionBESA("Couldn't get I/O for " + "the connection to: " + multicastaddr + ": " + e.toString());
+            throw new DistributedExceptionBESA("Couldn't get I/O for connection to: " + multicastAddr + ": " + e.toString());
         }
 
-        /*
-        admBesa.setMulticastSocket(new MulticastSocket(multicastport));
-        admBesa.getMulticastSocket().joinGroup(admBesa.getMulticastInetAddr());
-         */
-        ReportBESA.trace("BESA ha inicializado socket multicast: "
-                + admBesa.getMulticastInetAddr() + ":"
-                + admBesa.getMulticastPort());
+        ReportBESA.trace("BESA socket: "
+                + admBesa.getMulticastInetAddr() + ":" + admBesa.getMulticastPort());
 
-        // Init de la variable estatica admLocal compartida por todos los agentes/administradores
         AgentBESA.initAdmLocal(admBesa);
         AdmRemoteImpBESA.initAdmLocal(admBesa);
 
-        // Registro RMI para servicios de administracion remota
-        //Si ya existe simplemente lo agarra
-        startRMIService(portRmiRegistry, admBesa);
-        String rmiName = null;
-        try {
-            rmiName = admHandler.generateRmiUrl();
-            AdmRemoteInterfaceBESA server = new AdmRemoteImpBESA();
-            Naming.rebind(rmiName, server);
-        } catch (RemoteException ex) {
-            ReportBESA.error("Couldn't create the remote interface");
-            throw new DistributedExceptionBESA("Couldn't create the remote interface: " + ex.toString());
-        } catch (MalformedURLException ex) {
-            ReportBESA.error("Couldn't register with RMI registry");
-            throw new DistributedExceptionBESA("Couldn't register with RMI registry: " + ex.toString());
-        }
-        ReportBESA.trace("BESA ha registrado a: " + rmiName);
+        initRabbitMQ(admBesa, admHandler);
 
-        // Lanzar hilo para recibir/escuchar multicast
         admBesa.setPong(new PongSocketThread(admBesa));
         admBesa.getPong().start();
         try {
-            // Lanzar hilo para enviar multicast
             admBesa.setPing(new PingSocketThread(admBesa));
         } catch (SystemExceptionBESA ex) {
-            ex.printStackTrace();//TODO
+            ex.printStackTrace();
         }
         admBesa.getPing().start();
-
     }
 
+    // -------------------------------------------------------------------------
+    // Shared RabbitMQ initialisation
+    // -------------------------------------------------------------------------
+
     /**
-     * Creates the RPC service.
+     * Connects to RabbitMQ, declares the container's addressable queue and
+     * wires up the discovery exchange.
      *
-     * @param portRmiRegistry The container RPC associated port.
-     * @param admBesa The BESA container.
+     * <p>Queue naming convention: {@code besa.container.<alias>}
+     * (predictable; no UUID — enables static routing keys).
      */
-    private static void startRMIService(int portRmiRegistry, RemoteAdmBESA admBesa) throws DistributedExceptionBESA {
-        @SuppressWarnings("unused")
-        Registry rmiRegistry;
-        rmiRegistry = null;
+    private static void initRabbitMQ(RemoteAdmBESA admBesa, RemoteAdmHandlerBESA admHandler)
+            throws DistributedExceptionBESA {
         try {
-            try {
-                rmiRegistry = LocateRegistry.createRegistry(portRmiRegistry);
-                Thread.sleep(admBesa.getConfigBESA().getRMITimeout());
-            } catch (RemoteException e1) {
-                rmiRegistry = LocateRegistry.getRegistry(portRmiRegistry);
-                Thread.sleep(admBesa.getConfigBESA().getRMITimeout());
-            }
-            ((RemoteAdmHandlerBESA)admBesa.getAdmHandler()).setRmiRegistry(rmiRegistry);
-        } catch (Exception e) {
-            ReportBESA.error("Could not Create RMI service or it is already running");
-            throw new DistributedExceptionBESA("Could not Create RMI service or it is already running: " + e.toString());
+            RabbitMQManager.getInstance().init(admBesa.getConfigBESA());
+            Channel channel = RabbitMQManager.getInstance().getChannel();
+
+            // --- Addressable queue (direct exchange) -------------------------
+            String alias     = admHandler.getAlias();
+            String queueName = "besa.container." + alias;
+
+            channel.queueDeclare(queueName, false, false, false, null);
+            channel.queueBind(queueName, RabbitMQManager.EXCHANGE_NAME, queueName);
+
+            AdmRemoteImpBESA server = new AdmRemoteImpBESA();
+            channel.basicConsume(queueName, true, new RabbitMQMessageConsumer(channel, server));
+            ReportBESA.trace("RabbitMQ consumer on queue: " + queueName);
+
+            // --- Discovery (fanout exchange) ----------------------------------
+            channel.exchangeDeclare(RabbitMQDiscoveryConsumer.DISCOVERY_EXCHANGE, "fanout", true);
+
+            // Exclusive, auto-delete queue — lives only as long as this container
+            String discoveryQueue = channel.queueDeclare("", false, true, true, null).getQueue();
+            channel.queueBind(discoveryQueue, RabbitMQDiscoveryConsumer.DISCOVERY_EXCHANGE, "");
+            channel.basicConsume(discoveryQueue, true,
+                    new RabbitMQDiscoveryConsumer(channel, admBesa, alias));
+
+            // Publish own announcement immediately and schedule a heartbeat
+            publishAnnouncement(channel, admHandler);
+            scheduleHeartbeat(channel, admHandler);
+
+            ReportBESA.trace("Container '" + alias + "' ready for discovery.");
+
+        } catch (Exception ex) {
+            ReportBESA.error("Couldn't initialise RabbitMQ: " + ex.getMessage());
+            throw new DistributedExceptionBESA("Couldn't initialise RabbitMQ: " + ex.toString());
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Discovery helpers
+    // -------------------------------------------------------------------------
+
+    private static void publishAnnouncement(Channel channel, RemoteAdmHandlerBESA admHandler)
+            throws IOException {
+        ContainerAnnouncementBESA ann =
+                new ContainerAnnouncementBESA(admHandler.getAlias(), admHandler.getAdmId());
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream    oos = new ObjectOutputStream(bos);
+        oos.writeObject(ann);
+        oos.flush();
+        channel.basicPublish(RabbitMQDiscoveryConsumer.DISCOVERY_EXCHANGE, "", null, bos.toByteArray());
+        ReportBESA.trace("Discovery announcement published: " + admHandler.getAlias());
+    }
+
+    private static void scheduleHeartbeat(Channel channel, RemoteAdmHandlerBESA admHandler) {
+        Timer timer = new Timer("besa-discovery-heartbeat", true /* daemon */);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    publishAnnouncement(channel, admHandler);
+                } catch (Exception e) {
+                    ReportBESA.error("Discovery heartbeat failed: " + e.getMessage());
+                }
+            }
+        }, HEARTBEAT_INTERVAL_MS, HEARTBEAT_INTERVAL_MS);
     }
 }

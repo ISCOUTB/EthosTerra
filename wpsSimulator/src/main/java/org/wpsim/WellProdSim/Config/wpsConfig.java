@@ -139,7 +139,9 @@ public final class wpsConfig {
         try {
             String[] resourceNames = {
                     "water", "seeds", "pesticides",
-                    "tools", "livestock", "rice", "roots"
+                    "tools", "livestock",
+                    "rice", "roots", "maiz", "frijol",
+                    "cafe", "platano"
             };
 
             for (String resourceName : resourceNames) {
@@ -221,6 +223,16 @@ public final class wpsConfig {
     }
 
 
+    public String loadWorldFile(String world) {
+        // Try filesystem first (e.g. web/mediumworld.json from volume mount)
+        String result = loadFile("web/" + world + ".json");
+        if (result == null) {
+            // Fall back to JAR resource path (e.g. web/data/world.100.json)
+            result = loadFile("web/data/world." + world + ".json");
+        }
+        return result;
+    }
+
     public String loadFile(String fileName) {
         InputStream inputStream = null;
         try {
@@ -272,9 +284,11 @@ public final class wpsConfig {
 
         PeasantFamilyProfile pfProfile = this.getDefaultPeasantFamilyProfile();
 
+        double pfVariance = (params.variance != -1.0) ? params.variance : getDoubleProperty("pfagent.variance");
+
         double rnd = 1 + generateRandomNumber(
-                getDoubleProperty("pfagent.variance") * -1,
-                getDoubleProperty("pfagent.variance")
+                pfVariance * -1,
+                pfVariance
         );
 
         if (params.money != -1) {
@@ -311,7 +325,8 @@ public final class wpsConfig {
         pfProfile.setMinimumVital(wpsStart.config.getIntProperty("pfagent.minimalVital") * rnd);
 
         Random rand = new Random();
-        if (rand.nextInt(101) <= getIntProperty("society.criminality")) {
+        int criminalityThreshold = (params.criminality != -1) ? params.criminality : getIntProperty("society.criminality");
+        if (rand.nextInt(101) <= criminalityThreshold) {
             pfProfile.setCriminalityAffinity(true);
         }
 
@@ -332,7 +347,9 @@ public final class wpsConfig {
 
     public Double getDoubleProperty(String property) {
         try {
-            return Double.parseDouble(properties.getProperty(property));
+            String value = properties.getProperty(property);
+            if (value == null) return 0.0;
+            return Double.parseDouble(value);
         } catch (NumberFormatException e) {
             return 0.0;
         }
@@ -340,7 +357,9 @@ public final class wpsConfig {
 
     public int getIntProperty(String property) {
         try {
-            return Integer.parseInt(properties.getProperty(property));
+            String value = properties.getProperty(property);
+            if (value == null) return 0;
+            return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             return 0;
         }

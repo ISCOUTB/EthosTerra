@@ -5,9 +5,8 @@ export default function DownloadPage() {
     <div className="analytics-container p-6 md:p-8">
       <h1 className="text-3xl font-bold mb-6 font-clash">Data Export</h1>
       <p className="text-muted-foreground mb-8 max-w-3xl">
-        Download simulation results from WellProdSim for detailed analysis and
-        reporting. detailed analysis and report generation. You can preview the
-        data before before downloading.
+        Download simulation results from EthosTerra for detailed analysis and
+        reporting. You can preview the data before downloading.
       </p>
 
       <div className="slide-in">

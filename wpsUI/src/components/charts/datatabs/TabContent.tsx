@@ -69,7 +69,7 @@ useEffect(() => {
   const loadAgents = async () => {
     try {
       console.log("Cargando agentes...");
-      const response = await window.electronAPI.readCsv();
+      const response = await fetch("/api/simulator/csv").then((r) => r.json());
       if (!response.success || !response.data) {
         console.error("Error al leer CSV:", response.error || "Error desconocido");
         return;

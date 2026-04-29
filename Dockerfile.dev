@@ -1,0 +1,101 @@
+# ============================================================
+# Stage 1: Compilar todos los JARs Java (igual que prod)
+#           El caché de Docker evita recompilar si Java no cambia.
+# ============================================================
+FROM eclipse-temurin:21-jdk-jammy AS java-build
+
+RUN apt-get update && apt-get install -y --no-install-recommends maven && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# -- Cache Maven: sólo pom.xml primero --
+COPY KernelBESA/pom.xml    ./KernelBESA/pom.xml
+COPY LocalBESA/pom.xml     ./LocalBESA/pom.xml
+COPY RemoteBESA/pom.xml    ./RemoteBESA/pom.xml
+COPY RationalBESA/pom.xml  ./RationalBESA/pom.xml
+COPY BDIBESA/pom.xml       ./BDIBESA/pom.xml
+COPY eBDIBESA/pom.xml      ./eBDIBESA/pom.xml
+COPY wpsSimulator/pom.xml  ./wpsSimulator/pom.xml
+
+RUN cd KernelBESA   && mvn install -N -q -DskipTests \
+    && cd ../LocalBESA    && mvn install -N -q -DskipTests \
+    && cd ../RemoteBESA   && mvn install -N -q -DskipTests \
+    && cd ../RationalBESA && mvn install -N -q -DskipTests \
+    && cd ../BDIBESA      && mvn install -N -q -DskipTests \
+    && cd ../eBDIBESA     && mvn install -N -q -DskipTests \
+    && cd ../wpsSimulator && mvn dependency:go-offline -q -P docker \
+    && find /root/.m2/repository/io/github/iscoutb -name "*.jar" -delete 2>/dev/null || true
+
+# -- Fuentes por módulo: cada COPY+RUN es una capa independiente.
+#    Si sólo cambia wpsSimulator/src, las 6 capas BESA quedan en caché
+#    y sólo se recompila el simulador (~2 min en lugar de ~7 min). --
+
+COPY KernelBESA/    ./KernelBESA/
+RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY LocalBESA/     ./LocalBESA/
+RUN cd LocalBESA    && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY RemoteBESA/    ./RemoteBESA/
+RUN cd RemoteBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY RationalBESA/  ./RationalBESA/
+RUN cd RationalBESA && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY BDIBESA/       ./BDIBESA/
+RUN cd BDIBESA      && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY eBDIBESA/      ./eBDIBESA/
+RUN cd eBDIBESA     && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+
+COPY wpsSimulator/  ./wpsSimulator/
+RUN cd wpsSimulator && mvn package -q -DskipTests \
+    -Dmaven.javadoc.skip=true -Dmaven.source.skip=true \
+    -P docker
+
+# ============================================================
+# Stage 2: Runtime de desarrollo
+#           - Next.js en modo DEV (hot reload via volumen)
+#           - SIN `next build` → arranque rápido
+#           - Puerto 5005 para debug remoto de Java (attach IntelliJ/VSCode)
+# ============================================================
+FROM eclipse-temurin:21-jre-jammy AS devapp
+
+RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+
+# Node.js 20 (igual que el Dockerfile de prod)
+COPY --from=node:20-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:20-slim /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && node --version && npm --version
+
+WORKDIR /app
+
+# JAR compilado desde el stage anterior
+COPY --from=java-build \
+    /build/wpsSimulator/target/wps-simulator-3.6.0.jar \
+    /app/wps-simulator.jar
+
+# Solo manifiestos de npm — src/ y public/ se montan como volúmenes
+COPY wpsUI/package.json wpsUI/tsconfig.json wpsUI/next.config.mjs \
+     wpsUI/tailwind.config.ts wpsUI/postcss.config.mjs ./
+
+RUN npm install
+
+# Directorio de logs (sobreescrito por bind-mount en compose)
+RUN mkdir -p /app/logs
+
+EXPOSE 3000
+EXPOSE 8000
+# Java remote debug (attach desde IntelliJ/VSCode con "Remote JVM Debug")
+EXPOSE 5005
+
+ENV HOSTNAME=0.0.0.0
+ENV WPS_JAR_PATH=/app/wps-simulator.jar
+ENV NODE_ENV=development
+
+# next dev con -H para aceptar conexiones de cualquier interfaz dentro del contenedor
+# npm install al arrancar: detecta nuevas deps en package.json sin rebuild.
+# Con el volumen nombrado node_modules_dev, si no hay cambios tarda ~1s.
+CMD ["sh", "-c", "npm install --prefer-offline && npx next dev --turbo -H 0.0.0.0 -p 3000"]

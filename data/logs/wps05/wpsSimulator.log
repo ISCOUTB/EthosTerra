@@ -1,0 +1,3 @@
+04:05:02.828 [main] |-[39mDEBUG[0;39m c.r.client.impl.ConsumerWorkService  - Creating executor service with 12 thread(s) for consumer work service
+04:05:03.085 [Thread-4] |-[39mDEBUG[0;39m org.jboss.logging  - Logging Provider: org.jboss.logging.Slf4jLoggerProvider
+04:05:03.393 [Thread-4] |-[34mINFO [0;39m org.jboss.threads  - JBoss Threads version 3.5.0.Final

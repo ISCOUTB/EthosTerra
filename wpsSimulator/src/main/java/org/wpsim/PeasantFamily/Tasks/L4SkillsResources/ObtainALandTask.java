@@ -65,8 +65,7 @@ public class ObtainALandTask extends wpsTask {
             }
         }*/
 
-        // @TODO: setFarmName lo cambia el gobierno o el campesino
-        believes.getPeasantProfile().setFarmName(true);
+        // farmName is set by FromCivicAuthorityGuard only when land is actually assigned
         believes.setCurrentActivity(PeasantActivityType.PRICE_LIST);
         believes.getPeasantProfile().setHousing(1);
         believes.getPeasantProfile().setServicesPresence(1);

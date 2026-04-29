@@ -20,6 +20,8 @@ import BESA.Kernel.Agent.Event.EventBESA;
 import BESA.Kernel.System.AdmBESA;
 import BESA.Log.ReportBESA;
 import org.wpsim.CivicAuthority.Data.LandInfo;
+import java.util.Set;
+import java.util.Arrays;
 import org.wpsim.WellProdSim.Base.wpsTask;
 import org.wpsim.WellProdSim.wpsStart;
 import org.wpsim.MarketPlace.Guards.MarketPlaceGuard;
@@ -36,6 +38,10 @@ import static org.wpsim.MarketPlace.Data.MarketPlaceMessageType.SELL_CROP;
  * @author jairo
  */
 public class SellCropTask extends wpsTask {
+
+    private static final Set<String> PERENNIAL_CROPS = new java.util.HashSet<>(
+            Arrays.asList("cafe", "platano")
+    );
 
     /**
      * @param parameters
@@ -64,12 +70,18 @@ public class SellCropTask extends wpsTask {
                                     )
                             )
                     );
-                    // Elimina el Agente Tierra usado.
-                    AdmBESA.getInstance().getHandlerByAlias(currentLandInfo.getLandName());
-                    String agID = AdmBESA.getInstance().getHandlerByAlias(currentLandInfo.getLandName()).getAgId();
-                    AdmBESA.getInstance().killAgent(agID, wpsStart.config.getDoubleProperty("control.passwd"));
 
-                    currentLandInfo.setCurrentSeason(SeasonType.NONE);
+                    if (PERENNIAL_CROPS.contains(currentLandInfo.getCropName())) {
+                        // Cultivo perenne: el agente AgroEcosystem reinicia su ciclo internamente.
+                        // No se mata el agente; el campesino vuelve a GROWING para el próximo ciclo.
+                        currentLandInfo.setCurrentSeason(SeasonType.GROWING);
+                    } else {
+                        // Cultivo anual: elimina el agente tierra y libera la parcela.
+                        String agID = AdmBESA.getInstance().getHandlerByAlias(currentLandInfo.getLandName()).getAgId();
+                        AdmBESA.getInstance().killAgent(agID, wpsStart.config.getDoubleProperty("control.passwd"));
+                        currentLandInfo.setCurrentSeason(SeasonType.NONE);
+                    }
+
                     believes.getPeasantProfile().setHarvestedWeight(0);
                     believes.setUpdatePriceList(true);
                 } catch (Exception ex) {

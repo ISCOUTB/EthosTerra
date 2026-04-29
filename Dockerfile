@@ -27,7 +27,8 @@ RUN cd KernelBESA   && mvn install -N -q -DskipTests \
     && cd ../RationalBESA && mvn install -N -q -DskipTests \
     && cd ../BDIBESA      && mvn install -N -q -DskipTests \
     && cd ../eBDIBESA     && mvn install -N -q -DskipTests \
-    && cd ../wpsSimulator && mvn dependency:go-offline -q -P docker
+    && cd ../wpsSimulator && mvn dependency:go-offline -q -P docker \
+    && find /root/.m2/repository/io/github/iscoutb -name "*.jar" -delete 2>/dev/null || true
 
 # ---- Copiar fuentes completas de todos los repos ----
 COPY KernelBESA/    ./KernelBESA/
@@ -41,7 +42,7 @@ COPY wpsSimulator/  ./wpsSimulator/
 # ---- Compilar e instalar cada módulo BESA en ~/.m2 (orden de dependencias) ----
 RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 RUN cd LocalBESA    && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
-RUN cd RemoteBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
+RUN cd RemoteBESA   && mvn install -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 RUN cd RationalBESA && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 RUN cd BDIBESA      && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
 RUN cd eBDIBESA     && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
@@ -129,8 +130,8 @@ RUN ln -s /app/src/wps/logs /app/logs
 # Eliminar dependencias dummy "file:" que causan error en npm install
 RUN npm pkg delete dependencies.wellprodsim dependencies.WellProdSim 2>/dev/null; true
 
-# Instalar dependencias de producción (--ignore-scripts evita postinstall de electron)
-RUN npm install --ignore-scripts --no-optional
+# Instalar dependencias de producción (necesario para lightningcss/SWC/Oxide)
+RUN npm install
 
 # Compilar Next.js (output: 'standalone' configurado en next.config.mjs)
 RUN npx next build
@@ -161,3 +162,17 @@ EXPOSE 8000
 ENV HOSTNAME=0.0.0.0
 
 CMD ["node", ".next/standalone/server.js"]
+
+# ============================================================
+# Stage 3: Headless — solo runtime Java, sin UI ni Node.js
+#           Usado por docker-compose.exp-*.yml
+#           Build: docker compose -f docker-compose.exp-*.yml build
+# ============================================================
+FROM eclipse-temurin:21-jre-jammy AS javaonly
+
+WORKDIR /app
+COPY --from=java-build \
+    /build/wpsSimulator/target/wps-simulator-3.6.0.jar \
+    /app/wps-simulator.jar
+RUN mkdir -p /app/logs
+ENTRYPOINT ["java", "-jar", "/app/wps-simulator.jar"]

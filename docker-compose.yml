@@ -13,7 +13,10 @@ services:
       # Silenciar logs internos de X509 que ensucian la salida
       - JAVA_TOOL_OPTIONS=-Xmx2g -Xms512m -Djdk.internal.event.EventHelper.logX509CertificateEvent=false
       # HOSTNAME ya está fijado en el Dockerfile a 0.0.0.0
-    command: [ "java", "-jar", "wps-simulator.jar", "-mode", "web", "-agents", "20", "-env", "local", "-world", "mediumworld", "-land", "2", "-money", "2000000", "-emotions", "1", "-years", "1" ]
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     volumes:
       # Persistir logs y CSV de experimentos en el host
       # Los datos sobreviven a `docker compose down`
@@ -34,39 +37,16 @@ services:
     depends_on:
       - wpsllm-sidecar
 
-  wpsllm-sidecar:
-    build:
-      context: ./wpsllm-sidecar
-      dockerfile: Dockerfile
+  rabbitmq:
+    image: rabbitmq:3-management
     ports:
-      - "8001:8001"
-    volumes:
-      - ./data:/data
-      - ./output:/output
+      - "5672:5672"
+      - "15672:15672"
     environment:
-      - LLM_API_URL=http://llama-cpp:8080/v1
-      - LLM_MODEL=gemma4:e4b
-      - PYTHONUNBUFFERED=1
-      - HYBRID_MONEY_THRESHOLD=10000000
-      - HYBRID_HEALTH_THRESHOLD=101
-    depends_on:
-      - llama-cpp
-    restart: unless-stopped
-
-  llama-cpp:
-    image: ghcr.io/ggml-org/llama.cpp:server-cuda
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./models:/models
-    # Configuración para RTX 4060 (8GB VRAM)
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
-    command: >
-      --model /models/gemma-4-E4B-it-Q4_K_M.gguf --host 0.0.0.0 --port 8080 --n-gpu-layers 35 --parallel 16 --ctx-size 32768
-    restart: unless-stopped
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5

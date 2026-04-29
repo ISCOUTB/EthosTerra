@@ -212,6 +212,10 @@ public class PeasantFamily extends AgentBDI {
         //wpsReport.debug("Setup " + this.getAlias(), this.getAlias());
         // Internal HeartBeat ping
         PeasantFamilyBelieves believes = (PeasantFamilyBelieves) ((StateBDI) this.getState()).getBelieves();
+        
+        // Reportar estado inicial al WebSocket para descubrimiento inmediato en la UI
+        wpsReport.ws(believes.toJson(), believes.getAlias());
+        
         try {
             AdmBESA.getInstance().getHandlerByAlias(
                     getAlias()

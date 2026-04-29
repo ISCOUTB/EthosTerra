@@ -128,7 +128,7 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
         }
 
         if (params.training == 1) {
-            this.trainingLevel = wpsStart.config.getDoubleProperty("trainingLevel");
+            this.trainingLevel = wpsStart.config.getDoubleProperty("pfagent.trainingLevel");
         } else {
             this.trainingLevel = 0.4;
         }
@@ -859,12 +859,17 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
     }
 
     public String getCurrentCropName() {
-        //System.out.println("rice " + priceList.get("rice").getCost() + " - roots " + priceList.get("roots").getCost());
-        if (priceList.get("rice").getCost() > priceList.get("roots").getCost()) {
-            return "rice";
-        } else {
-            return "roots";
+        String[] sellable = {"rice", "roots", "maiz", "frijol", "cafe", "platano"};
+        String best = "roots";
+        int bestPrice = 0;
+        for (String crop : sellable) {
+            FarmingResource r = priceList.get(crop);
+            if (r != null && r.getCost() > bestPrice) {
+                bestPrice = r.getCost();
+                best = crop;
+            }
         }
+        return best;
     }
 
     public void setUpdatePriceList(boolean updatePriceList) {

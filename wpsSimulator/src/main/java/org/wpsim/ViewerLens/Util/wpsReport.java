@@ -131,6 +131,21 @@ public class wpsReport {
         }
     }
 
+    public static void interaction(String from, String to, String action, String detail) {
+        try {
+            String json = "{\"from\":\"" + from + "\",\"to\":\"" + to
+                    + "\",\"action\":\"" + action + "\",\"detail\":\"" + detail + "\"}";
+            AdmBESA.getInstance().getHandlerByAlias(
+                    wpsStart.config.getViewerAgentName()
+            ).sendEvent(new EventBESA(
+                    ViewerLensGuard.class.getName(),
+                    new ViewerLensMessage(json, "INTERACTION", from)
+            ));
+        } catch (ExceptionBESA e) {
+            // silently ignore if viewer not ready
+        }
+    }
+
     public static void ws(Object message, String alias) {
         try {
             AdmBESA.getInstance().getHandlerByAlias(

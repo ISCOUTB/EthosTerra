@@ -23,10 +23,7 @@ export async function GET() {
     }
     const data = fs.readFileSync(CSV_PATH, "utf-8");
     if (!data.trim()) {
-      return NextResponse.json(
-        { success: false, error: "Archivo CSV vacío" },
-        { status: 204 },
-      );
+      return NextResponse.json({ success: true, data: "" });
     }
     return NextResponse.json({ success: true, data });
   } catch (err: any) {

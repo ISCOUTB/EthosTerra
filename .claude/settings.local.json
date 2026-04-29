@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose:*)",
+      "Bash(find /home/jairo/Projects/EthosTerra -name mediumworld*)",
+      "Bash(find /home/jairo/Projects/EthosTerra -name *.json -path */web/*)",
+      "Bash(python3 -c \":*)"
+    ]
+  }
+}

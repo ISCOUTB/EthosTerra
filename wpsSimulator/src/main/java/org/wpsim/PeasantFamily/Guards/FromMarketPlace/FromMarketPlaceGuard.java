@@ -39,15 +39,16 @@ public class FromMarketPlaceGuard extends GuardBESA {
         FromMarketPlaceMessageType fromMarketPlaceMessageType = fromMarketPlaceMessage.getMessageType();
         wpsReport.debug(fromMarketPlaceMessageType, believes.getPeasantProfile().getPeasantFamilyAlias());
         int discount = 0;
+        double trainingBonus = believes.getPeasantProfile().getTrainingBonus();
 
         //wpsReport.warn(fromMarketMessage.getMessageType());
 
         switch (fromMarketPlaceMessageType) {
             case SOLD_CROP:
-                believes.getPeasantProfile().increaseMoney(
-                        believes.getPeasantProfile().getHarvestedWeight()
-                                * believes.getPriceList().get("rice").getCost()
-                );
+                double baseIncome = believes.getPeasantProfile().getHarvestedWeight()
+                        * believes.getPriceList().get("rice").getCost();
+                double bonusIncome = baseIncome * trainingBonus;
+                believes.getPeasantProfile().increaseMoney(baseIncome + bonusIncome);
                 believes.setUpdatePriceList(true);
                 break;
             case PRICE_LIST:
@@ -82,6 +83,11 @@ public class FromMarketPlaceGuard extends GuardBESA {
                 );
                 discount = fromMarketPlaceMessage.getQuantity() * believes.getPriceList().get("livestock").getCost();
                 break;
+        }
+
+        // Apply training discount for purchases
+        if (discount > 0) {
+            discount = (int) (discount * (1.0 - trainingBonus));
         }
 
         believes.getPeasantProfile().useMoney(discount);

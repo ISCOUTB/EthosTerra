@@ -52,6 +52,11 @@ public class FromAgroEcosystemGuard extends GuardBESA {
         landInfo.setProcessing(false);
         FromAgroEcosystemMessageType messageType = peasantCommMessage.getMessageType();
 
+        if (messageType == FromAgroEcosystemMessageType.CROP_INIT
+                || messageType == FromAgroEcosystemMessageType.CROP_PESTICIDE) {
+            wpsReport.interaction("AgroEcosystem", believes.getAlias(), messageType.toString(), landName != null ? landName : "");
+        }
+
         try {
 
             switch (messageType) {

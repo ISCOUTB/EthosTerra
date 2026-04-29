@@ -22,6 +22,10 @@ import org.wpsim.CivicAuthority.Agent.CivicAuthority;
 import org.wpsim.CommunityDynamics.Agent.CommunityDynamics;
 import org.wpsim.MarketPlace.Agent.MarketPlace;
 import org.wpsim.PeasantFamily.Agent.PeasantFamily;
+import org.wpsim.Person.Agent.Person;
+import org.wpsim.WellProdSim.FamilyFactory;
+import org.wpsim.Person.Data.PersonProfile;
+import org.wpsim.Person.Data.SocialRole;
 import org.wpsim.PerturbationGenerator.Agent.PerturbationGenerator;
 import org.wpsim.SimulationControl.Agent.SimulationControl;
 import org.wpsim.SimulationControl.Util.ControlCurrentDate;
@@ -31,6 +35,8 @@ import org.wpsim.ViewerLens.Util.wpsReport;
 import org.wpsim.WellProdSim.Config.wpsConfig;
 
 import java.util.Enumeration;
+
+// Forced rebuild due to stale JAR
 
 /**
  *
@@ -70,7 +76,8 @@ public class wpsStart {
         // Definir los parámetros esperados
         Options options = new Options();
         options.addOption(new Option("env", true, "Environment"));
-        options.addOption(new Option("mode", true, "Mode of operation"));
+        options.addOption(new Option("mode", true, "Container alias (e.g. single, wps01, wps02)"));
+        options.addOption(new Option("role", true, "Node role: primary (services+peasants) or worker (peasants only)"));
         options.addOption(new Option("nodes", true, "Nodes"));
         options.addOption(new Option("agents", true, "Number of agents"));
         options.addOption(new Option("money", true, "Amount of money"));
@@ -84,7 +91,13 @@ public class wpsStart {
         options.addOption(new Option("training", true, "Enable Training"));
         options.addOption(new Option("world", true, "World Size"));
         options.addOption(new Option("years", true, "Number of years"));
-        //options.addOption(new Option("step", false, "Step Time"));
+        options.addOption(new Option("variance", true, "Peasant variance"));
+        options.addOption(new Option("criminality", true, "Society criminality"));
+        options.addOption(new Option("step", true, "Step Time"));
+        options.addOption(new Option("perturbation", true, "Perturbation type"));
+        options.addOption(new Option("trainingslots", true, "Training Slots per Year"));
+        options.addOption(new Option("persons", true, "Individual Person agents per family"));
+        options.addOption(new Option("families", true, "Family containers (FamilyCoordinator + 8 persons each)"));
 
         // Crear el parser para los argumentos
         CommandLineParser parser = new DefaultParser();
@@ -102,6 +115,9 @@ public class wpsStart {
             }
             if (cmd.hasOption("mode")) {
                 params.mode = cmd.getOptionValue("mode");
+            }
+            if (cmd.hasOption("role")) {
+                params.role = cmd.getOptionValue("role");
             }
             if (cmd.hasOption("nodes")) {
                 params.nodes = Integer.parseInt(cmd.getOptionValue("nodes"));
@@ -139,12 +155,29 @@ public class wpsStart {
             if (cmd.hasOption("years")) {
                 params.years = Integer.parseInt(cmd.getOptionValue("years"));
             }
-
-            /*if (cmd.hasOption("step")) {
+            if (cmd.hasOption("variance")) {
+                params.variance = Double.parseDouble(cmd.getOptionValue("variance"));
+            }
+            if (cmd.hasOption("criminality")) {
+                params.criminality = Integer.parseInt(cmd.getOptionValue("criminality"));
+            }
+            if (cmd.hasOption("step")) {
                 params.steptime = Integer.parseInt(cmd.getOptionValue("step"));
-            }else{
+            } else if (params.steptime == -1) {
                 params.steptime = Integer.parseInt(wpsStart.config.getStringProperty("control.steptime"));
-            }*/
+            }
+            if (cmd.hasOption("perturbation")) {
+                params.perturbation = cmd.getOptionValue("perturbation");
+            }
+            if (cmd.hasOption("trainingslots")) {
+                params.trainingSlots = Integer.parseInt(cmd.getOptionValue("trainingslots"));
+            }
+            if (cmd.hasOption("persons")) {
+                params.personsPerFamily = Integer.parseInt(cmd.getOptionValue("persons"));
+            }
+            if (cmd.hasOption("families")) {
+                params.families = Integer.parseInt(cmd.getOptionValue("families"));
+            }
 
 
         } catch (Exception e) {
@@ -156,50 +189,64 @@ public class wpsStart {
     }
 
     private static void createContainer() {
-        if (!params.mode.equals("wps01")) {
-            // update ControlAgent Name
+        boolean isSingle = params.mode.equals("single") || params.mode.equals("web");
+
+        // Infer role from mode when not provided explicitly:
+        //   single / web → primary (everything in one JVM, no RabbitMQ needed)
+        //   wps01        → primary (services + peasants, distributed)
+        //   anything else → worker (peasants only, distributed)
+        if (params.role == null) {
+            params.role = (isSingle || params.mode.equals("wps01")) ? "primary" : "worker";
+        }
+
+        // Worker containers in distributed mode need uniquely named control/viewer agents
+        if (!isSingle && params.role.equals("worker")) {
             config.setControlAgentName(params.mode + "_" + config.getControlAgentName());
-            // update ViewerAgent Name
             config.setViewerAgentName(params.mode + "_" + config.getViewerAgentName());
         }
-        // container creation
-        String path = "server_" + params.env + "_" + params.mode + ".xml";
-        System.out.println("Starting in " + path + " mode");
-        AdmBESA adm = AdmBESA.getInstance(path);
+
+        BESA.Config.EnvironmentCase envCase = isSingle
+                ? BESA.Config.EnvironmentCase.LOCAL
+                : BESA.Config.EnvironmentCase.REMOTE;
+
+        System.out.println("Starting container '" + params.mode + "' role=" + params.role
+                + " env=" + envCase);
+
+        BESA.Config.ConfigBESA builderConfig = BESA.Config.ConfigBESA.builder()
+                .alias(params.mode)
+                .environmentCase(envCase)
+                .build();
+        AdmBESA adm = AdmBESA.getInstance(builderConfig);
         System.out.println(adm.getConfigBESA());
     }
 
     private static void startSimulation() {
+        System.out.println("Centralizado: " + AdmBESA.getInstance().isCentralized()
+                + "  role=" + params.role + "  agents=" + peasantFamiliesAgents);
 
-        System.out.println("Es centralizado: " + AdmBESA.getInstance().isCentralized());
-
-        switch (params.mode) {
-            case "wps01" -> {
+        switch (params.role) {
+            case "primary" -> {
                 createServices();
-                pauseThread(3000);
+                pauseThread(2000); // give services time to register before peasants start
                 createPeasants(config.peasantSerialID, peasantFamiliesAgents);
+                if (params.families > 0) {
+                    createFamilies(params.families);
+                } else if (params.personsPerFamily > 0) {
+                    createPersons(peasantFamiliesAgents, params.personsPerFamily);
+                }
                 showRunningAgents();
             }
-            case "wps02", "wps03", "wps04", "wps05" -> {
+            case "worker" -> {
                 createPeasants(config.peasantSerialID, peasantFamiliesAgents);
-                System.out.println("Simulating " + peasantFamiliesAgents + " agents");
+                if (params.families > 0) {
+                    createFamilies(params.families);
+                } else if (params.personsPerFamily > 0) {
+                    createPersons(peasantFamiliesAgents, params.personsPerFamily);
+                }
                 showRunningAgents();
             }
-            case "web" -> {
-                // Single mode
-                createServices();
-                System.out.println("Simulating " + peasantFamiliesAgents + " agents");
-                createPeasants(config.peasantSerialID, peasantFamiliesAgents);
-            }
-            case "single" -> {
-                // Single benchmark mode
-                wpsStart.CREATED_AGENTS = 0;
-                createServices();
-                System.out.println("Simulating " + peasantFamiliesAgents + " agents");
-                createPeasants(1, peasantFamiliesAgents);
-                showRunningAgents();
-            }
-            default -> System.out.println("No se reconoce el nombre del contendor BESA " + params.mode);
+            default -> System.err.println("Unknown role '" + params.role
+                    + "'. Use -role primary or -role worker.");
         }
     }
 
@@ -214,10 +261,10 @@ public class wpsStart {
             }
         }*/
         System.out.println("UPDATE: Contenedores activos");
-        Enumeration<String> containers = AdmBESA.getInstance().getAdmAliasList();
+        /*Enumeration<String> containers = AdmBESA.getInstance().getAdmAliasList();
         while (containers.hasMoreElements()) {
             System.out.println("UPDATE:" + containers.nextElement());
-        }
+        }*/
 
     }
 
@@ -247,8 +294,57 @@ public class wpsStart {
             }
         } catch (Exception ex) {
             System.err.println("error creando peasants" + ex.getMessage());
+            ex.printStackTrace(); // Keep stack trace for debugging
         }
 
+    }
+
+    /**
+     * Role distribution for individual Person agents (cycles through in order).
+     * Reflects a typical rural Colombian community composition.
+     */
+    private static final SocialRole[] ROLE_CYCLE = {
+            SocialRole.AGRICULTOR,
+            SocialRole.JORNALERO,
+            SocialRole.AGRICULTOR,
+            SocialRole.AMA_DE_CASA,
+            SocialRole.COMERCIANTE,
+            SocialRole.AGRICULTOR,
+            SocialRole.JORNALERO,
+            SocialRole.LIDER_COMUNITARIO,
+            SocialRole.AGRICULTOR,
+            SocialRole.MAESTRA,
+    };
+
+    /**
+     * Creates individual Person agents alongside the PeasantFamily agents.
+     * Each family (identified by its alias) spawns a set of persons with
+     * complementary social roles. The count parameter controls how many
+     * persons per family are created.
+     *
+     * @param familyCount number of PeasantFamily agents already created
+     * @param personsPerFamily number of individual persons to create per family
+     */
+    public static void createPersons(int familyCount, int personsPerFamily) {
+        int personIndex = 1;
+        try {
+            for (int f = 1; f <= familyCount; f++) {
+                String familyAlias = params.mode + "PeasantFamily" + f;
+                for (int p = 0; p < personsPerFamily; p++) {
+                    SocialRole role = ROLE_CYCLE[personIndex % ROLE_CYCLE.length];
+                    String personAlias = params.mode + "Person" + personIndex;
+                    PersonProfile profile = new PersonProfile(personAlias, familyAlias, role);
+                    profile.setPersonality(params.personality != -1.0 ? params.personality : 0.5);
+                    Person person = new Person(personAlias, profile);
+                    person.start();
+                    CREATED_AGENTS++;
+                    personIndex++;
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("Error creating Person agents: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     /**
@@ -270,6 +366,22 @@ public class wpsStart {
             System.err.println(ex.getMessage() + " wpsStart_noOK");
         }
         pauseThread(1000);
+    }
+
+    /**
+     * Creates family containers using {@link FamilyFactory}.
+     * Each family = 1 FamilyCoordinator + 8 demographically realistic Person agents.
+     *
+     * @param count number of families to create
+     */
+    public static void createFamilies(int count) {
+        double money      = params.money      != -1 ? params.money      : 1_500_000;
+        int    tools      = params.tools      != -1 ? params.tools      : 10;
+        int    seeds      = params.seeds      != -1 ? params.seeds      : 10;
+        int    water      = params.water      != -1 ? params.water      : 10;
+        double personality = params.personality != -1.0 ? params.personality : 0.5;
+
+        FamilyFactory.createFamilies(count, params.mode, money, tools, seeds, water, personality);
     }
 
     /**

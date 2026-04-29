@@ -21,12 +21,12 @@ const HeroSection = () => {
 
     
     gsap.to("#WellProd", {
-      text: "WellProdSimulator",
+      text: "EthosTerra",
       duration: 1,
     });
 
     gsap.to("#Escuela", {
-      text: "Escuela de Transformacion Digital",
+      text: "Escuela de Transformación Digital",
       duration: 1,
     });
 
@@ -119,7 +119,7 @@ const HeroSection = () => {
             <div className="flex w-full justify-end items-baseline">
               <img
                 src="/images/logo.svg"
-                alt="WellProdSimulator Logo"
+                alt="EthosTerra Logo"
                 className="w-32 h-32 md:w-48 md:h-16 mb-2 object-contain"
               />
             </div>

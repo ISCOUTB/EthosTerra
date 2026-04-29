@@ -37,6 +37,12 @@ const ALLOWED_FLAGS = new Set([
   "-env",
   "-mode",
   "-nodes",
+  "-variance",
+  "-criminality",
+  "-step",
+  "-perturbation",
+  "-trainingslots",
+  "-persons",
 ]);
 
 // Caracteres que indican intento de inyección de comandos
@@ -127,7 +133,7 @@ export async function POST(req: NextRequest) {
   const child = execFile(
     JAVA_BIN,
     ["-jar", JAR_PATH, ...cleaned],
-    { maxBuffer: 50 * 1024 * 1024 },
+    { maxBuffer: 50 * 1024 * 1024, detached: process.platform !== "win32" },
     (error, _stdout, stderr) => {
       clearJavaProcess();
       if (error && !(stderr && stderr.includes("Unrecognized option"))) {
@@ -153,9 +159,14 @@ export async function DELETE() {
   try {
     // En Linux dentro del contenedor usamos kill; en Windows taskkill
     if (process.platform === "win32") {
-      exec(`taskkill /pid ${child.pid} /f /t`);
+      if (child) exec(`taskkill /pid ${child.pid} /f /t`);
+      exec(`taskkill /F /FI "WINDOWTITLE eq wps-simulator*" /T`);
     } else {
-      process.kill(-child.pid!, "SIGTERM");
+      if (child && child.pid) {
+        try { process.kill(-child.pid, "SIGKILL"); } catch(e) {}
+      }
+      // Fallback definitivo (evita zombies de Hot Reloads de Next.js)
+      exec(`pkill -9 -f "wps-simulator.jar"`);
     }
     return NextResponse.json({ success: true });
   } catch (err: any) {

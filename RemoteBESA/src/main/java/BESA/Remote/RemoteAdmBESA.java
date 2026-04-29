@@ -173,7 +173,7 @@ public class RemoteAdmBESA extends LocalAdmBESA {
 
         this.admHandler = new RemoteAdmHandlerBESA(configBESA);//Initializes the administrator handler.
 
-        new DistributedInitBESA(this, (RemoteAdmHandlerBESA) this.admHandler, configBESA.getRmiPort(), configBESA.getMcaddress(), configBESA.getMcport()); //Initializes the administrator handler.
+        new DistributedInitBESA(this, (RemoteAdmHandlerBESA) this.admHandler, 0, "224.0.0.1", 2288); //Initializes the administrator handler without RMI.
     }
 
     /**
@@ -317,17 +317,7 @@ public class RemoteAdmBESA extends LocalAdmBESA {
 
     @Override
     public void kill(double containerPassword) throws ExceptionBESA {
-        //------------------------------------------------------------//
-        // Kills the distribuit components and sends to other         //
-        // administrator that this container is killed.               //
-        //------------------------------------------------------------//
-        //killCurrentContainer();
         if (!this.centralized) {
-            try {
-                ping.sendMulticast(MSG_MULTICAST_ADM_KILL); //Informs to other containers.
-            } catch (SystemExceptionBESA ex) {
-                Logger.getLogger(RemoteAdmBESA.class.getName()).log(Level.SEVERE, null, ex);
-            }
             ping = null;
             pong = null;
             multicastPort = 0;
@@ -338,7 +328,16 @@ public class RemoteAdmBESA extends LocalAdmBESA {
 
     @Override
     public void publicagent(String alias, String agId) throws SystemExceptionBESA {
-        this.ping.updateAgentbyMulticast(MSG_MULTICAST_AGENT_CREATE, agId, alias);
+        Enumeration<String> admAliases = this.getAdmAliasList();
+        while (admAliases.hasMoreElements()) {
+            String admAlias = admAliases.nextElement();
+            try {
+                RemoteAdmHandlerBESA remoteAdm = (RemoteAdmHandlerBESA) this.getAdmByAlias(admAlias);
+                remoteAdm.getAdmRemote().registerRemoteAgents(alias, agId, this.getAdmHandler().getAdmId());
+            } catch (Exception ex) {
+                ReportBESA.error("Couldn't notify remote container " + admAlias + " of new agent " + alias + ": " + ex.getMessage());
+            }
+        }
     }
 
     /**
@@ -449,10 +448,15 @@ public class RemoteAdmBESA extends LocalAdmBESA {
         AgHandlerBESA agh = (AgHandlerBESA) this.getHandlerByAid(agId);                 //Gets the agent handler.
         if (agh instanceof AgLocalHandlerBESA) {
             super.killAgent(agId, agentPassword);
-            try {
-                this.ping.updateAgentbyMulticast(MSG_MULTICAST_AGENT_DESTROY, agId, agh.getAlias()); //It removes the reference in the other containers.
-            } catch (SystemExceptionBESA ex) {
-                ReportBESA.error(ex);
+            Enumeration<String> admAliases = this.getAdmAliasList();
+            while (admAliases.hasMoreElements()) {
+                String admAlias = admAliases.nextElement();
+                try {
+                    RemoteAdmHandlerBESA remoteAdm = (RemoteAdmHandlerBESA) this.getAdmByAlias(admAlias);
+                    remoteAdm.getAdmRemote().unregisterRemoteAgent("", this.getAdmHandler().getAdmId(), agId);
+                } catch (Exception ex) {
+                    ReportBESA.error("Couldn't notify remote container " + admAlias + " of agent death " + agId + ": " + ex.getMessage());
+                }
             }
         }
         if (agh instanceof AgRemoteHandlerBESA) {

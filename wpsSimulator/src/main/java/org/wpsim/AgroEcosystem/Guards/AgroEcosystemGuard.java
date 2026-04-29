@@ -249,15 +249,21 @@ public class AgroEcosystemGuard extends GuardBESA {
      */
     public synchronized void harvestCrop(CropLayer cropLayer) {
         cropLayer.writeCropData();
-        try {
-            AgHandlerBESA ah = AdmBESA.getInstance().getHandlerByAid(this.agent.getAid());
-            PeriodicDataBESA periodicDataBESA = new PeriodicDataBESA(PeriodicGuardBESA.STOP_CALL);
-            EventBESA eventPeriodic = new EventBESA(
-                    FromAgroEcosystemGuard.class.getName(),
-                    periodicDataBESA);
-            ah.sendEvent(eventPeriodic);
-        } catch (ExceptionBESA e) {
-            wpsReport.error(e.getMessage(), "WorldAgent.harvestCrop");
+        CropCell firstCell = cropLayer.getCropCell();
+        if (firstCell != null && firstCell.isPerennial()) {
+            // Perennial: reset GDD/biomass for the next harvest cycle; keep the agent alive
+            cropLayer.resetHarvestCycle();
+        } else {
+            try {
+                AgHandlerBESA ah = AdmBESA.getInstance().getHandlerByAid(this.agent.getAid());
+                PeriodicDataBESA periodicDataBESA = new PeriodicDataBESA(PeriodicGuardBESA.STOP_CALL);
+                EventBESA eventPeriodic = new EventBESA(
+                        FromAgroEcosystemGuard.class.getName(),
+                        periodicDataBESA);
+                ah.sendEvent(eventPeriodic);
+            } catch (ExceptionBESA e) {
+                wpsReport.error(e.getMessage(), "WorldAgent.harvestCrop");
+            }
         }
     }
 }

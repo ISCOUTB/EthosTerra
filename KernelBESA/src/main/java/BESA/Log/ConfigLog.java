@@ -54,10 +54,10 @@ public class ConfigLog {
                     try {
                         inputStream = new FileInputStream(file);
                     } catch (FileNotFoundException e) {
-                        throw new FileNotFoundException("No se pudo encontrar " + CONFIG_FILE + " ni dentro del JAR ni en el sistema de archivos");
+                        return; // Default to built-in logging settings if file is inaccessible
                     }
                 } else {
-                    throw new FileNotFoundException("No se pudo encontrar " + CONFIG_FILE + " ni dentro del JAR ni en el sistema de archivos");
+                    return; // Default to built-in logging settings if file does not exist
                 }
             }
 

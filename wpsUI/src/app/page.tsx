@@ -1,11 +1,7 @@
-import HeroSection from "@/components/landing/heroSection";
+import SimulatorConfigPage from "@/components/settings/settings";
 
-const LandingPage = () => {
+export default function Home() {
   return (
-    <main>
-      <HeroSection />
-    </main>
+    <SimulatorConfigPage />
   );
-};
-
-export default LandingPage;
+}

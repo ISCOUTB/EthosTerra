@@ -15,7 +15,14 @@
 package org.wpsim.SimulationControl.Util;
 
 public class SimulationParams {
-    public String mode;
+    /** Container alias used as the BESA container name and RabbitMQ routing key. */
+    public String mode = "single";
+    /**
+     * Node role: {@code primary} creates services + peasants (default),
+     * {@code worker} creates only peasants (for distributed deployments).
+     * Inferred from mode if not supplied explicitly.
+     */
+    public String role = null;
     public String env;
     public int money = -1;
     public int land = -1;
@@ -27,8 +34,21 @@ public class SimulationParams {
     public int emotions = -1;
     public int training = -1;
     public int nodes = 0;
-    public int steptime = 50;
     public int years = 1;
+    public double variance = -1.0;
+    public int criminality = -1;
+    public int steptime = -1;
+    public String perturbation = null;
+    public int trainingSlots = -1;
     public String world;
+    /** Number of individual Person agents to spawn per PeasantFamily. 0 = disabled. */
+    public int personsPerFamily = 0;
+
+    /**
+     * Number of family containers (FamilyCoordinator + 8 persons each) to create.
+     * When > 0, FamilyFactory is used instead of plain Person agents.
+     * 0 = disabled (legacy mode).
+     */
+    public int families = 0;
 
 }

@@ -1,0 +1,67 @@
+# ============================================================
+# Experimento: 1 contenedor × 10 agentes
+# Modo headless — sin UI, solo simulación por terminal
+#
+# Configuración:
+#   Modo:        single (nodo único)
+#   Agentes:     10
+#   Dinero:      5,000,000 COP
+#   Tierra:      2 parcelas por agente
+#   Módulos:     Emociones (ON), Irrigación (ON), Capacitación (ON)
+#   Duración:    2 Años
+#
+# Comandos:
+#   Construir (si hay cambios en Java):
+#     docker compose -f docker-compose.exp-1C-10A.yml build
+#
+#   Ejecutar experimento:
+#     docker compose -f docker-compose.exp-1C-10A.yml up
+#
+#   Limpiar al terminar:
+#     docker compose -f docker-compose.exp-1C-10A.yml down
+#
+# Resultados:
+#   El archivo CSV se guardará en: ./data/logs/exp-1C-10A/wpsSimulator.csv
+# ============================================================
+
+services:
+  wps_experiment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: javaonly
+    restart: "no"   # Finaliza el contenedor cuando termina la simulación
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx2g -Xms512m
+    command:
+      - -mode
+      - single
+      - -agents
+      - "10"
+      - -env
+      - local
+      - -money
+      - "5000000"
+      - -land
+      - "2"
+      - -personality
+      - "0"
+      - -tools
+      - "10"
+      - -seeds
+      - "10"
+      - -water
+      - "10"
+      - -irrigation
+      - "1"
+      - -emotions
+      - "1"
+      - -training
+      - "1"
+      - -world
+      - mediumworld
+      - -years
+      - "2"
+    volumes:
+      - ./data/logs/exp-1C-10A:/app/logs
+      - ./wpsUI/public:/app/web

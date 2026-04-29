@@ -1,32 +1,50 @@
 @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap");
 @import url("https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap");
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-clash: "Clash Display", sans-serif;
+  --font-archivo: "Archivo", sans-serif;
+
+  --color-background: #0f1417;
+  --color-card: #171c1f;
+  --color-primary: #3b82f6;
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
 
 @layer base {
   :root {
     /* Paleta de colores modo claro */
-    --background: 214, 17%, 8%;
-    --foreground: 0, 0%, 100%;
-    --card: 210, 14%, 11%;
-    --card-foreground: 0, 0%, 100%;
-    --popover: 210, 14%, 11%;
-    --popover-foreground: 0, 0%, 100%;
-    --primary: 221.2, 83.2%, 53.3%;
-    --primary-foreground: 210, 40%, 98%;
-    --secondary: 210, 14%, 15%;
-    --secondary-foreground: 0, 0%, 100%;
-    --muted: 210, 14%, 15%;
-    --muted-foreground: 217.9, 10.6%, 64.9%;
-    --accent: 210, 14%, 15%;
-    --accent-foreground: 0, 0%, 100%;
-    --destructive: 0, 84.2%, 60.2%;
-    --destructive-foreground: 210, 40%, 98%;
-    --border: 214, 14%, 18%;
-    --input: 214, 14%, 18%;
-    --ring: 221.2, 83.2%, 53.3%;
+    --background: 214 17% 8%;
+    --foreground: 0 0% 100%;
+    --card: 210 14% 11%;
+    --card-foreground: 0 0% 100%;
+    --popover: 210 14% 11%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 14% 15%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 14% 15%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 210 14% 15%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 14% 18%;
+    --input: 214 14% 18%;
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
   }
 
@@ -54,10 +72,6 @@
   }
 }
 
-/* Tipografías personalizadas */
-.font-clash {
-  font-family: "Clash Display", sans-serif;
-}
 
 .font-archivo {
   font-family: "Archivo", sans-serif;

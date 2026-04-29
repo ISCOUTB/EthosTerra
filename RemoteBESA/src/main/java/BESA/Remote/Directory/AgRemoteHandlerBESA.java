@@ -69,8 +69,9 @@ public class AgRemoteHandlerBESA extends AgHandlerBESA {
                 i = 10;
             } catch (Exception e) {
                 try {
-                    this.wait(this.config.getSendEventTimeout());
-                } catch (Exception e1) {
+                    Thread.sleep(this.config.getSendEventTimeout());
+                } catch (InterruptedException e1) {
+                    Thread.currentThread().interrupt();
                     ReportBESA.error("Happened a error into the wait time: " + e1.getMessage());
                     throw new DistributedDirectoryExceptionBESA("Happened a error into the wait time: " + e1.getMessage());
                 }

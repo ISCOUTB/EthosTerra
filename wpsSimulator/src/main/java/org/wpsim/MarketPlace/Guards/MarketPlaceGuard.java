@@ -76,6 +76,8 @@ public class MarketPlaceGuard extends wpsGuardBESA {
 
                 wpsCSV.log("Market", marketPlaceMessage.getPeasantAlias() + "," + marketPlaceMessage.getCurrentDate() + ",ASK_FOR_PRICE_LIST," + fromMarketPlaceMessage.getMessageType());
                 wpsReport.debug(marketPlaceMessage.getPeasantAlias() + " sending... PRICE_LIST", this.getAgent().getAlias());
+                wpsReport.interaction(marketPlaceMessage.getPeasantAlias(), "MarketPlace", "ASK_PRICE_LIST", "price list request");
+                wpsReport.interaction("MarketPlace", marketPlaceMessage.getPeasantAlias(), "PRICE_LIST", "price list sent");
             } catch (Exception e) {
                 wpsReport.error(e.getMessage(), this.getAgent().getAlias());
             }
@@ -115,6 +117,8 @@ public class MarketPlaceGuard extends wpsGuardBESA {
                 );
                 wpsCSV.log("Market", marketPlaceMessage.getPeasantAlias() + "," + marketPlaceMessage.getCurrentDate() + ",SELL_CROP," + fromMarketPlaceMessage.getMessageType());
                 wpsReport.debug(marketPlaceMessage.getPeasantAlias() + " sending... SOLD_CROP", this.getAgent().getAlias());
+                wpsReport.interaction(marketPlaceMessage.getPeasantAlias(), "MarketPlace", "SELL_CROP", "sold " + quantity + " units");
+                wpsReport.interaction("MarketPlace", marketPlaceMessage.getPeasantAlias(), "SOLD_CROP", "sold " + quantity + " units");
             } catch (Exception e) {
                 wpsReport.error(e.getMessage(), this.getAgent().getAlias());
             }
@@ -150,6 +154,8 @@ public class MarketPlaceGuard extends wpsGuardBESA {
                 );
                 wpsCSV.log("Market", marketPlaceMessage.getPeasantAlias() + "," + marketPlaceMessage.getCurrentDate() + "," + messageType + "," + fromMarketPlaceMessage.getMessageType());
                 wpsReport.debug(marketPlaceMessage.getPeasantAlias() + " sending... " + productType.toUpperCase(), this.getAgent().getAlias());
+                wpsReport.interaction(marketPlaceMessage.getPeasantAlias(), "MarketPlace", messageType.toString(), productType + " x" + quantity);
+                wpsReport.interaction("MarketPlace", marketPlaceMessage.getPeasantAlias(), productType.toUpperCase(), productType + " x" + quantity);
             } catch (Exception e) {
                 wpsReport.error(e.getMessage(), this.getAgent().getAlias());
             }
