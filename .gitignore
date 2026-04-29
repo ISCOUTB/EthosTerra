@@ -61,6 +61,12 @@ docker-compose.override.yml
 .docker-build-cache/
 
 # --- Otros ---
+models/
+*.gguf
+output/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
 temp/
 tmp/
 *.swp

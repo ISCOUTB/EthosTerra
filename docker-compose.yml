@@ -3,14 +3,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: headless
     ports:
-      - "3000:3000"
-      - "8000:8000"  # WebSocket server de ViewerLens (Undertow) — wpsSimulator/ViewerLens/Server/WebsocketServer.java
+      # - "3000:3000"
+      - "8000:8000" # WebSocket server de ViewerLens (Undertow) — wpsSimulator/ViewerLens/Server/WebsocketServer.java
     env_file: .env
     environment:
       # Limitar heap de JVM: evita OOM Kill cuando la malla tiene >150 agentes
-      # (sobreescribe el valor del .env si se definen ahí)
-      - JAVA_TOOL_OPTIONS=-Xmx2g -Xms512m
+      # Silenciar logs internos de X509 que ensucian la salida
+      - JAVA_TOOL_OPTIONS=-Xmx2g -Xms512m -Djdk.internal.event.EventHelper.logX509CertificateEvent=false
       # HOSTNAME ya está fijado en el Dockerfile a 0.0.0.0
       - RABBITMQ_HOST=rabbitmq
     depends_on:
@@ -23,17 +24,18 @@ services:
     deploy:
       resources:
         limits:
-          # Java (2g heap) + Node.js + SO overhead ~3.5 GB en pico
-          memory: 4g
-          # Evitar que la simulación monopolice el host durante experimentos largos
-          cpus: "2.0"
+          # Optimizado para host con 32 GB RAM
+          memory: 12g
+          cpus: "4.0"
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/simulator/app-path"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+    # healthcheck:
+    #   test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/simulator/app-path"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 60s
+    depends_on:
+      - wpsllm-sidecar
 
   rabbitmq:
     image: rabbitmq:3-management
