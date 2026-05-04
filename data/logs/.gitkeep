@@ -1,5 +1,0 @@
-# Este directorio es el bind mount del volumen Docker de WellProdSim.
-
-# Los archivos CSV y logs de experimentos se almacenan aquí en tiempo de ejecución.
-
-# El directorio debe existir antes de `docker compose up`.

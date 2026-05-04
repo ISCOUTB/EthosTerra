@@ -22,6 +22,7 @@ import BESA.Kernel.Agent.Event.EventBESA;
 import BESA.Kernel.System.AdmBESA;
 import BESA.Log.ReportBESA;
 import org.json.JSONObject;
+import org.wpsim.Infrastructure.Goals.GoalEngine;
 import org.wpsim.PeasantFamily.Emotions.EmotionalEvaluator;
 import org.wpsim.PeasantFamily.Guards.FromSimulationControl.ToControlMessage;
 import org.wpsim.SimulationControl.Data.Coin;
@@ -33,6 +34,9 @@ import org.wpsim.PeasantFamily.Data.Utils.*;
 import org.wpsim.PeasantFamily.Emotions.EmotionalComponent;
 import org.wpsim.WellProdSim.wpsStart;
 import org.wpsim.ViewerLens.Util.wpsReport;
+import org.wpsim.Infrastructure.Beliefs.BeliefRepository;
+import org.wpsim.Infrastructure.Beliefs.RedisBeliefRepository;
+import org.wpsim.Infrastructure.Beliefs.RedisConnectionFactory;
 import rational.data.InfoData;
 import rational.mapping.Believes;
 
@@ -51,6 +55,11 @@ import static org.wpsim.WellProdSim.wpsStart.params;
 public class PeasantFamilyBelieves extends EmotionalComponent implements Believes {
 
     private PeasantFamilyProfile peasantProfile;
+    /**
+     * Redis-backed belief repository. Non-null only when REDIS_HOST env var is set.
+     * In Stage 1 this is write-behind only — all reads still use Java fields.
+     */
+    private BeliefRepository beliefs;
     private SeasonType currentSeason;
     private MoneyOriginType currentMoneyOrigin;
     private PeasantActivityType currentPeasantActivityType;
@@ -80,6 +89,23 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
     private double personality;
     private double trainingLevel;
     private boolean trainingAvailable;
+    private GoalEngine goalEngine;
+
+    public List<Map<String, Object>> getLandsState() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (LandInfo land : assignedLands) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", land.getLandName());
+            map.put("kind", land.getKind());
+            map.put("season", land.getCurrentSeason().toString());
+            map.put("crop", land.getCropName());
+            map.put("work_done", land.getElapsedWorkTime());
+            map.put("work_total", land.getTotalRequiredTime());
+            map.put("is_used", land.isUsed());
+            list.add(map);
+        }
+        return list;
+    }
 
     /**
      * @param alias          Peasant Family Alias
@@ -122,6 +148,108 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
 
         changePersonalityBase(getPersonality());
 
+        if (RedisConnectionFactory.isAvailable()) {
+            this.beliefs = new RedisBeliefRepository(alias);
+            syncToRedis();
+        }
+    }
+
+    /**
+     * Returns the BeliefRepository for this agent, or null when Redis is not configured.
+     * Intended for use by GoalEngine (Stage 4+) and external tooling.
+     */
+    public BeliefRepository getBeliefRepository() {
+        return beliefs;
+    }
+
+    /**
+     * Mirrors the agent's current state snapshot to Redis as a write-behind update.
+     * Called at the end of makeNewDay() so Redis always has a fresh daily snapshot.
+     * All reads still use Java fields — this does NOT change simulation behaviour.
+     */
+    private void syncToRedis() {
+        if (beliefs == null) return;
+        RedisBeliefRepository repo = (RedisBeliefRepository) beliefs;
+
+        Map<String, String> state = new LinkedHashMap<>();
+        state.put("money",              String.valueOf(peasantProfile.getMoney()));
+        state.put("health",             String.valueOf(peasantProfile.getHealth()));
+        state.put("loan_amount_to_pay", String.valueOf(peasantProfile.getLoanAmountToPay()));
+        state.put("have_loan",          String.valueOf(haveLoan));
+        state.put("loan_denied",        String.valueOf(loanDenied));
+        state.put("new_day",            String.valueOf(newDay));
+        state.put("current_day",        String.valueOf(currentDay));
+        state.put("time_left_on_day",   String.valueOf(timeLeftOnDay));
+        state.put("worker_without_land",String.valueOf(workerWithoutLand));
+        state.put("seeds",              String.valueOf(peasantProfile.getSeeds()));
+        state.put("tools",              String.valueOf(peasantProfile.getTools()));
+        state.put("water_available",    String.valueOf(peasantProfile.getWaterAvailable()));
+        state.put("pesticides_available", String.valueOf(peasantProfile.getPesticidesAvailable()));
+        state.put("supplies",           String.valueOf(peasantProfile.getSupplies()));
+        state.put("harvested_weight",   String.valueOf(peasantProfile.getHarvestedWeight()));
+        state.put("total_harvested_weight", String.valueOf(peasantProfile.getTotalHarvestedWeight()));
+        state.put("crop_health",        String.valueOf(peasantProfile.getCropHealth()));
+        state.put("farm_ready",         String.valueOf(peasantProfile.getFarmReady()));
+        state.put("has_farm",           String.valueOf(peasantProfile.getFarmName()));
+        state.put("resource_needed_type", currentResourceNeededType != null ? currentResourceNeededType.toString() : "NONE");
+        state.put("crop_size",          String.valueOf(peasantProfile.getCropSize()));
+        state.put("training_level",     String.valueOf(trainingLevel));
+        state.put("training_available", String.valueOf(trainingAvailable));
+        state.put("minimum_vital",      String.valueOf(peasantProfile.getMinimumVital()));
+        state.put("purpose",            peasantProfile.getPurpose());
+        state.put("waiting",            String.valueOf(wait));
+        state.put("assigned_lands_count", String.valueOf(assignedLands.size()));
+        state.put("has_helper",         String.valueOf(peasantFamilyHelper != null && !peasantFamilyHelper.isEmpty()));
+        state.put("asked_for_collaboration", String.valueOf(askedForCollaboration));
+        state.put("asked_for_contractor", String.valueOf(askedForContractor));
+        
+        // Add execution flags for all registered goals
+        for (org.wpsim.Infrastructure.Goals.GoalSpec spec : org.wpsim.Infrastructure.Goals.GoalRegistry.getInstance().getAllGoals().values()) {
+            state.put("already_executed_" + spec.getId(), String.valueOf(isTaskExecutedOnDate(internalCurrentDate, spec.getId())));
+        }
+
+        repo.bulkSet(repo.stateHash(), state);
+
+        Map<String, String> pers = new LinkedHashMap<>();
+        pers.put("personality",             String.valueOf(this.personality));
+        pers.put("peasant_family_affinity",  String.valueOf(peasantProfile.getPeasantFamilyAffinity()));
+        pers.put("social_affinity",          String.valueOf(peasantProfile.getSocialAffinity()));
+        pers.put("live_stock_affinity",      String.valueOf(peasantProfile.getLiveStockAffinity()));
+        pers.put("peasant_leisure_affinity", String.valueOf(peasantProfile.getPeasantLeisureAffinity()));
+        pers.put("peasant_friends_affinity", String.valueOf(peasantProfile.getPeasantFriendsAffinity()));
+        repo.bulkSet(repo.personalityHash(), pers);
+
+        Map<String, String> emotional = new LinkedHashMap<>();
+        if (isHaveEmotions()) {
+            EmotionalEvaluator evaluator = new EmotionalEvaluator("EmotionalRulesFull");
+            double emotionalIndex = evaluator.evaluate(getEmotionsListCopy());
+            emotional.put("emotional_index", String.valueOf(emotionalIndex));
+        } else {
+            emotional.put("emotional_index", "0.5");
+        }
+        emotional.put("happiness", String.valueOf(getEmotionCurrentValue("Happiness")));
+        emotional.put("hopeful",   String.valueOf(getEmotionCurrentValue("Hopeful")));
+        emotional.put("security",  String.valueOf(getEmotionCurrentValue("Secure")));
+        repo.bulkSet(repo.emotionalHash(), emotional);
+
+        // Sync lands state as a JSON array for MVEL complex evaluations
+        try {
+            org.json.JSONArray landsArray = new org.json.JSONArray();
+            for (LandInfo land : assignedLands) {
+                org.json.JSONObject landObj = new org.json.JSONObject();
+                landObj.put("name", land.getLandName());
+                landObj.put("kind", land.getKind());
+                landObj.put("season", land.getCurrentSeason().toString());
+                landObj.put("crop", land.getCropName());
+                landObj.put("work_done", land.getElapsedWorkTime());
+                landObj.put("work_total", land.getTotalRequiredTime());
+                landObj.put("is_used", land.isUsed());
+                landsArray.put(landObj);
+            }
+            repo.set("lands", landsArray.toString());
+        } catch (Exception e) {
+            // Log but don't fail
+        }
     }
 
     public boolean isTrainingAvailable() {
@@ -308,6 +436,10 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
         taskLog.computeIfAbsent(date, k -> ConcurrentHashMap.newKeySet()).add(taskName);
     }
 
+    public void addNamedTaskToLog(String date, String taskName) {
+        taskLog.computeIfAbsent(date, k -> ConcurrentHashMap.newKeySet()).add(taskName);
+    }
+
     public void addTaskToLog(String date, String landName) {
         StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
         String fullClassName = stackTraceElements[2].getClassName();
@@ -437,6 +569,7 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
             // Report the agent's beliefs to the wpsViewer
             wpsReport.mental(Instant.now() + "," + this.toCSV(), this.getAlias());
         }
+        syncToRedis();
     }
 
     private void notifyInternalCurrentDay() {
@@ -897,6 +1030,25 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
 
     public void setPersonality(Double personality) {
         this.personality = personality;
+    }
+    public GoalEngine getGoalEngine() {
+        return goalEngine;
+    }
+
+    public void setGoalEngine(GoalEngine goalEngine) {
+        this.goalEngine = goalEngine;
+    }
+
+    // Transient bindings shared across DeclarativeTask steps within one plan execution.
+    private transient Map<String, Object> planBindings = new HashMap<>();
+
+    public Map<String, Object> getPlanBindings() {
+        if (planBindings == null) planBindings = new HashMap<>();
+        return planBindings;
+    }
+
+    public void clearPlanBindings() {
+        planBindings = new HashMap<>();
     }
 }
 

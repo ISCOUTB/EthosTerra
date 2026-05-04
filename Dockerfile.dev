@@ -2,7 +2,7 @@
 # Stage 1: Compilar todos los JARs Java (igual que prod)
 #           El caché de Docker evita recompilar si Java no cambia.
 # ============================================================
-FROM eclipse-temurin:21-jdk-jammy AS java-build
+FROM eclipse-temurin:25-jdk-noble AS java-build
 
 RUN apt-get update && apt-get install -y --no-install-recommends maven && rm -rf /var/lib/apt/lists/*
 
@@ -51,7 +51,7 @@ RUN cd wpsSimulator && mvn package -q -DskipTests \
 #           - SIN `next build` → arranque rápido
 #           - Puerto 5005 para debug remoto de Java (attach IntelliJ/VSCode)
 # ============================================================
-FROM eclipse-temurin:21-jre-jammy AS devapp
+FROM eclipse-temurin:25-jre-noble AS devapp
 
 RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
 

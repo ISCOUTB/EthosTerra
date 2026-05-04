@@ -40,6 +40,6 @@ public class SimulationParams {
     public int steptime = -1;
     public String perturbation = null;
     public int trainingSlots = -1;
-    public String world;
+    public String world = "100";
 
 }

@@ -85,6 +85,9 @@ public class HarvestCropsTask extends wpsLandTask {
                         currentLandInfo.setCurrentSeason(SeasonType.SELL_CROP);
                         currentLandInfo.setCurrentCropCareType(CropCareType.NONE);
                         currentLandInfo.resetElapsedWorkTime();
+                        org.wpsim.Infrastructure.Goals.Actions.EmitEpisodeAction.emit(believes, 
+                            "Finished harvesting crops in " + currentLandInfo.getLandName(), 
+                            "harvest", "production", "development");
                     } catch (Exception ex) {
                         //ReportBESA.info(ex.getMessage() + " " + believes.getAlias());
                     }

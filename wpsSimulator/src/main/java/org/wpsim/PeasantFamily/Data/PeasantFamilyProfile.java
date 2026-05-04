@@ -198,7 +198,7 @@ public class PeasantFamilyProfile implements Serializable, Cloneable {
         }
     }
 
-    private double getMinimumVital() {
+    public double getMinimumVital() {
         return minimumVital;
     }
 
@@ -486,7 +486,7 @@ public class PeasantFamilyProfile implements Serializable, Cloneable {
     /**
      * @param money
      */
-    public synchronized void setMoney(Integer money) {
+    public synchronized void setMoney(double money) {
         this.money = money;
     }
 

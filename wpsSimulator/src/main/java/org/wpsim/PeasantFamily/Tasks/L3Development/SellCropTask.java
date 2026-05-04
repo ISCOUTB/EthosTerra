@@ -82,6 +82,9 @@ public class SellCropTask extends wpsTask {
                         currentLandInfo.setCurrentSeason(SeasonType.NONE);
                     }
 
+                    org.wpsim.Infrastructure.Goals.Actions.EmitEpisodeAction.emit(believes, 
+                        "Sold " + believes.getPeasantProfile().getHarvestedWeight() + "kg of " + currentLandInfo.getCropName() + " at the market", 
+                        "sale", "market", "finance");
                     believes.getPeasantProfile().setHarvestedWeight(0);
                     believes.setUpdatePriceList(true);
                 } catch (Exception ex) {

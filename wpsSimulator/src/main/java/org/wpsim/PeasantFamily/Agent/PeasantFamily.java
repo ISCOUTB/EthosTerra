@@ -29,7 +29,6 @@ import BESA.Remote.Directory.AgRemoteHandlerBESA;
 import BESA.Remote.Directory.RemoteAdmHandlerBESA;
 import BESA.Remote.RemoteAdmBESA;
 import BESA.Util.PeriodicDataBESA;
-import org.wpsim.PeasantFamily.Goals.L1Survival.DoVoidGoal;
 import org.wpsim.PeasantFamily.Guards.FromCivicAuthority.FromCivicAuthorityTrainingGuard;
 import org.wpsim.PeasantFamily.Guards.FromCommunityDynamics.SocietyWorkerDateSyncGuard;
 import org.wpsim.SimulationControl.Guards.AliveAgentGuard;
@@ -37,20 +36,8 @@ import org.wpsim.SimulationControl.Guards.DeadAgentGuard;
 import org.wpsim.CivicAuthority.Data.LandInfo;
 import org.wpsim.PeasantFamily.Data.PeasantFamilyBelieves;
 import org.wpsim.PeasantFamily.Data.PeasantFamilyProfile;
-import org.wpsim.PeasantFamily.Goals.L1Survival.DoHealthCareGoal;
-import org.wpsim.PeasantFamily.Goals.L2Obligation.LookForLoanGoal;
-import org.wpsim.PeasantFamily.Goals.L2Obligation.PayDebtsGoal;
 import org.wpsim.PeasantFamily.Guards.FromSimulationControl.ToControlMessage;
-import org.wpsim.PeasantFamily.Goals.L1Survival.DoVitalsGoal;
-import org.wpsim.PeasantFamily.Goals.L1Survival.SeekPurposeGoal;
 import org.wpsim.PeasantFamily.Goals.L3Development.*;
-import org.wpsim.PeasantFamily.Goals.L4SkillsResources.*;
-import org.wpsim.PeasantFamily.Goals.L5Social.LookForCollaborationGoal;
-import org.wpsim.PeasantFamily.Goals.L5Social.ProvideCollaborationGoal;
-import org.wpsim.PeasantFamily.Goals.L6Leisure.SpendFamilyTimeGoal;
-import org.wpsim.PeasantFamily.Goals.L6Leisure.SpendFriendsTimeGoal;
-import org.wpsim.PeasantFamily.Goals.L6Leisure.LeisureActivitiesGoal;
-import org.wpsim.PeasantFamily.Goals.L6Leisure.WasteTimeAndResourcesGoal;
 import org.wpsim.PeasantFamily.Guards.FromBankOffice.FromBankOfficeGuard;
 import org.wpsim.PeasantFamily.Guards.FromSimulationControl.FromSimulationControlGuard;
 import org.wpsim.PeasantFamily.Guards.FromCivicAuthority.FromCivicAuthorityGuard;
@@ -77,6 +64,10 @@ import static org.wpsim.WellProdSim.wpsStart.params;
  * @TODO: Patrones de comunicación
  */
 
+import org.wpsim.Infrastructure.Goals.DeclarativeGoal;
+import org.wpsim.Infrastructure.Goals.GoalEngine;
+import org.wpsim.Infrastructure.Goals.GoalRegistry;
+
 /**
  * @author jairo
  */
@@ -84,6 +75,7 @@ import static org.wpsim.WellProdSim.wpsStart.params;
 public class PeasantFamily extends AgentBDI {
 
     private static final double BDITHRESHOLD = 0;
+    private GoalEngine goalEngine;
 
     private static StructBESA createStruct(StructBESA structBESA) throws ExceptionBESA {
         // Cada comportamiento es un hilo.
@@ -131,15 +123,15 @@ public class PeasantFamily extends AgentBDI {
         List<GoalBDI> goals = new ArrayList<>();
 
         //Level 1 Goals: Survival        
-        goals.add(DoVoidGoal.buildGoal());
-        goals.add(DoVitalsGoal.buildGoal());
-        goals.add(SeekPurposeGoal.buildGoal());
-        goals.add(DoHealthCareGoal.buildGoal());
-        //goals.add(SelfEvaluationGoal.buildGoal());
+        goals.add(DeclarativeGoal.build("do_void"));
+        goals.add(DeclarativeGoal.build("do_vitals"));
+        goals.add(DeclarativeGoal.build("seek_purpose"));
+        goals.add(DeclarativeGoal.build("do_healthcare"));
+        goals.add(DeclarativeGoal.build("self_evaluation"));
 
         //Level 2 Goals: Obligations
-        goals.add(LookForLoanGoal.buildGoal());
-        goals.add(PayDebtsGoal.buildGoal());
+        goals.add(DeclarativeGoal.build("look_for_loan"));
+        goals.add(DeclarativeGoal.build("pay_debts"));
 
         //Level 3 Goals: Development        
         //goals.add(AttendToLivestockGoal.buildGoal());
@@ -159,35 +151,35 @@ public class PeasantFamily extends AgentBDI {
         //goals.add(MaintainHouseGoal.buildGoal());
 
         //Level 4 Goals: Skills And Resources
-        goals.add(GetPriceListGoal.buildGoal());
-        goals.add(ObtainALandGoal.buildGoal());
-        goals.add(ObtainSeedsGoal.buildGoal());
-        goals.add(ObtainToolsGoal.buildGoal());
-        goals.add(AlternativeWorkGoal.buildGoal());
-        //goals.add(ObtainPesticidesGoal.buildGoal());
-        //goals.add(ObtainSuppliesGoal.buildGoal());
-        //goals.add(ObtainLivestockGoal.buildGoal());
-
+        goals.add(DeclarativeGoal.build("get_price_list"));
+        goals.add(DeclarativeGoal.build("obtain_a_land"));
+        goals.add(DeclarativeGoal.build("obtain_seeds"));
+        goals.add(DeclarativeGoal.build("obtain_tools"));
+        goals.add(DeclarativeGoal.build("alternative_work"));
+        goals.add(DeclarativeGoal.build("obtain_pesticides"));
+        goals.add(DeclarativeGoal.build("obtain_supplies"));
+        goals.add(DeclarativeGoal.build("obtain_livestock"));
 
         if (config.getBooleanProperty("pfagent.trainingEnabled")) {
-            goals.add(GetTechAssistanceGoal.buildGoal());
+            goals.add(DeclarativeGoal.build("get_training"));
         }
 
         if (params.irrigation == 1) {
             goals.add(IrrigateCropsGoal.buildGoal());
-            goals.add(ObtainWaterGoal.buildGoal());
+            goals.add(DeclarativeGoal.build("obtain_water"));
         }
 
         //Level 5 Goals: Social
-        //goals.add(CommunicateGoal.buildGoal());
-        goals.add(LookForCollaborationGoal.buildGoal());
-        goals.add(ProvideCollaborationGoal.buildGoal());
+        goals.add(DeclarativeGoal.build("communicate"));
+        goals.add(DeclarativeGoal.build("look_for_collaboration"));
+        goals.add(DeclarativeGoal.build("provide_collaboration"));
 
         //Level 6 Goals: Leisure
-        goals.add(SpendFamilyTimeGoal.buildGoal());
-        goals.add(SpendFriendsTimeGoal.buildGoal());
-        goals.add(LeisureActivitiesGoal.buildGoal());
-        goals.add(WasteTimeAndResourcesGoal.buildGoal());
+        goals.add(DeclarativeGoal.build("spend_family_time"));
+        goals.add(DeclarativeGoal.build("spend_friends_time"));
+        goals.add(DeclarativeGoal.build("leisure_activities"));
+        goals.add(DeclarativeGoal.build("waste_time_and_resources"));
+        goals.add(DeclarativeGoal.build("find_news"));
 
         return goals;
     }
@@ -199,7 +191,11 @@ public class PeasantFamily extends AgentBDI {
      */
     public PeasantFamily(String alias, PeasantFamilyProfile peasantProfile) throws ExceptionBESA {
         super(alias, createBelieves(alias, peasantProfile), createGoals(), BDITHRESHOLD, createStruct(new StructBESA()));
-        //wpsReport.info("Starting " + alias + " " + peasantProfile.getPeasantKind(), alias);
+        PeasantFamilyBelieves believes = (PeasantFamilyBelieves) ((StateBDI) this.getState()).getBelieves();
+        if (believes.getBeliefRepository() != null) {
+            this.goalEngine = new GoalEngine(alias, believes.getBeliefRepository());
+            believes.setGoalEngine(this.goalEngine);
+        }
     }
 
     /**
@@ -277,9 +273,13 @@ public class PeasantFamily extends AgentBDI {
                     ).getAgId(),
                     config.getDoubleProperty("control.passwd")
             );
-        } catch (Exception ex) {
-            System.err.println(ex.getMessage() + " " + believes.getAlias());
+        } catch (ExceptionBESA e) {
+            e.printStackTrace();
         }
+    }
+
+    public GoalEngine getGoalEngine() {
+        return goalEngine;
     }
 
 }

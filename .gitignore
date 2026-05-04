@@ -15,8 +15,8 @@
 
 # --- Datos de experimentos (generados en tiempo de ejecución) ---
 # El directorio data/logs se monta como volumen Docker
-data/logs/*.csv
-data/logs/*.log
+data/logs/**/*.csv
+data/logs/**/*.log
 data/experiments_log.txt
 # Conservar la estructura del directorio
 !data/logs/.gitkeep

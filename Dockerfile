@@ -2,9 +2,7 @@
 # Stage 1: Compilar todos los JARs Java (BESA + wpsSimulator)
 #           Un solo stage para compartir el repositorio Maven local (~/.m2)
 # ============================================================
-FROM eclipse-temurin:21-jdk-jammy AS java-build
-
-RUN apt-get update && apt-get install -y --no-install-recommends maven && rm -rf /var/lib/apt/lists/*
+FROM maven:3.9-eclipse-temurin-21-noble AS java-build
 
 WORKDIR /build
 
@@ -38,6 +36,8 @@ COPY RationalBESA/  ./RationalBESA/
 COPY BDIBESA/       ./BDIBESA/
 COPY eBDIBESA/      ./eBDIBESA/
 COPY wpsSimulator/  ./wpsSimulator/
+COPY specs/         ./specs/
+
 
 # ---- Compilar e instalar cada módulo BESA en ~/.m2 (orden de dependencias) ----
 RUN cd KernelBESA   && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dmaven.source.skip=true
@@ -50,7 +50,7 @@ RUN cd eBDIBESA     && mvn install -q -DskipTests -Dmaven.javadoc.skip=true -Dma
 # ---- Compilar wpsSimulator con perfil "docker" ----
 # El perfil "docker" usa deps BESA con scope=compile (no system)
 # para que maven-shade-plugin las incluya en el uber-JAR
-RUN cd wpsSimulator && mvn package -q -DskipTests \
+RUN cd wpsSimulator && mvn package -DskipTests \
     -Dmaven.javadoc.skip=true -Dmaven.source.skip=true \
     -P docker
 
@@ -62,10 +62,10 @@ RUN jar tf /build/wpsSimulator/target/wps-simulator-3.6.0.jar | head -5 && \
     echo "=== JAR verification passed ==="
 
 # ============================================================
-# Stage 2: Aplicación web (Next.js + JRE 21)
-#           Base: eclipse-temurin ya incluye JRE 21 → instalamos Node.js encima
+# Stage 2: Aplicación web (Next.js + JRE 25)
+#           Base: eclipse-temurin ya incluye JRE 25 → instalamos Node.js encima
 # ============================================================
-FROM eclipse-temurin:21-jre-jammy AS webapp
+FROM eclipse-temurin:21-jre-noble AS webapp
 
 # Instalar wget (para healthcheck) y limpiar cache apt
 RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
@@ -87,6 +87,10 @@ WORKDIR /app
 COPY --from=java-build \
     /build/wpsSimulator/target/wps-simulator-3.6.0.jar \
     /app/wps-simulator.jar
+
+# ---- Copiar los specs declarativos (YAML goals y planes) ----
+# GoalRegistry los lee desde el filesystem en /app/specs/goals al arrancar
+COPY specs/ ./specs/
 
 # ---- Copiar fuentes wpsUI ----
 COPY wpsUI/package.json wpsUI/tsconfig.json wpsUI/next.config.mjs wpsUI/tailwind.config.ts wpsUI/postcss.config.mjs ./
@@ -141,11 +145,12 @@ CMD ["node", ".next/standalone/server.js"]
 #           Usado por docker-compose.exp-*.yml
 #           Build: docker compose -f docker-compose.exp-*.yml build
 # ============================================================
-FROM eclipse-temurin:21-jre-jammy AS javaonly
+FROM eclipse-temurin:21-jre-noble AS javaonly
 
 WORKDIR /app
 COPY --from=java-build \
     /build/wpsSimulator/target/wps-simulator-3.6.0.jar \
     /app/wps-simulator.jar
+COPY specs/         ./specs/
 RUN mkdir -p /app/logs
 ENTRYPOINT ["java", "-jar", "/app/wps-simulator.jar"]

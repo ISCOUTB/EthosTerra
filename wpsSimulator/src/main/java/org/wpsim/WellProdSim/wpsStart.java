@@ -21,6 +21,8 @@ import org.wpsim.BankOffice.Agent.BankOffice;
 import org.wpsim.CivicAuthority.Agent.CivicAuthority;
 import org.wpsim.CommunityDynamics.Agent.CommunityDynamics;
 import org.wpsim.MarketPlace.Agent.MarketPlace;
+import org.wpsim.Infrastructure.Goals.GoalRegistry;
+import org.wpsim.Infrastructure.Goals.PlanRegistry;
 import org.wpsim.PeasantFamily.Agent.PeasantFamily;
 import org.wpsim.PerturbationGenerator.Agent.PerturbationGenerator;
 import org.wpsim.SimulationControl.Agent.SimulationControl;
@@ -53,10 +55,17 @@ public class wpsStart {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // Set arguments to config
-        setArgumentsConfig(args);
         // Set initial config of simulation
         config = wpsConfig.getInstance();
+        System.out.println("DEBUG: config is null? " + (config == null));
+        // Set arguments to config
+        setArgumentsConfig(args);
+
+        // Register experiment run in DB (Stage 3)
+        if (org.wpsim.Infrastructure.Episodes.PostgresConnectionFactory.isAvailable()) {
+            registerExperimentRun();
+        }
+
         // Create BESA Container
         createContainer();
         // Set initial date of simulation
@@ -65,6 +74,23 @@ public class wpsStart {
         printHeader();
         //showRunningAgents();
         startSimulation();
+    }
+
+    private static void registerExperimentRun() {
+        String sql = "INSERT INTO experiment_runs (config, model_hash, notes) VALUES (?::jsonb, ?, ?)";
+        try (java.sql.Connection conn = org.wpsim.Infrastructure.Episodes.PostgresConnectionFactory.getInstance().getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            com.google.gson.Gson gson = new com.google.gson.Gson();
+            ps.setString(1, gson.toJson(params));
+            ps.setString(2, "all-MiniLM-L6-v2");
+            ps.setString(3, "Simulation started with " + peasantFamiliesAgents + " agents");
+            
+            ps.executeUpdate();
+            BESA.Log.ReportBESA.info("Experiment run registered in PostgreSQL.");
+        } catch (java.sql.SQLException e) {
+            BESA.Log.ReportBESA.error("Failed to register experiment run: " + e.getMessage());
+        }
     }
 
     private static void setArgumentsConfig(String[] args) {
@@ -205,7 +231,6 @@ public class wpsStart {
                 .environmentCase(envCase)
                 .build();
         AdmBESA adm = AdmBESA.getInstance(builderConfig);
-        System.out.println(adm.getConfigBESA());
     }
 
     private static void startSimulation() {
@@ -216,6 +241,11 @@ public class wpsStart {
             case "primary" -> {
                 createServices();
                 pauseThread(2000); // give services time to register before peasants start
+
+                // Initialize EBDI Registries after services (ViewerLens) are ready
+                GoalRegistry.getInstance();
+                PlanRegistry.getInstance();
+
                 createPeasants(config.peasantSerialID, peasantFamiliesAgents);
                 showRunningAgents();
             }

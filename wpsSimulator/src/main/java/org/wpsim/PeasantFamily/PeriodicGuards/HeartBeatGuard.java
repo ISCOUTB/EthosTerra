@@ -14,6 +14,7 @@
  */
 package org.wpsim.PeasantFamily.PeriodicGuards;
 
+import BESA.BDI.AgentStructuralModel.GoalBDI;
 import BESA.BDI.AgentStructuralModel.StateBDI;
 import BESA.ExceptionBESA;
 import BESA.Kernel.Agent.Event.EventBESA;
@@ -50,20 +51,23 @@ public class HeartBeatGuard extends PeriodicGuardBESA {
         PeasantFamilyBelieves believes = (PeasantFamilyBelieves) ((StateBDI) PeasantFamily.getState()).getBelieves();
         StateBDI state = (StateBDI) PeasantFamily.getState();
 
-        if (ControlCurrentDate.getInstance().getDaysBetweenDates(believes.getInternalCurrentDate()) < -60){
-            ReportBESA.info(
-                    "UPDATE: \n=========" + believes.getAlias() + "========= " + believes.getTimeLeftOnDay() +
-                    "Intention " + state.getMachineBDIParams().getIntention() +
-                    "getTasks " + state.getMachineBDIParams().getIntention().getRole().getRolePlan().getTasks().toString() +
-                    "======================================================"
-            );
-            believes.setCurrentActivity(PeasantActivityType.BLOCKED);
-            believes.getPeasantProfile().setHealth(-100);
+        if (true) { // Debugging: always print intention
+            GoalBDI intention = state.getMachineBDIParams().getIntention();
+            System.out.println("EBDI: [HeartBeat] Agent " + believes.getAlias() +
+                " | Intention: " + (intention != null ? intention.getDescription() : "none") +
+                " | Tasks: " + (intention != null && intention.getRole() != null
+                    ? intention.getRole().getRolePlan().getTasks().toString() : "[]"));
         }
         // Check if the agent has finished
         if (checkDead(believes)) return;
         // Check if the simulation has finished
         if (checkFinish(believes)) return;
+
+        // Stage 4: Tick GoalEngine in shadow mode
+        if (PeasantFamily.getGoalEngine() != null) {
+            PeasantFamily.getGoalEngine().tick(believes);
+        }
+
         // Send BDI Pulse to BDI Information Flow
         sendBDIPulse(this.agent.getAlias());
         //wpsReport.info("Tiempo restante " + believes.getTimeLeftOnDay() + " Ya ejecutadas: " + believes.getTasksBySpecificDate(believes.getInternalCurrentDate()), believes.getAlias());

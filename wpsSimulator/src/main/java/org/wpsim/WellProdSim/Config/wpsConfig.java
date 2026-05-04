@@ -224,11 +224,11 @@ public final class wpsConfig {
 
 
     public String loadWorldFile(String world) {
-        // Try filesystem first (e.g. web/mediumworld.json from volume mount)
-        String result = loadFile("web/" + world + ".json");
+        // Try to match the standard pattern first: web/data/world.[ID].json
+        String result = loadFile("web/data/world." + world + ".json");
         if (result == null) {
-            // Fall back to JAR resource path (e.g. web/data/world.100.json)
-            result = loadFile("web/data/world." + world + ".json");
+            // Fallback for custom world paths
+            result = loadFile("web/" + world + ".json");
         }
         return result;
     }
