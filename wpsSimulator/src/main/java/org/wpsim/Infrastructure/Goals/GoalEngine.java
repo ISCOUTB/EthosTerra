@@ -35,6 +35,25 @@ public class GoalEngine implements BeliefChangeListener {
         this.agentId = agentId;
         this.beliefRepository = beliefRepository;
         this.goalRegistry = GoalRegistry.getInstance();
+        this.normativeFilter = (goal, believes) -> {
+            if (goal.getNormative_tags() == null || goal.getNormative_tags().isEmpty()) {
+                return true;
+            }
+
+            // Check if agent has forbidden tags belief
+            Optional<String> forbidden = believes.getBeliefRepository().get("forbidden_normative_tags", String.class);
+            if (forbidden.isPresent()) {
+                List<String> forbiddenList = Arrays.asList(forbidden.get().split(","));
+                for (String tag : goal.getNormative_tags()) {
+                    if (forbiddenList.contains(tag)) {
+                        wpsReport.debug("Goal " + goal.getId() + " filtered by normative tag: " + tag, agentId);
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        };
         subscribeToRelevantBeliefs();
     }
 
@@ -62,6 +81,19 @@ public class GoalEngine implements BeliefChangeListener {
     }
 
     /**
+     * Normative filter to prune or prioritize goals based on social/legal norms.
+     */
+    public interface NormativeFilter {
+        boolean isPermitted(GoalSpec goal, PeasantFamilyBelieves believes);
+    }
+
+    private NormativeFilter normativeFilter;
+
+    public void setNormativeFilter(NormativeFilter filter) {
+        this.normativeFilter = filter;
+    }
+
+    /**
      * Periodic tick to evaluate goals and log potential intentions (Shadow Mode).
      */
     public void tick(PeasantFamilyBelieves believes) {
@@ -77,6 +109,7 @@ public class GoalEngine implements BeliefChangeListener {
                 Boolean activated = (Boolean) MVEL.eval(spec.getActivation_when(), context);
                 if (activated != null && activated) {
                     activeGoals.add(spec);
+                    System.out.println("EBDI: [Goal] Detected " + spec.getId() + " for agent " + agentId);
                 }
             } catch (Exception e) {
                 wpsReport.error("Error evaluating activation for goal " + spec.getId() + ": " + e.getMessage(), agentId);
@@ -85,24 +118,42 @@ public class GoalEngine implements BeliefChangeListener {
 
         if (activeGoals.isEmpty()) return;
 
-        // Evaluate contribution for active goals
+        GoalSpec bestGoal = selectIntention(activeGoals, believes);
+
+        if (bestGoal != null) {
+            String logEntry = String.format("[EBDI] Agent %s: Selected goal %s (level %s)",
+                    agentId, bestGoal.getId(), bestGoal.getPyramid_level());
+            shadowLog.add(logEntry);
+            // In full BDI mode, this would trigger an intention shift.
+            // For now, we still log it as a shadow/validation step.
+            System.out.println(logEntry);
+            wpsReport.info(logEntry, agentId);
+        }
+    }
+
+    /**
+     * Selects the best goal from active goals based on contribution and normative filters.
+     */
+    public GoalSpec selectIntention(List<GoalSpec> activeGoals, PeasantFamilyBelieves believes) {
         GoalSpec bestGoal = null;
         double maxContribution = -1.0;
 
         for (GoalSpec spec : activeGoals) {
+            // 1. Check normative filter
+            if (!normativeFilter.isPermitted(spec, believes)) {
+                continue;
+            }
+
+            // 2. Evaluate contribution
             double contribution = evaluateContribution(spec, believes);
+            
+            // 3. Selection (highest contribution)
             if (contribution > maxContribution) {
                 maxContribution = contribution;
                 bestGoal = spec;
             }
         }
-
-        if (bestGoal != null) {
-            String logEntry = String.format("[Shadow] Agent %s: Selected goal %s (level %s) with contribution %.2f",
-                    agentId, bestGoal.getId(), bestGoal.getPyramid_level(), maxContribution);
-            shadowLog.add(logEntry);
-            wpsReport.info(logEntry, agentId);
-        }
+        return bestGoal;
     }
 
     public double evaluateContribution(GoalSpec spec, PeasantFamilyBelieves believes) {
@@ -171,6 +222,7 @@ public class GoalEngine implements BeliefChangeListener {
             rb.setConjunction(new Minimum());
             rb.setDisjunction(new Maximum());
             rb.setActivation(new General());
+            rb.setImplication(new Minimum());
             
             for (GoalSpec.FuzzyRule ruleSpec : rules.getRules()) {
                 StringBuilder fclRule = new StringBuilder("if ");

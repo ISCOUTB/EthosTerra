@@ -1,0 +1,6 @@
+id: sample_experimental_goal
+pyramid_level: SOCIAL
+activation_when: "belief.get('current_day') >= 1"
+plan_ref: sample_experimental_plan
+contribution_rules:
+  fixed_value: 0.8

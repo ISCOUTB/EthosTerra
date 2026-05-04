@@ -224,10 +224,17 @@ public final class wpsConfig {
 
 
     public String loadWorldFile(String world) {
-        // Try to match the standard pattern first: web/data/world.[ID].json
-        String result = loadFile("web/data/world." + world + ".json");
+        // Try the new location first: data/worlds/world.[ID].json
+        String result = loadFile("data/worlds/world." + world + ".json");
+        if (result != null) return result;
+
+        // Try the new location first: data/worlds/[ID].json
+        result = loadFile("data/worlds/" + world + ".json");
+        if (result != null) return result;
+
+        // Fallback to legacy locations
+        result = loadFile("web/data/world." + world + ".json");
         if (result == null) {
-            // Fallback for custom world paths
             result = loadFile("web/" + world + ".json");
         }
         return result;

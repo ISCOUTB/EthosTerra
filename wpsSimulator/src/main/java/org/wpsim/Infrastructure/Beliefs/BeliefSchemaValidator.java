@@ -35,13 +35,28 @@ public class BeliefSchemaValidator {
                         double min = meta.optDouble("min", Double.NEGATIVE_INFINITY);
                         double max = meta.optDouble("max", Double.POSITIVE_INFINITY);
                         String type = meta.optString("type", "String");
-                        CATALOG.put(key, new BeliefMeta(type, min, max));
+                        String redisHash = meta.optString("redis_hash", "agent:{id}:state");
+                        CATALOG.put(key, new BeliefMeta(type, min, max, redisHash));
                     }
                 }
             }
         } catch (Exception e) {
             // Schema not found on classpath — validation is disabled silently.
         }
+    }
+
+    /**
+     * Returns the Redis hash pattern for a given key, or the default state hash if unknown.
+     */
+    public static String getRedisHash(String key) {
+        BeliefMeta meta = CATALOG.get(key);
+        if (meta != null) {
+            return meta.redisHash;
+        }
+        // Fallback for emotional/personality prefixes
+        if (key.startsWith("emotional.")) return "agent:{id}:emotional";
+        if (key.startsWith("personality.")) return "agent:{id}:personality";
+        return "agent:{id}:state";
     }
 
     /**
@@ -62,5 +77,5 @@ public class BeliefSchemaValidator {
         return CATALOG.keySet();
     }
 
-    private record BeliefMeta(String type, double min, double max) {}
+    private record BeliefMeta(String type, double min, double max, String redisHash) {}
 }

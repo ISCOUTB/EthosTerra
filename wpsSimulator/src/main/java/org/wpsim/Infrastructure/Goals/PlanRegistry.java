@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  * Registry for PlanSpec objects. Loads YAML files from the specs/plans/ directory.
  */
 public class PlanRegistry {
-    private static final String DEFAULT_PLANS_DIR = "specs/plans";
+    private static final String DEFAULT_PLANS_DIR = "data/ebdi/plans";
     private static final String ENV_PLANS_DIR = "WPS_PLANS_DIR";
     private static PlanRegistry instance;
     private final Map<String, PlanSpec> plans = new HashMap<>();

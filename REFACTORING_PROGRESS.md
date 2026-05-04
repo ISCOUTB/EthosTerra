@@ -4,7 +4,7 @@
 **Plan file:** `.claude/plans/wellprodsim-wps-lucky-duckling.md` (local to `~/.claude/plans/`)  
 **Branch:** `nextWPS`  
 **Last updated:** 2026-05-04 (session 5)  
-**Last worked:** Stage 5 — L6 Leisure completo (5 goals: spend_family_time, spend_friends_time, leisure_activities, waste_time_and_resources, find_news). Nueva acción `SpendFriendsTimeAction` y mejora de `EmitEmotionAction`. Run v26 validado: spend_family_time x1170. Toda la pirámide (L1-L6, exc. L3) es declarativa.  
+**Last worked:** Estructura reorganizada. Todos los archivos declarativos (metas, planes, esquemas) migrados de `specs/` a `data/ebdi/`. Registros Java y Dockerfile actualizados. Simulación v29 validada.  
 
 ---
 
@@ -18,7 +18,7 @@
 | 3 | Embeddings + búsqueda semántica | ✅ Done | 1 |
 | 4 | GoalEngine declarativo (shadow mode) | ✅ Done | 1 |
 | 5 | Migración del runtime de metas | ✅ Done | 6 |
-| 6 | Extensión sin código | 🔄 In Progress | — |
+| 6 | Extensión sin código | ✅ Done | 1 |
 
 ---
 

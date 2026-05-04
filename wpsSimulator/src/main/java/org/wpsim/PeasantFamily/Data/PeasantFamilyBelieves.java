@@ -102,9 +102,46 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
             map.put("work_done", land.getElapsedWorkTime());
             map.put("work_total", land.getTotalRequiredTime());
             map.put("is_used", land.isUsed());
+            map.put("currentCropCareType", land.getCurrentCropCareType().toString());
             list.add(map);
         }
         return list;
+    }
+
+    public boolean hasLandWithSeason(String season) {
+        for (LandInfo land : assignedLands) {
+            if (land.getCurrentSeason().toString().equals(season)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasLandWithKind(String kind) {
+        for (LandInfo land : assignedLands) {
+            if (land.getKind().equals(kind)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasLandWithKindAndSeason(String kind, String season) {
+        for (LandInfo land : assignedLands) {
+            if (land.getKind().equals(kind) && land.getCurrentSeason().toString().equals(season)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasLandWithCropCare(String careType) {
+        for (LandInfo land : assignedLands) {
+            if (land.getCurrentCropCareType().toString().equals(careType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -150,6 +187,21 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
 
         if (RedisConnectionFactory.isAvailable()) {
             this.beliefs = new RedisBeliefRepository(alias);
+            
+            // Subscribe to keys that can be updated by declarative goals
+            this.beliefs.subscribe("new_day", (key, oldVal, newVal) -> {
+                this.newDay = (boolean) newVal;
+            });
+            this.beliefs.subscribe("have_loan", (key, oldVal, newVal) -> {
+                this.haveLoan = (boolean) newVal;
+            });
+            this.beliefs.subscribe("loan_denied", (key, oldVal, newVal) -> {
+                this.loanDenied = (boolean) newVal;
+            });
+            this.beliefs.subscribe("purpose", (key, oldVal, newVal) -> {
+                this.peasantProfile.setPurpose((String) newVal);
+            });
+            
             syncToRedis();
         }
     }
@@ -466,6 +518,68 @@ public class PeasantFamilyBelieves extends EmotionalComponent implements Believe
         Set<String> tasks = taskLog.getOrDefault(date, new HashSet<>());
         //ReportBESA.info(tasks + " " + (taskName+landName) + " on " + date + " r " + tasks.contains(taskName+landName));
         return tasks.contains(taskName + landName);
+    }
+
+    public boolean isTaskExecutedToday(String taskName) {
+        return isTaskExecutedOnDate(getInternalCurrentDate(), taskName);
+    }
+
+    public boolean hasMoney(double amount) {
+        return getPeasantProfile().getMoney() >= amount;
+    }
+
+    public boolean hasHealthBelow(double threshold) {
+        return getPeasantProfile().getHealth() < threshold;
+    }
+
+    public boolean hasHarvestedWeight() {
+        return getPeasantProfile().getHarvestedWeight() > 0;
+    }
+
+    public boolean hasPurpose() {
+        return getPeasantProfile().getPurpose() != null && !getPeasantProfile().getPurpose().isEmpty();
+    }
+
+    public boolean needsSeeds() {
+        return getPeasantProfile().getSeeds() < getPeasantProfile().getSeedsNeeded();
+    }
+
+    public boolean needsTools() {
+        return getPeasantProfile().getTools() < getPeasantProfile().getToolsNeeded();
+    }
+
+    public boolean needsWater() {
+        // Water is needed if any land has irrigation care type and water is low (arbitrary threshold 10)
+        return hasLandWithCropCare("IRRIGATION") && getPeasantProfile().getWaterAvailable() < 10;
+    }
+
+    public boolean needsPesticides() {
+        // Pesticides are needed if any land is growing and pesticides are low (arbitrary threshold 5)
+        return hasLandWithSeason("GROWING") && getPeasantProfile().getPesticidesAvailable() < 5;
+    }
+
+    public boolean isPriceListAvailable() {
+        return !getPriceList().isEmpty();
+    }
+
+    public boolean hasHelper() {
+        return getPeasantFamilyHelper() != null && !getPeasantFamilyHelper().isEmpty();
+    }
+
+    public boolean hasContractor() {
+        return getContractor() != null && !getContractor().isEmpty();
+    }
+
+    public boolean isWorker() {
+        return "worker".equals(getPeasantProfile().getPurpose());
+    }
+
+    public boolean hasMoneyBelow(double amount) {
+        return getPeasantProfile().getMoney() <= amount;
+    }
+
+    public boolean hasLoan() {
+        return isHaveLoan();
     }
 
     public boolean isHaveLoan() {

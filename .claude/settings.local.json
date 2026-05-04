@@ -30,7 +30,11 @@
       "Bash(tee /tmp/val_run.log)",
       "Read(//tmp/**)",
       "Bash(echo \"PID: $!\")",
-      "Bash(awk '{print $NF}')"
+      "Bash(awk '{print $NF}')",
+      "Bash(echo \"   Goals YAML files: $\\(find /c/Users/jairo/Projects/EthosTerra/specs/goals -name \"*.yaml\")",
+      "Bash(grep -E \"\\\\.java$\")",
+      "Bash(echo \"3. TOTAL wpsSimulator JAVA: $\\(find /c/Users/jairo/Projects/EthosTerra/wpsSimulator -name \"*.java\")",
+      "Bash(echo \"5. ACTION IMPLEMENTATIONS: $\\(find /c/Users/jairo/Projects/EthosTerra/wpsSimulator/src/main/java/org/wpsim/Infrastructure/Goals/Actions -name \"*.java\")"
     ]
   }
 }

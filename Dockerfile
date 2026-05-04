@@ -36,7 +36,7 @@ COPY RationalBESA/  ./RationalBESA/
 COPY BDIBESA/       ./BDIBESA/
 COPY eBDIBESA/      ./eBDIBESA/
 COPY wpsSimulator/  ./wpsSimulator/
-COPY specs/         ./specs/
+COPY data/          ./data/
 
 
 # ---- Compilar e instalar cada módulo BESA en ~/.m2 (orden de dependencias) ----
@@ -88,9 +88,8 @@ COPY --from=java-build \
     /build/wpsSimulator/target/wps-simulator-3.6.0.jar \
     /app/wps-simulator.jar
 
-# ---- Copiar los specs declarativos (YAML goals y planes) ----
-# GoalRegistry los lee desde el filesystem en /app/specs/goals al arrancar
-COPY specs/ ./specs/
+# ---- Copiar datos (metas, planes, tierras, mundos) ----
+COPY data/ ./data/
 
 # ---- Copiar fuentes wpsUI ----
 COPY wpsUI/package.json wpsUI/tsconfig.json wpsUI/next.config.mjs wpsUI/tailwind.config.ts wpsUI/postcss.config.mjs ./
@@ -151,6 +150,6 @@ WORKDIR /app
 COPY --from=java-build \
     /build/wpsSimulator/target/wps-simulator-3.6.0.jar \
     /app/wps-simulator.jar
-COPY specs/         ./specs/
+COPY data/          ./data/
 RUN mkdir -p /app/logs
 ENTRYPOINT ["java", "-jar", "/app/wps-simulator.jar"]

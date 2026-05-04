@@ -140,9 +140,8 @@ public class RedisBeliefRepository implements BeliefRepository {
     // -------------------------------------------------------------------------
 
     private String hashFor(String key) {
-        if (key.startsWith("emotional.")) return String.format(HASH_EMOTIONAL, agentId);
-        if (key.startsWith("personality.")) return String.format(HASH_PERSONALITY, agentId);
-        return String.format(HASH_STATE, agentId);
+        String pattern = BeliefSchemaValidator.getRedisHash(key);
+        return pattern.replace("{id}", agentId);
     }
 
     private String fieldFor(String key) {
@@ -164,6 +163,8 @@ public class RedisBeliefRepository implements BeliefRepository {
             return (T) Long.valueOf(raw);
         if (type == Boolean.class || type == boolean.class)
             return (T) Boolean.valueOf(raw);
+        if (type == Object.class)
+            return (T) parseValue(raw);
         return (T) raw;
     }
 

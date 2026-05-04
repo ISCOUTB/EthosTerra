@@ -178,10 +178,11 @@ public class AgroEcosystemAction implements PrimitiveAction {
 
     private boolean handleCheck(PeasantFamilyBelieves believes) {
         for (LandInfo land : believes.getAssignedLands()) {
-            if (land.getCurrentSeason() == SeasonType.GROWING) {
+            if (land.getCurrentCropCareType().equals(org.wpsim.PeasantFamily.Data.Utils.CropCareType.CHECK)) {
                 int workTime = TimeConsumedBy.CheckCropsTask.getTime();
                 believes.useTime(workTime);
                 try {
+                    land.setCurrentCropCareType(org.wpsim.PeasantFamily.Data.Utils.CropCareType.NONE);
                     AdmBESA.getInstance().getHandlerByAlias(land.getLandName()).sendEvent(
                         new EventBESA(AgroEcosystemGuard.class.getName(),
                         new AgroEcosystemMessage(AgroEcosystemMessageType.CROP_INFORMATION, land.getCropName(), believes.getInternalCurrentDate(), land.getLandName()))
@@ -224,10 +225,11 @@ public class AgroEcosystemAction implements PrimitiveAction {
 
     private boolean handlePesticide(PeasantFamilyBelieves believes) {
         for (LandInfo land : believes.getAssignedLands()) {
-            if (land.getCurrentSeason() == SeasonType.GROWING) {
+            if (land.getCurrentCropCareType().equals(org.wpsim.PeasantFamily.Data.Utils.CropCareType.PESTICIDE)) {
                 int workTime = TimeConsumedBy.ManagePestsTask.getTime();
                 believes.useTime(workTime);
                 try {
+                    land.setCurrentCropCareType(org.wpsim.PeasantFamily.Data.Utils.CropCareType.NONE);
                     AdmBESA.getInstance().getHandlerByAlias(land.getLandName()).sendEvent(
                         new EventBESA(AgroEcosystemGuard.class.getName(),
                         new AgroEcosystemMessage(AgroEcosystemMessageType.CROP_PESTICIDE, land.getCropName(), believes.getInternalCurrentDate(), believes.getAlias()))

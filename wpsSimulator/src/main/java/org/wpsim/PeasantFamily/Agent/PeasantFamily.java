@@ -37,7 +37,6 @@ import org.wpsim.CivicAuthority.Data.LandInfo;
 import org.wpsim.PeasantFamily.Data.PeasantFamilyBelieves;
 import org.wpsim.PeasantFamily.Data.PeasantFamilyProfile;
 import org.wpsim.PeasantFamily.Guards.FromSimulationControl.ToControlMessage;
-import org.wpsim.PeasantFamily.Goals.L3Development.*;
 import org.wpsim.PeasantFamily.Guards.FromBankOffice.FromBankOfficeGuard;
 import org.wpsim.PeasantFamily.Guards.FromSimulationControl.FromSimulationControlGuard;
 import org.wpsim.PeasantFamily.Guards.FromCivicAuthority.FromCivicAuthorityGuard;
@@ -133,18 +132,17 @@ public class PeasantFamily extends AgentBDI {
         goals.add(DeclarativeGoal.build("look_for_loan"));
         goals.add(DeclarativeGoal.build("pay_debts"));
 
-        //Level 3 Goals: Development        
-        //goals.add(AttendToLivestockGoal.buildGoal());
-        goals.add(AttendReligiousEventsGoal.buildGoal());
-        goals.add(CheckCropsGoal.buildGoal());
-        goals.add(HarvestCropsGoal.buildGoal());
-        goals.add(ManagePestsGoal.buildGoal());
-        goals.add(PlantCropGoal.buildGoal());
-        goals.add(PrepareLandGoal.buildGoal());
-        goals.add(DeforestingLandGoal.buildGoal());
-        goals.add(SellCropGoal.buildGoal());
-        goals.add(SearchForHelpAndNecessityGoal.buildGoal());
-        goals.add(WorkForOtherGoal.buildGoal());
+        //Level 3 Goals: Development
+        goals.add(DeclarativeGoal.build("attend_religious_events"));
+        goals.add(DeclarativeGoal.build("check_crops"));
+        goals.add(DeclarativeGoal.build("harvest_crops"));
+        goals.add(DeclarativeGoal.build("manage_pests"));
+        goals.add(DeclarativeGoal.build("plant_crop"));
+        goals.add(DeclarativeGoal.build("prepare_land"));
+        goals.add(DeclarativeGoal.build("deforest_land"));
+        goals.add(DeclarativeGoal.build("sell_crop"));
+        goals.add(DeclarativeGoal.build("search_for_help"));
+        goals.add(DeclarativeGoal.build("work_for_other"));
 
         //goals.add(ProcessProductsGoal.buildGoal());
         //goals.add(SellProductsGoal.buildGoal());
@@ -165,7 +163,7 @@ public class PeasantFamily extends AgentBDI {
         }
 
         if (params.irrigation == 1) {
-            goals.add(IrrigateCropsGoal.buildGoal());
+            goals.add(DeclarativeGoal.build("irrigate_crops"));
             goals.add(DeclarativeGoal.build("obtain_water"));
         }
 
