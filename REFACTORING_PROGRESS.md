@@ -17,8 +17,8 @@
 | 2 | Memoria episódica básica | ✅ Done | 1 |
 | 3 | Embeddings + búsqueda semántica | ✅ Done | 1 |
 | 4 | GoalEngine declarativo (shadow mode) | ✅ Done | 1 |
-| 5 | Migración del runtime de metas | 🔄 In Progress | 5 |
-| 6 | Extensión sin código | ⬜ Pending | — |
+| 5 | Migración del runtime de metas | ✅ Done | 6 |
+| 6 | Extensión sin código | 🔄 In Progress | — |
 
 ---
 
@@ -222,14 +222,14 @@
 2. `LookForLoanGoal` + `LookForLoanTask` ✅
 3. All L1Survival (4 remaining): YAML + plans definidos ✅, Java classes eliminadas ✅
 4. All L2Obligation (1 remaining): YAML + plan definidos ✅, Java classes eliminadas ✅
-5. L3 batch 1 (5 goals), validate ⬜
-6. L3 batch 2 (5 goals), validate ⬜
-7. L3 batch 3 (6 goals), validate → delete L3 Java classes ⬜
-8. **L4 batch 1 (5 goals)** → ✅ Done (alternative_work, get_training, get_price_list, obtain_seeds, obtain_tools)
-9. **L4 batch 2 (5 goals)** → ✅ Done (obtain_a_land, obtain_pesticides, obtain_supplies, obtain_livestock, obtain_water)
-10. **L5Social (3 goals)** → ✅ Done (look_for_collaboration, provide_collaboration, communicate)
-11. **L6Leisure (5 goals)** → ✅ Done (spend_family_time, spend_friends_time, leisure_activities, waste_time_and_resources, find_news)
-12. Delete `wpsGoalBDI.java` after all goals migrated ⬜
+5. L3 batch 1 (5 goals), validate ✅ Done
+6. L3 batch 2 (5 goals), validate ✅ Done
+7. L3 batch 3 (6 goals), validate → delete L3 Java classes ✅ Done
+8. **L4 batch 1 (5 goals)** → ✅ Done
+9. **L4 batch 2 (5 goals)** → ✅ Done
+10. **L5Social (3 goals)** → ✅ Done
+11. **L6Leisure (5 goals)** → ✅ Done
+12. Delete `wpsGoalBDI.java` after all goals migrated ✅ Done
 
 ### Validation criterion
 - [x] Build compila sin errores (Run v19)
@@ -274,25 +274,19 @@
 
 ---
 
-## Checkpoint: Session 5 — L6 Leisure Completo
+## Checkpoint: Session 6 — Migración eBDI Finalizada
 
-**Punto de parada:** 2026-05-04 (sesión 5), después de validar L6 Leisure con Run v26.
+**Punto de parada:** 2026-05-04 (sesión 6), después de completar L3 AgroEcosystem y resolver bloqueo de Git.
 
 **Logros de esta sesión:**
-- ✅ `EmitEmotionAction.java` actualizado — ahora procesa eventos emocionales reales (`EmotionalEvent`).
-- ✅ `SpendFriendsTimeAction.java` — acción especializada para manejar el azar (Coin flip) y eventos duales.
-- ✅ `PeasantFamilyBelieves.java` — `syncToRedis` actualizado con `peasant_friends_affinity` y `emotional_index`.
-- ✅ 5 GoalSpec YAML creados en `specs/goals/leisure/`.
-- ✅ 4 PlanSpec YAML creados en `specs/plans/leisure/`.
-- ✅ Eliminados 10 Java files (L6 Leisure) y limpieza de imports en `PeasantFamily.java`.
-- ✅ Run v26: spend_family_time x1170 — Validado el nivel de ocio.
+- ✅ **Resolución de Bloqueo en Git**: Se eliminaron los archivos de log de más de 100MB (`wpsSimulator.log`) y se actualizó el `.gitignore` para ignorar recursivamente `data/logs/`.
+- ✅ **L3 AgroEcosystem Declarativo**: Migración completa del motor de cultivos a la arquitectura BDI basada en YAML.
+- ✅ **Eliminación de Deuda Técnica**: Borrado físico de todas las clases de metas y tareas legacy (L1 a L6). El paquete `org.wpsim.PeasantFamily.Tasks.L3Development` y su equivalente en `Goals` han sido eliminados.
+- ✅ **Sincronización Remota**: Push exitoso al repositorio con la arquitectura limpia.
 
-**Próxima sesión — L3 AgroEcosystem (El gran bloqueador):**
-- L3 es el nivel más complejo porque interactúa con los terrenos (`LandInfo`) y requiere eventos de simulación física (`AgroEcosystem`).
-- Reto: Crear una acción primitiva flexible para eventos de cultivo (`SOW`, `PREPARE`, `HARVEST`, etc.) que acepte el nombre del terreno.
-- Reto: Exponer el estado de cada terreno (`LandInfo`) a Redis/MVEL de forma que se puedan activar metas por parcela.
-
----
+**Próxima sesión — Stage 6: Extensión sin código:**
+- Validar la adición de una meta nueva 100% via YAML sin tocar una sola línea de Java.
+- Refinar el `NormativeFilter` en el `GoalEngine`.
 
 ## Stage 6 — Extensión sin código ⬜
 
