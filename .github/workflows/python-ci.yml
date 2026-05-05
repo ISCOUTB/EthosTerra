@@ -1,0 +1,102 @@
+name: EthosTerra Python CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'besa-python/**'
+      - 'ethosterra-python/**'
+      - 'scripts/**'
+      - 'data/ebdi/**'
+  pull_request:
+    branches: [main]
+
+env:
+  ETHOSTERRA_ROOT: ${{ github.workspace }}
+  PYTHONPATH: ${{ github.workspace }}/besa-python:${{ github.workspace }}/ethosterra-python
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydantic pyyaml sortedcontainers simpleeval structlog numpy scikit-fuzzy httpx
+
+      - name: Verify imports
+        run: |
+          python -c "
+          import sys; print(f'Python {sys.version}')
+          import pydantic, yaml, sortedcontainers, simpleeval, structlog, numpy
+          print('Core dependencies: OK')
+          "
+
+      - name: Run kernel tests
+        run: |
+          python ${{ github.workspace }}/besa-python/tests/unit/test_kernel.py
+
+      - name: Run framework integration tests
+        run: |
+          PYTHONPATH="${{ env.PYTHONPATH }}" ETHOSTERRA_ROOT="${{ env.ETHOSTERRA_ROOT }}" \
+            python ${{ github.workspace }}/besa-python/tests/integration/test_full_stack.py
+
+      - name: Run domain tests
+        run: |
+          PYTHONPATH="${{ env.PYTHONPATH }}" ETHOSTERRA_ROOT="${{ env.ETHOSTERRA_ROOT }}" \
+            python ${{ github.workspace }}/ethosterra-python/tests/integration/test_domain.py
+
+      - name: Run full system tests
+        run: |
+          PYTHONPATH="${{ env.PYTHONPATH }}" ETHOSTERRA_ROOT="${{ env.ETHOSTERRA_ROOT }}" \
+            python ${{ github.workspace }}/ethosterra-python/tests/integration/test_full_system.py
+
+      - name: Run plan execution tests
+        run: |
+          PYTHONPATH="${{ env.PYTHONPATH }}" ETHOSTERRA_ROOT="${{ env.ETHOSTERRA_ROOT }}" \
+            python ${{ github.workspace }}/ethosterra-python/tests/integration/test_plan_execution.py
+
+      - name: Run coverage tests
+        run: |
+          PYTHONPATH="${{ env.PYTHONPATH }}" ETHOSTERRA_ROOT="${{ env.ETHOSTERRA_ROOT }}" \
+            python ${{ github.workspace }}/ethosterra-python/tests/integration/test_coverage.py
+
+      - name: Run with pytest + coverage (XML for SonarQube)
+        run: |
+          pip install pytest-cov
+          PYTHONPATH="${{ env.PYTHONPATH }}" ETHOSTERRA_ROOT="${{ env.ETHOSTERRA_ROOT }}" \
+            python -m pytest \
+            besa-python/tests/unit/test_kernel.py \
+            besa-python/tests/integration/test_full_stack.py \
+            ethosterra-python/tests/integration/test_domain.py \
+            ethosterra-python/tests/integration/test_full_system.py \
+            ethosterra-python/tests/integration/test_plan_execution.py \
+            ethosterra-python/tests/integration/test_coverage.py \
+            -v --tb=short --cov=besa --cov=ethosterra --cov-report=xml
+
+      - name: Run 1-year simulation smoke test
+        run: |
+          PYTHONPATH="${{ env.PYTHONPATH }}" ETHOSTERRA_ROOT="${{ env.ETHOSTERRA_ROOT }}" \
+            timeout 30 python ${{ github.workspace }}/ethosterra-python/ethosterra/start.py \
+            --agents 2 --years 1 --speed 0.001
+          echo "CSV lines: $(wc -l < ${{ github.workspace }}/data/logs/wpsSimulator.csv)"
+          echo "Land assignment:"
+          awk -F',' 'NR>1 && $9==1' ${{ github.workspace }}/data/logs/wpsSimulator.csv | wc -l
+
+      - name: Run comparison self-test
+        run: |
+          python ${{ github.workspace }}/scripts/compare_outputs.py \
+            --java ${{ github.workspace }}/data/logs/wpsSimulator.csv \
+            --python ${{ github.workspace }}/data/logs/wpsSimulator.csv \
+            --tolerance 0.15

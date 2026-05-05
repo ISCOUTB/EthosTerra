@@ -1,0 +1,24 @@
+[tool.pytest.ini_options]
+addopts = "-v --tb=short --strict-markers --cov=besa --cov=ethosterra --cov-report=xml --cov-report=html --cov-report=term"
+testpaths = ["besa-python/tests", "ethosterra-python/tests"]
+pythonpath = ["besa-python", "ethosterra-python"]
+markers = [
+    "slow: tests que requieren >1s",
+    "integration: tests que requieren RabbitMQ o llama-server",
+    "llm: tests que requieren llama-server activo",
+]
+
+[tool.coverage.run]
+source = ["besa-python/besa", "ethosterra-python/ethosterra"]
+omit = ["*/tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"

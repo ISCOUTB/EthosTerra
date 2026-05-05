@@ -1,316 +1,236 @@
-# EthosTerra — Simulador Social de Productividad y Bienestar para Familias Campesinas
+# EthosTerra — Simulador Social Multi-Agente BDI para Familias Campesinas
 
-EthosTerra (anteriormente WellProdSim) es una plataforma de simulación multi-agente desarrollada por el grupo **SIDRePUJ / ISCOUTB (UTB)**. Modela el comportamiento de familias campesinas colombianas mediante agentes BDI (Belief-Desire-Intention) con componentes emocionales, simulando decisiones agrícolas, económicas y de bienestar a lo largo del tiempo.
+[![CI](https://github.com/ISCOUTB/EthosTerra/actions/workflows/python-ci.yml/badge.svg)](https://github.com/ISCOUTB/EthosTerra/actions/workflows/python-ci.yml)
+[![Python](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+
+EthosTerra es un simulador multi-agente en Python 3.14 con razonamiento BDI (Belief-Desire-Intention) y componentes emocionales, que modela el comportamiento de familias campesinas colombianas: decisiones agrícolas, económicas y de bienestar a lo largo del tiempo.
+
+Desarrollado por los grupos **SIDRePUJ / ISCOUTB** (Universidad Tecnológica de Bolívar y Pontificia Universidad Javeriana).
 
 ---
 
-## Arquitectura general
+## Arquitectura
 
-```mermaid
-graph TB
-    subgraph Docker["Docker Container"]
-        subgraph UI["Next.js 14 — Puerto 3000"]
-            API["/api/simulator/* (API Routes)"]
-            WEB["Páginas Web (React)"]
-        end
-        subgraph SIM["wps-simulator.jar — Java 21"]
-            ENGINE["Motor de Simulación"]
-            VIEWER["ViewerLens (WebSocket :8000)"]
-        end
-        LOGS["/app/logs/ — CSV de resultados"]
-    end
-    subgraph MQ["RabbitMQ — Puerto 5672"]
-        EX["besa.exchange (Direct)"]
-    end
-
-    BROWSER["🌐 Navegador"] -->|HTTP :3000| WEB
-    BROWSER -->|WebSocket :8000| VIEWER
-    WEB --> API
-    API -->|spawn / kill| ENGINE
-    ENGINE --> LOGS
-    ENGINE -->|AMQP publish| EX
-    EX -->|AMQP consume| ENGINE
-    ENGINE -->|broadcast| VIEWER
-
-    style Docker fill:#14181c,stroke:#272d34,color:#fff
-    style UI fill:#0d1117,stroke:#38bdf8,color:#38bdf8
-    style SIM fill:#0d1117,stroke:#22c55e,color:#22c55e
-    style MQ fill:#0d1117,stroke:#f59e0b,color:#f59e0b
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Docker Container                        │
+│  ┌──────────────┐    WS :8000    ┌────────────────────────┐ │
+│  │  Next.js 14  │◄──────────────│  Python Simulator       │ │
+│  │  (UI :3000)  │──────────────►│  ethosterra-python      │ │
+│  │              │  POST :8001   │  BDI + FAO-56 crops     │ │
+│  └──────────────┘               │  besa-python framework  │ │
+│                                  └────────┬───────────────┘ │
+│                                           │                 │
+│                            ┌──────────────┼──────────────┐  │
+│                            │  Redis  │ Postgres │ Rabbit │  │
+│                            │ (belief │ (episode │  (dist │  │
+│                            │  store) │  store)  │  mode) │  │
+│                            └─────────┴──────────┴────────┘  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-El frontend web se comunica con el motor Java mediante API Routes de Next.js que reemplazan el sistema IPC de Electron original.
+- **Python simulator**: threading.Thread per agent, event-driven, YAML-specified goals
+- **WebSocket (8000)**: `q=` (agent count), `d=` (date), `j=` (agent JSON), `e=` (end)
+- **Control API (8001)**: `GET /status`, `POST /start`, `POST /stop`
+- **UI (3000)**: Next.js 14 standalone, configuration form + real-time dashboard
 
 ---
 
-### Cadena de dependencias BESA (Maven)
+## Quick Start
 
-```mermaid
-graph LR
-    K["KernelBESA"] --> L["LocalBESA"]
-    L --> R["RemoteBESA"]
-    R --> RA["RationalBESA"]
-    RA --> B["BDIBESA"]
-    B --> E["eBDIBESA"]
-    E --> W["wpsSimulator (Uber-JAR)"]
+### Prerequisites
 
-    style K fill:#1e3a5f,stroke:#38bdf8,color:#fff
-    style L fill:#1e3a5f,stroke:#38bdf8,color:#fff
-    style R fill:#1e3a5f,stroke:#38bdf8,color:#fff
-    style RA fill:#1e3a5f,stroke:#38bdf8,color:#fff
-    style B fill:#1e3a5f,stroke:#38bdf8,color:#fff
-    style E fill:#1e3a5f,stroke:#38bdf8,color:#fff
-    style W fill:#064e3b,stroke:#22c55e,color:#fff
-```
+- Docker Desktop 27+ with Compose 5+ (or Podman equivalent)
+- 4 GB RAM available for containers
 
-Cada módulo se compila e instala en `~/.m2` estrictamente en este orden dentro del `Dockerfile` multi-stage.
+### Docker Compose Profiles
 
----
+The `docker-compose.python.yml` defines **6 services** across **5 profiles**. The simulator always runs; all other services are optional.
 
-### Pipeline Docker (Multi-stage Build)
+| Command | Services Started | Use Case |
+|---------|-----------------|----------|
+| `up simulator` | Simulator | Minimal: WebSocket + Control API on 8000/8001 |
+| `up simulator --profile ui` | Simulator + UI | Full local: add Next.js dashboard on port 3000 |
+| `up simulator --profile redis` | Simulator + Redis | Belief persistence via Redis |
+| `up simulator --profile postgres` | Simulator + PostgreSQL | Episode storage via PostgreSQL |
+| `up simulator --profile distributed` | Simulator + RabbitMQ | Multi-node simulation (distributed mode) |
+| `up simulator --profile dev` | Simulator (dev mode) | Hot-reload development with mounted volumes |
+| `up simulator --profile full --profile ui` | All services | Complete stack: Redis + Postgres + RabbitMQ + UI |
 
-```mermaid
-flowchart LR
-    A["Stage 1: Cache Maven\npom.xml + go-offline"] --> B["Stage 2: Compilación BESA\n6 módulos secuenciales"]
-    B --> C["Stage 3: Uber-JAR\nmaven-shade-plugin -P docker"]
-    C --> D["Stage 4: Runtime\neclipse-temurin:21-jre + Node.js"]
+**Profile breakdown:**
 
-    style A fill:#1c1917,stroke:#78716c,color:#fbbf24
-    style B fill:#1c1917,stroke:#78716c,color:#fbbf24
-    style C fill:#1c1917,stroke:#78716c,color:#22c55e
-    style D fill:#1c1917,stroke:#78716c,color:#38bdf8
-```
+| Profile | Services |
+|---------|----------|
+| *(none)* | `simulator` only |
+| `ui` | `simulator` + `ui` |
+| `redis` | `simulator` + `redis` |
+| `postgres` | `simulator` + `postgres` |
+| `distributed` | `simulator` + `rabbitmq` |
+| `dev` | `simulator-dev` (hot-reload, binds source dirs) |
+| `full` | `simulator` + `redis` + `postgres` + `rabbitmq` |
 
----
-
-### Flujo de datos en tiempo real (WebSocket ViewerLens)
-
-```mermaid
-sequenceDiagram
-    participant SIM as wpsSimulator (Java)
-    participant VL as ViewerLens Agent
-    participant WS as WebSocket :8000
-    participant UI as Navegador (Next.js)
-
-    SIM->>VL: wpsReport.ws(state, alias)
-    VL->>WS: broadcastMessage("j=" + JSON)
-    WS->>UI: j={"name":"Fam_1","state":"{...}"}
-    Note over UI: Actualiza estado del agente
-
-    SIM->>VL: wpsReport.interaction(from, to, action, detail)
-    VL->>WS: broadcastMessage("i=" + JSON)
-    WS->>UI: i={"from":"Fam_1","to":"MarketPlace","action":"SELL_CROP"}
-    Note over UI: Anima partícula de mensaje en el mapa de red
-```
-
----
-
-### Topología de agentes en la simulación
-
-```mermaid
-graph TD
-    MP["🛒 MarketPlace"]
-    BO["🏦 BankOffice"]
-    CA["⚖ CivicAuthority"]
-    CD["👥 CommunityDynamics"]
-
-    F1["🚜 Familia 1"]
-    F2["🚜 Familia 2"]
-    F3["🚜 Familia 3"]
-    FN["🚜 Familia N"]
-
-    F1 <-->|EventBESA| MP
-    F1 <-->|EventBESA| BO
-    F2 <-->|EventBESA| CA
-    F2 <-->|EventBESA| CD
-    F3 <-->|EventBESA| MP
-    F3 <-->|EventBESA| BO
-    FN <-->|EventBESA| CA
-    FN <-->|EventBESA| CD
-
-    MP <-->|Inter-hub| BO
-    CA <-->|Inter-hub| CD
-
-    style MP fill:#78350f,stroke:#f59e0b,color:#fff
-    style BO fill:#064e3b,stroke:#22c55e,color:#fff
-    style CA fill:#3b0764,stroke:#a855f7,color:#fff
-    style CD fill:#500724,stroke:#ec4899,color:#fff
-```
-
----
-
-### Flujo de simulación (usuario)
-
-```mermaid
-flowchart LR
-    S["⚙ Settings\nConfigurar parámetros"] --> R["▶ Ejecutar\nIniciar simulación"]
-    R --> M["🗺 Simulador\nVisualizar en tiempo real"]
-    R --> N["📡 Red BESA\nMonitor de agentes"]
-    M --> A["📊 Analytics\nGráficas de resultados"]
-    A --> D["📥 Data Export\nDescargar CSV"]
-
-    style S fill:#1e3a5f,stroke:#38bdf8,color:#fff
-    style R fill:#064e3b,stroke:#22c55e,color:#fff
-    style M fill:#1c1917,stroke:#f59e0b,color:#fff
-    style N fill:#172554,stroke:#60a5fa,color:#fff
-    style A fill:#3b0764,stroke:#a855f7,color:#fff
-    style D fill:#500724,stroke:#ec4899,color:#fff
-```
-
----
-
-## Repositorios incluidos
-
-| Repositorio            | Descripción                                     |
-| ---------------------- | ----------------------------------------------- |
-| `ISCOUTB/KernelBESA`   | Núcleo del framework de agentes BESA            |
-| `ISCOUTB/LocalBESA`    | Implementación local del administrador BESA     |
-| `ISCOUTB/RemoteBESA`   | Implementación distribuida BESA                 |
-| `ISCOUTB/RationalBESA` | Agentes racionales BESA                         |
-| `ISCOUTB/BDIBESA`      | Agentes BDI sobre BESA                          |
-| `ISCOUTB/eBDIBESA`     | Agentes BDI con componente emocional            |
-| `ISCOUTB/wpsSimulator` | Motor principal del simulador (fat JAR)         |
-| `ISCOUTB/wpsUI`        | Interfaz web (Next.js 14 + Tailwind + Recharts) |
-
----
-
-## Prerrequisitos
-
-Solo necesitas **Docker Desktop** instalado y en ejecución.
-
-- [Descargar Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- Versión mínima probada: Docker 29.x + Compose 5.x
-
-No se requiere instalar Java, Node.js, Maven ni ninguna dependencia adicional en el equipo host.
-
----
-
-## Instalación y ejecución (primera vez)
-
-### 1. Clonar los repositorios
+### Quick Commands
 
 ```bash
-git clone https://github.com/ISCOUTB/KernelBESA.git
-git clone https://github.com/ISCOUTB/LocalBESA.git
-git clone https://github.com/ISCOUTB/RemoteBESA.git
-git clone https://github.com/ISCOUTB/RationalBESA.git
-git clone https://github.com/ISCOUTB/BDIBESA.git
-git clone https://github.com/ISCOUTB/eBDIBESA.git
-git clone https://github.com/ISCOUTB/wpsSimulator.git
-git clone https://github.com/ISCOUTB/wpsUI.git
+# Simulator only (WebSocket :8000, Control API :8001)
+docker compose -f docker-compose.python.yml up simulator --build
+
+# Simulator + UI (Next.js :3000)
+docker compose -f docker-compose.python.yml --profile ui up --build
+
+# Full stack: Redis + Postgres + RabbitMQ + UI
+docker compose -f docker-compose.python.yml --profile full --profile ui up --build
 ```
 
-> Todos los repositorios deben quedar al **mismo nivel** de directorio (requerido por las rutas relativas `systemPath` del `pom.xml` de `wpsSimulator`).
+Open **http://localhost:3000** — configure simulation parameters, click **Iniciar**, watch real-time agent data.
 
-### 2. Construir la imagen
+### Usage Flow
+
+1. **Browser opens UI** → simulator is in `--wait` mode (agents created, WebSocket active, simulation NOT running)
+2. **Configure parameters** — families, years, money, tools, seeds, water, speed
+3. **Click "Iniciar"** → UI sends `POST :8001/start` with JSON config
+4. **Real-time data** flows via `ws://localhost:8000/wpsViewer` → agent cards update
+5. **Click "Detener"** → UI sends `POST :8001/stop`
+6. **Analytics** → `/analytics` page reads CSV and displays charts
+
+### Local (no Docker)
 
 ```bash
-docker compose build
+# Install dependencies
+pip install -r requirements.txt
+
+# Run simulation (5 agents, 1 year)
+PYTHONPATH=besa-python:ethosterra-python ETHOSTERRA_ROOT=. \
+  python ethosterra-python/ethosterra/start.py --agents 5 --years 1 --speed 0.001
+
+# Run in wait mode (API-controlled, like Docker)
+PYTHONPATH=besa-python:ethosterra-python ETHOSTERRA_ROOT=. \
+  python ethosterra-python/ethosterra/start.py --wait
 ```
 
-Este proceso tarda aproximadamente **7-8 minutos** la primera vez. Realiza:
+---
 
-1. Compilación de los 6 módulos BESA con Maven (Java 21)
-2. Compilación de `wpsSimulator` generando el fat JAR
-3. Instalación de dependencias Node.js y compilación de Next.js
+## CLI Arguments
 
-Las siguientes ejecuciones usan caché de Docker y tardan solo **3-4 minutos**.
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--agents N` | 5 | Number of peasant families |
+| `--years N` | 1 | Simulation years |
+| `--speed N` | 0.001 | Seconds per simulation day |
+| `--money N` | 1500000 | Initial money per family (COP) |
+| `--tools N` | 10 | Initial tools |
+| `--seeds N` | 10 | Initial seeds |
+| `--water N` | 10 | Initial water units |
+| `--irrigation 0/1` | 1 | Irrigation enabled |
+| `--emotions 0/1` | 1 | Emotional module enabled |
+| `--training 0/1` | 1 | Training programs enabled |
+| `--world FILE` | `mediumworld.json` | World config file |
+| `--wait` | — | Wait mode (API-controlled, used in Docker) |
 
-### 3. Iniciar la aplicación
+---
+
+## Agents
+
+| Agent | Role |
+|-------|------|
+| **PeasantFamily** | BDI actor: money, land, health, crop cycle (37 YAML goals, 6-level pyramid) |
+| **AgroEcosystem** | Cellular automaton: FAO-56 model, 7 crop types, GDD growth, water stress |
+| **BankOffice** | Credit: formal/informal loans, payment tables |
+| **MarketPlace** | Buy/sell: seeds, water, tools, pesticides, livestock |
+| **CivicAuthority** | Land assignment, training slots |
+| **CommunityDynamics** | Labor contracts, social collaboration |
+| **SimulationControl** | Clock, agent lifecycle |
+| **ViewerLens** | WebSocket server (real-time state broadcast) |
+| **PerturbationGenerator** | Random events: drought, flood, plague |
+
+---
+
+## Repository Structure
+
+```
+EthosTerra/
+├── besa-python/              # Generic BESA framework (49 files, ~2,000 LOC)
+│   ├── besa/kernel/          # AgentBESA (threading), EventBESA, GuardBESA, MBoxBESA
+│   ├── besa/local/           # LocalAdmBESA container (dict + RLock)
+│   ├── besa/rational/        # RationalAgent, Plan (DAG), Task
+│   ├── besa/bdi/             # AgentBDI, BDIMachine, DesireHierarchyPyramid (6 levels)
+│   │   └── declarative/      # GoalRegistry, PlanRegistry, ActionRegistry (16 actions)
+│   ├── besa/ebdi/            # EmotionalModel (8 axes), SemanticDictionary
+│   ├── besa/remote/          # RabbitMQProducer/Consumer, RemoteAdmBESA
+│   └── besa/llm/             # LLMBroker, CircuitBreaker, RateLimiter
+├── ethosterra-python/        # Domain simulation (37 files, ~2,500 LOC)
+│   ├── ethosterra/agents/    # 9 service agents + PeasantFamily BDI
+│   ├── ethosterra/guards/    # 12 PeasantFamily guards
+│   ├── ethosterra/believes/  # PeasantFamilyBelieves (~50 fields, pydantic)
+│   ├── ethosterra/output/    # CSVWriter, ViewerWSServer
+│   └── ethosterra/start.py   # CLI entry point + Control API
+├── ethosterra-ui/            # Next.js 14 visualizer (standalone)
+│   ├── src/app/page.tsx      # Main dashboard with config form
+│   ├── src/hooks/            # useWebSocket hook (q=/d=/j=/e= protocol)
+│   └── src/app/api/          # /api/simulator, /api/csv
+├── data/ebdi/                # YAML specs: 37 goals + 37 plans
+├── data/worlds/              # World configuration JSON files
+├── data/logs/                # CSV output (volume-mounted in Docker)
+├── scripts/                  # compare_outputs.py (K-S test)
+├── Dockerfile.python         # Multi-stage Docker build (~120 MB)
+├── docker-compose.python.yml  # Simulator + Redis + Postgres + RabbitMQ + UI
+└── requirements.txt          # Python dependencies
+```
+
+---
+
+## Development
+
+### Run tests
 
 ```bash
-docker compose up -d
+# All 6 suites (need PYTHONPATH + ETHOSTERRA_ROOT)
+PYTHONPATH=besa-python:ethosterra-python ETHOSTERRA_ROOT=. \
+  python besa-python/tests/unit/test_kernel.py
+PYTHONPATH=besa-python:ethosterra-python ETHOSTERRA_ROOT=. \
+  python besa-python/tests/integration/test_full_stack.py
+PYTHONPATH=besa-python:ethosterra-python ETHOSTERRA_ROOT=. \
+  python ethosterra-python/tests/integration/test_domain.py
+PYTHONPATH=besa-python:ethosterra-python ETHOSTERRA_ROOT=. \
+  python ethosterra-python/tests/integration/test_full_system.py
+PYTHONPATH=besa-python:ethosterra-python ETHOSTERRA_ROOT=. \
+  python ethosterra-python/tests/integration/test_plan_execution.py
+PYTHONPATH=besa-python:ethosterra-python ETHOSTERRA_ROOT=. \
+  python ethosterra-python/tests/integration/test_coverage.py
+
+# With pytest + coverage (XML for SonarQube)
+pytest --cov=besa --cov=ethosterra --cov-report=xml besa-python/tests ethosterra-python/tests
 ```
 
-### 4. Abrir en el navegador
+### CI/CD
 
-```
-http://localhost:3000
-```
+GitHub Actions workflow (`.github/workflows/python-ci.yml`) runs all 5 suites on Python 3.13 and 3.14 on every push to main/develop.
 
----
-
-## Uso
-
-### Flujo de una simulación
-
-1. **Settings** (`/pages/settings`) — Configura los parámetros de la simulación:
-   - Número de agentes campesinos (1–1000)
-   - Capital inicial en pesos
-   - Hectáreas de terreno
-   - Personalidad, herramientas, semillas, agua, riego, emociones
-   - Años a simular
-
-2. **Ejecuta la simulación** — Pulsa el botón de inicio. El motor Java corre en segundo plano; el estado se actualiza en tiempo real via polling cada 2 segundos.
-
-3. **Simulador** (`/pages/simulador`) — Visualiza el progreso mientras la simulación corre.
-
-4. **Analytics** (`/pages/analytics`) — Analiza los resultados con gráficas de series de tiempo una vez que la simulación finaliza.
-
-5. **Data Export** (`/pages/dataExport`) — Descarga los resultados en CSV.
-
----
-
-## Comandos útiles
+### Build UI locally
 
 ```bash
-# Ver logs en tiempo real
-docker compose logs -f
-
-# Detener el contenedor
-docker compose down
-
-# Reiniciar sin rebuild
-docker compose up -d
-
-# Rebuild completo (tras cambios en el código)
-docker compose up --build -d
-
-# Ver estado del simulador desde terminal
-curl http://localhost:3000/api/simulator
-
-# Abrir una shell dentro del contenedor
-docker exec -it simulacion-wellprodsim-1 sh
+cd ethosterra-ui
+npm install
+npm run dev      # dev mode on port 3000
+npm run build    # production build (standalone output)
 ```
 
 ---
 
-## API interna (para desarrollo)
+## Environment Variables
 
-| Endpoint                  | Método   | Descripción                                    |
-| ------------------------- | -------- | ---------------------------------------------- |
-| `/api/simulator`          | `GET`    | Estado del proceso Java `{"running": bool}`    |
-| `/api/simulator`          | `POST`   | Lanzar simulación con `{"args": [...]}`        |
-| `/api/simulator`          | `DELETE` | Matar el proceso Java en curso                 |
-| `/api/simulator/csv`      | `GET`    | Leer el CSV de resultados                      |
-| `/api/simulator/csv`      | `DELETE` | Vaciar el CSV                                  |
-| `/api/simulator/file`     | `GET`    | Verificar existencia de archivo `?path=<ruta>` |
-| `/api/simulator/file`     | `DELETE` | Eliminar un archivo `?path=<ruta>`             |
-| `/api/simulator/app-path` | `GET`    | Ruta base de la aplicación                     |
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `ETHOSTERRA_ROOT` | `.` | Project root for YAML path resolution |
+| `ETHOSTERRA_GOALS_DIR` | `data/ebdi/goals` | YAML goal specs directory |
+| `ETHOSTERRA_PLANS_DIR` | `data/ebdi/plans` | YAML plan specs directory |
+| `ETHOSTERRA_LOGS_PATH` | `data/logs/wpsSimulator.csv` | CSV output path |
+| `REDIS_HOST` | `localhost` | Redis host (optional belief persistence) |
+| `POSTGRES_HOST` | `localhost` | PostgreSQL host (optional episode storage) |
 
 ---
 
-## Estructura del workspace
+## License
 
-```
-simulacion/
-├── KernelBESA/          ← Framework BESA — núcleo
-├── LocalBESA/           ← Framework BESA — local
-├── RemoteBESA/          ← Framework BESA — distribuido
-├── RationalBESA/        ← Framework BESA — agentes racionales
-├── BDIBESA/             ← Framework BESA — BDI
-├── eBDIBESA/            ← Framework BESA — BDI emocional
-├── wpsSimulator/        ← Motor Java del simulador
-├── wpsUI/               ← Interfaz web Next.js
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── api/simulator/     ← API Routes (reemplazan IPC de Electron)
-│   │   │   └── pages/             ← Rutas de la UI
-│   │   ├── components/
-│   │   │   └── ElectronPolyfill.tsx  ← Adaptador IPC→HTTP
-│   │   └── lib/
-│   │       └── javaProcessState.ts  ← Estado del proceso Java (singleton)
-│   └── next.config.mjs
-├── Dockerfile
-├── docker-compose.yml
-└── .dockerignore
-```
+LGPL-2.1 — [LICENSE](LICENSE)

@@ -1,0 +1,36 @@
+FROM python:3.14-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+FROM python:3.14-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends libpq5 && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    ETHOSTERRA_ROOT=/app \
+    ETHOSTERRA_LOGS_PATH=/app/data/logs/wpsSimulator.csv \
+    REDIS_HOST=redis \
+    REDIS_PORT=6379 \
+    POSTGRES_HOST=postgres \
+    POSTGRES_PORT=5432 \
+    POSTGRES_DB=ethosterra \
+    POSTGRES_USER=ethosterra \
+    POSTGRES_PASSWORD=ethosterra
+
+COPY besa-python/besa/ ./besa/
+COPY ethosterra-python/ethosterra/ ./ethosterra/
+COPY data/ebdi/ ./data/ebdi/
+COPY data/worlds/ ./data/worlds/
+
+RUN mkdir -p /app/data/logs
+
+ENTRYPOINT ["python", "/app/ethosterra/start.py"]
