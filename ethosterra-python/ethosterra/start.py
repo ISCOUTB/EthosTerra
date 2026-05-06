@@ -52,6 +52,7 @@ def parse_args(argv: list[str] | None = None) -> SimulationParams:
     parser.add_argument("--world", default="mediumworld.json", help="World file")
     parser.add_argument("--perturbation", default="", help="Perturbation type")
     parser.add_argument("--trainingslots", type=int, default=-1, help="Training slots")
+    parser.add_argument("--world-lands", type=int, default=800, help="Total world parcels in CivicAuthority pool")
     parser.add_argument("--speed", type=float, default=0.001, help="Tick speed (seconds per day)")
     parser.add_argument("--wait", action="store_true", help="Start in wait mode (API-controlled)")
 
@@ -75,16 +76,18 @@ def parse_args(argv: list[str] | None = None) -> SimulationParams:
     p.perturbation = args.perturbation
     p.training_slots = args.trainingslots
     p.speed = args.speed
+    p.world_lands = args.world_lands
     p.agents = max(1, args.agents)
     p._wait = args.wait
     return p
 
 
-def create_services(adm: LocalAdmBESA) -> None:
+def create_services(adm: LocalAdmBESA, sim_params: SimulationParams | None = None) -> None:
+    world_lands = sim_params.world_lands if sim_params else 800
     agents = [
         CommunityDynamicsAgent("CommunityDynamics"),
         MarketPlaceAgent("MarketPlace"),
-        CivicAuthorityAgent("CivicAuthority", training_slots=10),
+        CivicAuthorityAgent("CivicAuthority", num_lands=world_lands, training_slots=10),
         BankOfficeAgent("BankOffice"),
         PerturbationGeneratorAgent("PerturbationGenerator"),
         AgroEcosystemAgent("AgroEcosystem"),
@@ -238,7 +241,7 @@ def main(argv: list[str] | None = None) -> None:
 
     if params.role == "primary":
         print(f"Starting container '{params.mode}' with {params.years} year(s), {params.agents} agents")
-        create_services(adm)
+        create_services(adm, params)
         GoalRegistry.get_instance()
         PlanRegistry.get_instance()
 

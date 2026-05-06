@@ -34,6 +34,9 @@ class ConsumeResourceAction:
         key = p.get("key", "")
         amount = int(float(str(p.get("amount", 0))))
         if key == "time_left_on_day":
+            personality = getattr(believes, 'personality', 0.3)
+            efficiency = 1.0 - (personality - 0.3) * 0.4
+            amount = max(1, int(amount * efficiency))
             believes.time_left_on_day = max(0, believes.time_left_on_day - amount)
         elif key == "money":
             believes.money = max(0, believes.money - amount)
@@ -225,16 +228,32 @@ class AgroEcosystemAction:
                 "PREPARE": AgroEcosystemMessageType.CROP_INIT,
                 "SELL": AgroEcosystemMessageType.CROP_INFORMATION,
             }
+            crop_type = p.get("crop_type", "")
+            if not crop_type and hasattr(believes, 'lands') and believes.lands:
+                crop_type = believes.lands[0].crop_type or ""
             msg = AgroEcosystemMessage(
                 message_type=op_map.get(op, AgroEcosystemMessageType.CROP_INFORMATION),
                 crop_id=f"{agent}_crop",
                 peasant_alias=agent,
                 date=believes.current_date,
+                crop_type=crop_type,
             )
             send_guard("AgroEcosystem", op, msg)
             new_stage = self._STAGE_AFTER.get(op)
-            if new_stage and believes.lands:
-                believes.lands[0].stage = new_stage
+            if believes.lands:
+                if new_stage:
+                    believes.lands[0].stage = new_stage
+                if op in ("PREPARE", "PLANT") and crop_type and believes.lands:
+                    believes.lands[0].crop_type = crop_type
+        return True
+
+
+class SetLandCropTypeAction:
+    def execute(self, believes: Any, params: dict[str, Any] | None = None) -> bool:
+        p = params or {}
+        crop_type = p.get("crop_type", "maiz")
+        if hasattr(believes, 'lands') and believes.lands:
+            believes.lands[0].crop_type = crop_type
         return True
 
 
@@ -255,4 +274,5 @@ ACTIONS: dict[str, PrimitiveAction] = {
     "send_society_collaboration": SendSocietyCollaborationAction(),
     "spend_friends_time": SpendFriendsTimeAction(),
     "agro_ecosystem_operation": AgroEcosystemAction(),
+    "set_land_crop_type": SetLandCropTypeAction(),
 }

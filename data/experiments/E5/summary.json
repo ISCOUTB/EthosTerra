@@ -1,0 +1,425 @@
+{
+  "experiment": "E5",
+  "agents": 100,
+  "years": 5,
+  "world_lands": 800,
+  "date": "2026-05-06T10:57:13.212531",
+  "results": [
+    {
+      "treatment": "E402",
+      "params": {
+        "money": 750000,
+        "land": 2,
+        "personality": 0.7,
+        "tools": 10,
+        "seeds": 999999,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 9.3,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E402/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E403",
+      "params": {
+        "money": 750000,
+        "land": 2,
+        "personality": 0.7,
+        "tools": 10,
+        "seeds": 0,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 13.9,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E403/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E404",
+      "params": {
+        "money": 750000,
+        "land": 6,
+        "personality": 0.3,
+        "tools": 999999,
+        "seeds": 10,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 10.4,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E404/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E405",
+      "params": {
+        "money": 750000,
+        "land": 6,
+        "personality": 0.3,
+        "tools": 999999,
+        "seeds": 999999,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 9.0,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E405/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E406",
+      "params": {
+        "money": 750000,
+        "land": 6,
+        "personality": 0.3,
+        "tools": 999999,
+        "seeds": 0,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 10.2,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E406/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E407",
+      "params": {
+        "money": 750000,
+        "land": 12,
+        "personality": -0.5,
+        "tools": 0,
+        "seeds": 10,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 9.3,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E407/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E408",
+      "params": {
+        "money": 750000,
+        "land": 12,
+        "personality": -0.5,
+        "tools": 0,
+        "seeds": 999999,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 11.8,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E408/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E409",
+      "params": {
+        "money": 750000,
+        "land": 12,
+        "personality": -0.5,
+        "tools": 0,
+        "seeds": 0,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 8.9,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E409/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E410",
+      "params": {
+        "money": 1500000,
+        "land": 2,
+        "personality": 0.3,
+        "tools": 0,
+        "seeds": 10,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 11.4,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E410/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E411",
+      "params": {
+        "money": 1500000,
+        "land": 2,
+        "personality": 0.3,
+        "tools": 0,
+        "seeds": 999999,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 13.3,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E411/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E412",
+      "params": {
+        "money": 1500000,
+        "land": 2,
+        "personality": 0.3,
+        "tools": 0,
+        "seeds": 0,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 9.8,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E412/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E413",
+      "params": {
+        "money": 1500000,
+        "land": 6,
+        "personality": -0.5,
+        "tools": 10,
+        "seeds": 10,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 20.5,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E413/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E414",
+      "params": {
+        "money": 1500000,
+        "land": 6,
+        "personality": -0.5,
+        "tools": 10,
+        "seeds": 999999,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 13.1,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E414/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E415",
+      "params": {
+        "money": 1500000,
+        "land": 6,
+        "personality": -0.5,
+        "tools": 10,
+        "seeds": 0,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 8.5,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E415/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E416",
+      "params": {
+        "money": 1500000,
+        "land": 12,
+        "personality": 0.7,
+        "tools": 999999,
+        "seeds": 10,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 8.3,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E416/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E417",
+      "params": {
+        "money": 1500000,
+        "land": 12,
+        "personality": 0.7,
+        "tools": 999999,
+        "seeds": 999999,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 8.5,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E417/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E418",
+      "params": {
+        "money": 1500000,
+        "land": 12,
+        "personality": 0.7,
+        "tools": 999999,
+        "seeds": 0,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 21.9,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E418/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E419",
+      "params": {
+        "money": 3000000,
+        "land": 2,
+        "personality": -0.5,
+        "tools": 999999,
+        "seeds": 10,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 11.8,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E419/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E420",
+      "params": {
+        "money": 3000000,
+        "land": 2,
+        "personality": -0.5,
+        "tools": 999999,
+        "seeds": 999999,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 18.4,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E420/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E421",
+      "params": {
+        "money": 3000000,
+        "land": 2,
+        "personality": -0.5,
+        "tools": 999999,
+        "seeds": 0,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 14.6,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E421/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E422",
+      "params": {
+        "money": 3000000,
+        "land": 6,
+        "personality": 0.7,
+        "tools": 0,
+        "seeds": 10,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 12.7,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E422/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E423",
+      "params": {
+        "money": 3000000,
+        "land": 6,
+        "personality": 0.7,
+        "tools": 0,
+        "seeds": 999999,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 14.8,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E423/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E424",
+      "params": {
+        "money": 3000000,
+        "land": 6,
+        "personality": 0.7,
+        "tools": 0,
+        "seeds": 0,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 8.2,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E424/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E425",
+      "params": {
+        "money": 3000000,
+        "land": 12,
+        "personality": 0.3,
+        "tools": 10,
+        "seeds": 10,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 15.2,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E425/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E426",
+      "params": {
+        "money": 3000000,
+        "land": 12,
+        "personality": 0.3,
+        "tools": 10,
+        "seeds": 999999,
+        "water": 0
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 10.2,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E426/wpsSimulator.csv",
+      "csv_rows": 26101
+    },
+    {
+      "treatment": "E427",
+      "params": {
+        "money": 3000000,
+        "land": 12,
+        "personality": 0.3,
+        "tools": 10,
+        "seeds": 0,
+        "water": 999999
+      },
+      "status": "success",
+      "returncode": 0,
+      "elapsed_sec": 8.2,
+      "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E427/wpsSimulator.csv",
+      "csv_rows": 26101
+    }
+  ]
+}

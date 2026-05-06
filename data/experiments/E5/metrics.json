@@ -1,0 +1,465 @@
+{
+  "results": {
+    "E401": [
+      0.214,
+      0.0
+    ],
+    "E402": [
+      0.214,
+      0.0
+    ],
+    "E403": [
+      0.092,
+      0.387
+    ],
+    "E404": [
+      0.043,
+      0.2
+    ],
+    "E405": [
+      0.063,
+      0.0
+    ],
+    "E406": [
+      0.053,
+      0.2
+    ],
+    "E407": [
+      0.009,
+      0.0
+    ],
+    "E408": [
+      0.0,
+      0.164
+    ],
+    "E409": [
+      0.011,
+      0.0
+    ],
+    "E410": [
+      0.368,
+      0.251
+    ],
+    "E411": [
+      0.282,
+      0.401
+    ],
+    "E412": [
+      0.426,
+      0.196
+    ],
+    "E413": [
+      0.065,
+      1.0
+    ],
+    "E414": [
+      0.121,
+      0.401
+    ],
+    "E415": [
+      0.167,
+      0.0
+    ],
+    "E416": [
+      0.073,
+      0.0
+    ],
+    "E417": [
+      0.078,
+      0.0
+    ],
+    "E418": [
+      0.018,
+      0.984
+    ],
+    "E419": [
+      1.0,
+      0.401
+    ],
+    "E420": [
+      0.87,
+      0.802
+    ],
+    "E421": [
+      0.948,
+      0.601
+    ],
+    "E422": [
+      0.294,
+      0.401
+    ],
+    "E423": [
+      0.279,
+      0.601
+    ],
+    "E424": [
+      0.331,
+      0.0
+    ],
+    "E425": [
+      0.149,
+      0.601
+    ],
+    "E426": [
+      0.169,
+      0.2
+    ],
+    "E427": [
+      0.184,
+      0.0
+    ]
+  },
+  "raw": {
+    "E401": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 560911.8,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 280455.9,
+      "raw_bienestar": 0.81
+    },
+    "E402": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 560362.8,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 280181.4,
+      "raw_bienestar": 0.81
+    },
+    "E403": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 260148.91,
+      "health_avg": 0.8292999999999999,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 130074.455,
+      "raw_bienestar": 0.8292999999999999
+    },
+    "E404": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 422586.0,
+      "health_avg": 0.82,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 70431.0,
+      "raw_bienestar": 0.82
+    },
+    "E405": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 566642.47,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 94440.41166666667,
+      "raw_bienestar": 0.81
+    },
+    "E406": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 491033.22,
+      "health_avg": 0.82,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 81838.87,
+      "raw_bienestar": 0.82
+    },
+    "E407": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 336823.23,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 28068.602499999997,
+      "raw_bienestar": 0.81
+    },
+    "E408": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 206089.76,
+      "health_avg": 0.8181999999999999,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 17174.146666666667,
+      "raw_bienestar": 0.8181999999999999
+    },
+    "E409": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 362289.9,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 30190.825,
+      "raw_bienestar": 0.81
+    },
+    "E410": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 938728.84,
+      "health_avg": 0.8225,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 469364.42,
+      "raw_bienestar": 0.8225
+    },
+    "E411": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 728653.51,
+      "health_avg": 0.83,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 364326.755,
+      "raw_bienestar": 0.83
+    },
+    "E412": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 1083377.6,
+      "health_avg": 0.8197999999999999,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 541688.8,
+      "raw_bienestar": 0.8197999999999999
+    },
+    "E413": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 581099.46,
+      "health_avg": 0.8599,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 96849.90999999999,
+      "raw_bienestar": 0.8599
+    },
+    "E414": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 993660.06,
+      "health_avg": 0.83,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 165610.01,
+      "raw_bienestar": 0.83
+    },
+    "E415": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 1337719.45,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 222953.24166666667,
+      "raw_bienestar": 0.81
+    },
+    "E416": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 1286771.56,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 107230.96333333333,
+      "raw_bienestar": 0.81
+    },
+    "E417": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 1358947.71,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 113245.6425,
+      "raw_bienestar": 0.81
+    },
+    "E418": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 468520.52,
+      "health_avg": 0.8591,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 39043.37666666667,
+      "raw_bienestar": 0.8591
+    },
+    "E419": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2494072.77,
+      "health_avg": 0.83,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 1247036.385,
+      "raw_bienestar": 0.83
+    },
+    "E420": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2173688.16,
+      "health_avg": 0.85,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 1086844.08,
+      "raw_bienestar": 0.85
+    },
+    "E421": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2366008.9,
+      "health_avg": 0.84,
+      "total_harvested": 0.0,
+      "avg_parcels": 2.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 1183004.45,
+      "raw_bienestar": 0.84
+    },
+    "E422": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2274026.2,
+      "health_avg": 0.83,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 379004.3666666667,
+      "raw_bienestar": 0.83
+    },
+    "E423": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2161369.91,
+      "health_avg": 0.84,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 360228.31833333336,
+      "raw_bienestar": 0.84
+    },
+    "E424": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2545588.03,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 6.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 424264.67166666663,
+      "raw_bienestar": 0.81
+    },
+    "E425": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2403052.29,
+      "health_avg": 0.84,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 200254.3575,
+      "raw_bienestar": 0.84
+    },
+    "E426": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2702147.54,
+      "health_avg": 0.82,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 225178.96166666667,
+      "raw_bienestar": 0.82
+    },
+    "E427": {
+      "agent_count": 100,
+      "total_rows": 26100,
+      "final_money_avg": 2928791.87,
+      "health_avg": 0.81,
+      "total_harvested": 0.0,
+      "avg_parcels": 12.0,
+      "positive_emotions": 0,
+      "negative_emotions": 0,
+      "neutral_emotions": 26100,
+      "raw_productividad": 244065.98916666667,
+      "raw_bienestar": 0.81
+    }
+  }
+}

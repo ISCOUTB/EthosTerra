@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "elapsed": 5.046975374221802,
+  "csv_path": "data/experiments/comparative_test/T1_baseline/wpsSimulator.csv",
+  "params": {
+    "agents": 5,
+    "years": 1,
+    "speed": 0.0,
+    "personality": 0.3,
+    "money": 1500000,
+    "land": 6,
+    "seeds": 10,
+    "water": 10,
+    "tools": 10,
+    "description": "Baseline: 5 agents, neutral personality, 1.5M money, 6 land"
+  }
+}

@@ -44,7 +44,7 @@ class WorldConfiguration:
             "temperature_avg": 25.0,
             "rainfall_annual": 1500,
             "soil_type": "LOAM",
-            "crops": ["maiz", "frijol", "cafe", "platano"],
+            "crops": ["maiz", "frijol", "cafe", "platano", "arroz", "name"],
         }
 
     def get(self, key: str, default: Any = None) -> Any:

@@ -92,9 +92,11 @@ EMOTIONAL_EVENT_INFLUENCES: dict[str, dict[str, float]] = {
 
 
 def process_emotional_event(believes: Any, event_type: str) -> None:
+    personality = getattr(believes, 'personality', 0.3)
+    p_mod = 0.8 + personality * 0.67
     for axis, influences in EMOTIONAL_EVENT_INFLUENCES.items():
         influence = influences.get(event_type, 0)
         if influence > 0:
             current = getattr(believes, axis, 0.5)
-            delta = influence * 0.05
+            delta = influence * 0.05 * p_mod
             setattr(believes, axis, max(0.0, min(1.0, current + delta)))

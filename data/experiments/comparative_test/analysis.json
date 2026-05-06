@@ -1,0 +1,259 @@
+{
+  "T1_baseline": {
+    "agent_count": 5,
+    "total_rows": 265,
+    "avg_final_money": 41682.0,
+    "avg_final_health": 0.394,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 231.4,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 6.0,
+    "money_trend": 319318.95849056606,
+    "health_trend": 0.703622641509434,
+    "top_goals": [
+      [
+        "leisure_activities",
+        259
+      ],
+      [
+        "waste_time_and_resources",
+        1
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 265
+    }
+  },
+  "T2_high_agents": {
+    "agent_count": 30,
+    "total_rows": 1590,
+    "avg_final_money": 111682.0,
+    "avg_final_health": 0.5660000000000001,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 146.06666666666666,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 6.0,
+    "money_trend": 315515.6572327044,
+    "health_trend": 0.7250817610062892,
+    "top_goals": [
+      [
+        "leisure_activities",
+        1390
+      ],
+      [
+        "waste_time_and_resources",
+        170
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 1590
+    }
+  },
+  "T3_positive": {
+    "agent_count": 5,
+    "total_rows": 265,
+    "avg_final_money": 43682.0,
+    "avg_final_health": 0.4,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 231.0,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 6.0,
+    "money_trend": 319250.1471698113,
+    "health_trend": 0.7039245283018868,
+    "top_goals": [
+      [
+        "leisure_activities",
+        256
+      ],
+      [
+        "waste_time_and_resources",
+        4
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 265
+    }
+  },
+  "T4_negative": {
+    "agent_count": 5,
+    "total_rows": 265,
+    "avg_final_money": 41682.0,
+    "avg_final_health": 0.394,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 231.4,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 6.0,
+    "money_trend": 323429.77735849057,
+    "health_trend": 0.7039622641509434,
+    "top_goals": [
+      [
+        "leisure_activities",
+        258
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 265
+    }
+  },
+  "T5_high_money": {
+    "agent_count": 5,
+    "total_rows": 265,
+    "avg_final_money": 98682.0,
+    "avg_final_health": 0.41,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 225.0,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 6.0,
+    "money_trend": 939185.2943396226,
+    "health_trend": 0.7133962264150944,
+    "top_goals": [
+      [
+        "leisure_activities",
+        249
+      ],
+      [
+        "waste_time_and_resources",
+        11
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 265
+    }
+  },
+  "T6_low_money": {
+    "agent_count": 5,
+    "total_rows": 265,
+    "avg_final_money": 248682.0,
+    "avg_final_health": 0.37,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 238.0,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 6.0,
+    "money_trend": 178787.8641509434,
+    "health_trend": 0.6805283018867925,
+    "top_goals": [
+      [
+        "leisure_activities",
+        257
+      ],
+      [
+        "waste_time_and_resources",
+        3
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 265
+    }
+  },
+  "T7_high_land": {
+    "agent_count": 5,
+    "total_rows": 265,
+    "avg_final_money": 38682.0,
+    "avg_final_health": 0.39,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 232.0,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 12.0,
+    "money_trend": 322088.1924528302,
+    "health_trend": 0.7035471698113207,
+    "top_goals": [
+      [
+        "leisure_activities",
+        259
+      ],
+      [
+        "waste_time_and_resources",
+        1
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 265
+    }
+  },
+  "T8_low_land": {
+    "agent_count": 5,
+    "total_rows": 265,
+    "avg_final_money": 41682.0,
+    "avg_final_health": 0.394,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 231.4,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 2.0,
+    "money_trend": 324391.10943396227,
+    "health_trend": 0.7036603773584905,
+    "top_goals": [
+      [
+        "leisure_activities",
+        255
+      ],
+      [
+        "waste_time_and_resources",
+        1
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 265
+    }
+  },
+  "T9_all_high": {
+    "agent_count": 15,
+    "total_rows": 795,
+    "avg_final_money": 98348.66666666667,
+    "avg_final_health": 0.41,
+    "avg_final_happiness": 1.0,
+    "total_harvested": 0.0,
+    "avg_loans_active": 0.0,
+    "avg_days_in_crisis": 225.06666666666666,
+    "avg_social_capital": 1.0,
+    "avg_food_security": 0.0,
+    "avg_emotion": 0.0,
+    "avg_lands": 12.0,
+    "money_trend": 938076.9798742138,
+    "health_trend": 0.7130062893081761,
+    "top_goals": [
+      [
+        "leisure_activities",
+        743
+      ],
+      [
+        "waste_time_and_resources",
+        37
+      ]
+    ],
+    "emotion_distribution": {
+      "neutral": 795
+    }
+  }
+}

@@ -76,7 +76,12 @@ class MarketPlaceGuard(GuardBESA):
                     msg.peasant_alias,
                     EventBESA(
                         guard_type=FromMarketPlaceGuard,
-                        data=MarketPlaceMessage(MarketPlaceMessageType.TRANSACTION_COMPLETE),
+                        data=MarketPlaceMessage(
+                            MarketPlaceMessageType.TRANSACTION_COMPLETE,
+                            resource=msg.resource,
+                            quantity=msg.quantity,
+                            price=price,
+                        ),
                     ),
                 )
             else:

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import random
 from typing import Any
 from besa.bdi.agent_bdi import AgentBDI
 from besa.bdi.declarative.declarative_goal import DeclarativeGoal
 from besa.bdi.declarative.goal_registry import GoalRegistry
 from besa.kernel.event import EventBESA
 
-from ethosterra.believes.peasant_family_believes import PeasantFamilyBelieves
+from ethosterra.believes.peasant_family_believes import PeasantFamilyBelieves, Land
 from ethosterra.plan_executor import PlanExecutor
 from ethosterra.simulation_params import SimulationParams
 from ethosterra.agents.simulation_control_messages import ControlMessage
@@ -15,18 +16,41 @@ from ethosterra.agents.simulation_control import SimulationControlGuard
 
 class PeasantFamily(AgentBDI):
     def __init__(self, alias: str, params: SimulationParams):
+        variance = params.variance
+        if variance > 0:
+            rng = random.Random(hash(alias) & 0xFFFFFFFF)
+            money = max(0, int(float(params.money) * (1 + rng.uniform(-variance, variance))))
+            tools = max(0, int(params.tools * (1 + rng.uniform(-variance, variance))))
+            seeds = max(0, int(params.seeds * (1 + rng.uniform(-variance, variance))))
+            water = max(0, int(params.water * (1 + rng.uniform(-variance, variance))))
+        else:
+            money = params.money
+            tools = params.tools
+            seeds = params.seeds
+            water = params.water
+
         believes = PeasantFamilyBelieves(
             alias=alias,
-            money=float(params.money),
-            initial_money=float(params.money),
-            tools=params.tools,
-            seeds=params.seeds,
-            water_available=params.water,
+            money=float(money),
+            initial_money=float(money),
+            tools=tools,
+            seeds=seeds,
+            water_available=water,
             irrigation=params.irrigation == 1,
             emotions_enabled=params.emotions == 1,
             training_enabled=params.training == 1,
             personality=params.personality,
         )
+        if params.land > 0:
+            for i in range(params.land):
+                land = Land(
+                    id=f"{alias}_land-{i}",
+                    area=1.0,
+                    stage="FALLOW",
+                    crop_type="land",
+                )
+                believes.lands.append(land)
+            believes.farm_name = True
         super().__init__(alias, state=believes)
         self._guard_map: dict[str, type] = {}
         self._register_all_guards()
@@ -48,6 +72,13 @@ class PeasantFamily(AgentBDI):
         )
         from ethosterra.guards.heart_beat import HeartBeatGuard
         from ethosterra.guards.status import StatusGuard
+        from ethosterra.guards.civic_additional_guards import (
+            CivicAuthorityHelpGuard,
+            CivicAuthorityReleaseLandGuard,
+            TrainingOfferGuard,
+        )
+        from ethosterra.guards.market_info_guard import MarketPlaceInfoAgentGuard
+        from ethosterra.guards.natural_phenomena import NaturalPhenomena
 
         guards = [
             HeartBeatGuard,
@@ -62,6 +93,11 @@ class PeasantFamily(AgentBDI):
             PeasantWorkerContractFinishedGuard,
             SocietyWorkerDateSyncGuard,
             StatusGuard,
+            CivicAuthorityHelpGuard,
+            CivicAuthorityReleaseLandGuard,
+            TrainingOfferGuard,
+            MarketPlaceInfoAgentGuard,
+            NaturalPhenomena,
         ]
         for guard in guards:
             self.register_guard(guard)

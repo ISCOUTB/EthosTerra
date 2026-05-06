@@ -18,6 +18,7 @@ class AgroEcosystemMessageType(Enum):
     CROP_PESTICIDE = auto()
     CROP_OBSERVE = auto()
     CROP_HARVEST = auto()
+    DAILY_TICK = auto()
 
 
 class FromAgroEcosystemMessageType(Enum):
@@ -58,12 +59,14 @@ class AgroEcosystemMessage:
         peasant_alias: str = "",
         payload: str = "",
         date: str = "",
+        crop_type: str = "",
     ):
         self.message_type = message_type
         self.crop_id = crop_id
         self.peasant_alias = peasant_alias
         self.payload = payload
         self.date = date
+        self.crop_type = crop_type
 
 
 class FromAgroEcosystemMessage:
@@ -195,6 +198,26 @@ class CropCell:
         }
 
 
+class ArrozCell(CropCell):
+    def __init__(self, crop_id: str, peasant_alias: str):
+        super().__init__(
+            crop_factor_ini=1.05, crop_factor_mid=1.20, crop_factor_end=0.90,
+            degree_days_mid=1000, degree_days_end=2200,
+            crop_area=1, max_root_depth=0.5, depletion_fraction=0.20,
+            soil=Soil.CLAY, crop_id=crop_id, peasant_alias=peasant_alias,
+        )
+
+
+class NameCell(CropCell):
+    def __init__(self, crop_id: str, peasant_alias: str):
+        super().__init__(
+            crop_factor_ini=0.50, crop_factor_mid=1.10, crop_factor_end=0.95,
+            degree_days_mid=900, degree_days_end=2000,
+            crop_area=1, max_root_depth=0.6, depletion_fraction=0.35,
+            soil=Soil.SILT, crop_id=crop_id, peasant_alias=peasant_alias,
+        )
+
+
 class CafeCell(CropCell):
     def __init__(self, crop_id: str, peasant_alias: str):
         super().__init__(
@@ -265,6 +288,20 @@ class VegetablesCell(CropCell):
             crop_area=1, max_root_depth=0.4, depletion_fraction=0.30,
             soil=Soil.LOAM, crop_id=crop_id, peasant_alias=peasant_alias,
         )
+
+
+CROP_CELL_MAP: dict[str, type[CropCell]] = {
+    "arroz": ArrozCell,
+    "rice": ArrozCell,
+    "name": NameCell,
+    "yam": NameCell,
+    "maiz": MaizCell,
+    "cafe": CafeCell,
+    "frijol": FrijolCell,
+    "platano": PlatanoCell,
+    "roots": NameCell,
+    "vegetables": VegetablesCell,
+}
 
 
 @dataclass
@@ -342,12 +379,13 @@ class AgroEcosystemGuard(GuardBESA):
 
         if msg.message_type == AgroEcosystemMessageType.CROP_INIT:
             if not state.crops.get_crop(msg.crop_id):
-                crop = MaizCell(msg.crop_id, msg.peasant_alias)
+                cell_cls = CROP_CELL_MAP.get(msg.crop_type.lower(), MaizCell)
+                crop = cell_cls(msg.crop_id, msg.peasant_alias)
                 state.crops.add_crop(crop)
             state.update_for_date(msg.date)
             self._reply(msg.peasant_alias, FromAgroEcosystemMessageType.CROP_INIT, "CROP_INIT", msg.date)
 
-        elif msg.message_type == AgroEcosystemMessageType.CROP_INFORMATION:
+        elif msg.message_type == AgroEcosystemMessageType.DAILY_TICK:
             state.update_for_date(msg.date)
             for crop in state.crops.get_all_crops():
                 if crop.state.water_stress:
@@ -357,6 +395,7 @@ class AgroEcosystemGuard(GuardBESA):
                 if crop.harvest_ready:
                     self._notify(crop.peasant_alias, FromAgroEcosystemMessageType.NOTIFY_CROP_READY_HARVEST, msg.date)
 
+        elif msg.message_type == AgroEcosystemMessageType.CROP_INFORMATION:
             cell = state.crops.get_crop(msg.crop_id)
             if cell:
                 self._reply(msg.peasant_alias, FromAgroEcosystemMessageType.CROP_INFORMATION_NOTIFICATION,

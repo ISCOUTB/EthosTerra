@@ -27,4 +27,5 @@ class SimulationParams:
     perturbation: str = ""
     training_slots: int = -1
     world: str = "100"
+    world_lands: int = 800
     speed: float = 0.001

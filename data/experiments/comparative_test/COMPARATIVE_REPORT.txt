@@ -1,0 +1,124 @@
+=========================================================================================================
+  ETHOSTERRA SIMULATOR — COMPARATIVE EXPERIMENT REPORT
+  All simulations: 1 year, irrigation=on, emotions=on, training=on, speed=0
+=========================================================================================================
+
+Treatment               Agts   Money(fin)  Health   Happy     Harvest  Loans   Crisis  Social FoodSec
+---------------------------------------------------------------------------------------------------------
+T1_baseline                5       41,682    0.39    1.00         0.0    0.0    231.4    1.00    0.00
+T2_high_agents            30      111,682    0.57    1.00         0.0    0.0    146.1    1.00    0.00
+T3_positive                5       43,682    0.40    1.00         0.0    0.0    231.0    1.00    0.00
+T4_negative                5       41,682    0.39    1.00         0.0    0.0    231.4    1.00    0.00
+T5_high_money              5       98,682    0.41    1.00         0.0    0.0    225.0    1.00    0.00
+T6_low_money               5      248,682    0.37    1.00         0.0    0.0    238.0    1.00    0.00
+T7_high_land               5       38,682    0.39    1.00         0.0    0.0    232.0    1.00    0.00
+T8_low_land                5       41,682    0.39    1.00         0.0    0.0    231.4    1.00    0.00
+T9_all_high               15       98,349    0.41    1.00         0.0    0.0    225.1    1.00    0.00
+
+--- PERSONALITY COMPARISON (varying personality, 5 agents, 1.5M, 6 land) ---
+Metric                         Negative (-0.5)        Baseline (0.3)        Positive (0.7)
+------------------------------------------------------------------------------------------
+Final Money                           41,682.0              41,682.0              43,682.0
+Final Health                               0.4                   0.4                   0.4
+Final Happiness                            1.0                   1.0                   1.0
+Total Harvested                            0.0                   0.0                   0.0
+Food Security                              0.0                   0.0                   0.0
+Days in Crisis                           231.4                 231.4                 231.0
+Social Capital                             1.0                   1.0                   1.0
+
+--- INITIAL MONEY COMPARISON (varying money, 5 agents, neut, 6 land) ---
+Metric                              Low (750k)       Baseline (1.5M)             High (3M)
+------------------------------------------------------------------------------------------
+Final Money                          248,682.0              41,682.0              98,682.0
+Final Health                               0.4                   0.4                   0.4
+Final Happiness                            1.0                   1.0                   1.0
+Total Harvested                            0.0                   0.0                   0.0
+Food Security                              0.0                   0.0                   0.0
+Days in Crisis                           238.0                 231.4                 225.0
+Social Capital                             1.0                   1.0                   1.0
+
+--- LAND PER PEASANT COMPARISON (varying land, 5 agents, neut, 1.5M) ---
+Metric                                 Low (2)          Baseline (6)             High (12)
+------------------------------------------------------------------------------------------
+Final Money                           41,682.0              41,682.0              38,682.0
+Final Health                               0.4                   0.4                   0.4
+Final Happiness                            1.0                   1.0                   1.0
+Total Harvested                            0.0                   0.0                   0.0
+Food Security                              0.0                   0.0                   0.0
+Days in Crisis                           231.4                 231.4                 232.0
+Social Capital                             1.0                   1.0                   1.0
+
+--- AGENT SCALE COMPARISON (varying agents, neut, 1.5M, 6 land) ---
+Metric                                5 agents             15 agents             30 agents
+------------------------------------------------------------------------------------------
+Final Money                           41,682.0              98,348.7             111,682.0
+Final Health                               0.4                   0.4                   0.6
+Final Happiness                            1.0                   1.0                   1.0
+Total Harvested                            0.0                   0.0                   0.0
+Food Security                              0.0                   0.0                   0.0
+Days in Crisis                           231.4                 225.1                 146.1
+Social Capital                             1.0                   1.0                   1.0
+
+=========================================================================================================
+  KEY FINDINGS
+=========================================================================================================
+
+1. INITIAL MONEY IMPACT (5 agents, neut personality, 6 land):
+   Baseline(1.5M):   Money=      41,682  Health=0.39  Harvest=       0.0  Crisis=231.4
+   High(3M):         Money=      98,682  Health=0.41  Harvest=       0.0  Crisis=225.0
+   Low(750k):        Money=     248,682  Health=0.37  Harvest=       0.0  Crisis=238.0
+   Delta high vs base: Money=+136.7%  Harvest=+0.0%
+   Delta low vs base:  Money=+496.6%  Harvest=+0.0%
+
+2. PERSONALITY IMPACT (5 agents, 1.5M, 6 land):
+   Baseline(0.3):  Happiness=1.00  Crisis=231.4  Social=1.00
+   Positive(0.7):  Happiness=1.00  Crisis=231.0  Social=1.00
+   Negative(-0.5): Happiness=1.00  Crisis=231.4  Social=1.00
+   Delta pos: Happiness=+0.0%  Crisis=-0.2%
+   Delta neg: Happiness=+0.0%  Crisis=+0.0%
+
+3. LAND PER PEASANT IMPACT (5 agents, neut, 1.5M):
+   Baseline(6):  Harvest=       0.0  FoodSec=0.00  Crisis=231.4
+   High(12):     Harvest=       0.0  FoodSec=0.00  Crisis=232.0
+   Low(2):       Harvest=       0.0  FoodSec=0.00  Crisis=231.4
+   Delta high: Harvest=+0.0%  FoodSec=+0.0%
+   Delta low:  Harvest=+0.0%  FoodSec=+0.0%
+
+4. AGENT SCALE IMPACT (neut, 1.5M, 6 land):
+   5 agents:  Harvest=       0.0  Crisis=231.4  Money=      41,682
+   15 agents: Harvest=       0.0  Crisis=225.1  Money=      98,349  (0.0x harvest)
+   30 agents: Harvest=       0.0  Crisis=146.1  Money=     111,682  (0.0x harvest)
+
+5. OPTIMAL CONFIG (T9 — All High):
+   15 agents, +0.7 personality, 3M money, 12 land, abundant resources
+   Final Money=      98,349  Health=0.41  Happiness=1.00
+   Harvest=       0.0  FoodSec=0.00  Crisis=225.1
+   vs Baseline: Harvest=+0.0%  Money=+135.9%
+
+6. TOP GOALS PER TREATMENT (most executed):
+   T1_baseline            leisure_activities(259), waste_time_and_resources(1)
+   T2_high_agents         leisure_activities(1390), waste_time_and_resources(170)
+   T3_positive            leisure_activities(256), waste_time_and_resources(4)
+   T4_negative            leisure_activities(258)
+   T5_high_money          leisure_activities(249), waste_time_and_resources(11)
+   T6_low_money           leisure_activities(257), waste_time_and_resources(3)
+   T7_high_land           leisure_activities(259), waste_time_and_resources(1)
+   T8_low_land            leisure_activities(255), waste_time_and_resources(1)
+   T9_all_high            leisure_activities(743), waste_time_and_resources(37)
+
+7. EMOTION DISTRIBUTION:
+   T1_baseline            neutral:265
+   T2_high_agents         neutral:1590
+   T3_positive            neutral:265
+   T4_negative            neutral:265
+   T5_high_money          neutral:265
+   T6_low_money           neutral:265
+   T7_high_land           neutral:265
+   T8_low_land            neutral:265
+   T9_all_high            neutral:795
+
+=========================================================================================================
+  JSON analysis: data/experiments/comparative_test/analysis.json
+  CSVs:          data/experiments/comparative_test
+  Report:        data/experiments/comparative_test/COMPARATIVE_REPORT.txt
+=========================================================================================================

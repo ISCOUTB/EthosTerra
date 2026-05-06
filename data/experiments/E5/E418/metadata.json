@@ -1,0 +1,16 @@
+{
+  "treatment": "E418",
+  "params": {
+    "money": 1500000,
+    "land": 12,
+    "personality": 0.7,
+    "tools": 999999,
+    "seeds": 0,
+    "water": 0
+  },
+  "status": "success",
+  "returncode": 0,
+  "elapsed_sec": 21.9,
+  "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E418/wpsSimulator.csv",
+  "csv_rows": 26101
+}

@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "elapsed": 21.5494441986084,
+  "csv_path": "data/experiments/comparative_test/T2_high_agents/wpsSimulator.csv",
+  "params": {
+    "agents": 30,
+    "years": 1,
+    "speed": 0.0,
+    "personality": 0.3,
+    "money": 1500000,
+    "land": 6,
+    "seeds": 10,
+    "water": 10,
+    "tools": 10,
+    "description": "Scale stress: 30 agents (6x baseline)"
+  }
+}

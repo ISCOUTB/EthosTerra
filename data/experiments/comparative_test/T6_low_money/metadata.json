@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "elapsed": 4.960667610168457,
+  "csv_path": "data/experiments/comparative_test/T6_low_money/wpsSimulator.csv",
+  "params": {
+    "agents": 5,
+    "years": 1,
+    "speed": 0.0,
+    "personality": 0.3,
+    "money": 750000,
+    "land": 6,
+    "seeds": 10,
+    "water": 10,
+    "tools": 10,
+    "description": "Low initial money (750k)"
+  }
+}

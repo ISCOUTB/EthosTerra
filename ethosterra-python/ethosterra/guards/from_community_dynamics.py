@@ -38,10 +38,15 @@ class PeasantWorkerContractFinishedGuard(GuardBESA):
 
         if msg.message_type == FromCommunityDynamicsMessageType.CONTRACT_FINISHED:
             believes.days_to_work_for_other = 0
-            beliefs.peasant_family_helper = ""
+            believes.peasant_family_helper = ""
             believes.task_log.append("Contrato finalizado")
 
 
 class SocietyWorkerDateSyncGuard(GuardBESA):
     def func_exec_guard(self, event: EventBESA) -> None:
-        pass
+        msg = event.data
+        if isinstance(msg, dict) and "current_date" in msg:
+            believes: PeasantFamilyBelieves = self.get_state()
+            if believes:
+                believes.current_date = msg["current_date"]
+                # b.task_log.append(f"Fecha sincronizada: {msg['current_date']}")

@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "elapsed": 4.969793796539307,
+  "csv_path": "data/experiments/comparative_test/T8_low_land/wpsSimulator.csv",
+  "params": {
+    "agents": 5,
+    "years": 1,
+    "speed": 0.0,
+    "personality": 0.3,
+    "money": 1500000,
+    "land": 2,
+    "seeds": 10,
+    "water": 10,
+    "tools": 10,
+    "description": "Low land (2 parcels)"
+  }
+}

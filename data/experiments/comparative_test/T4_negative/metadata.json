@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "elapsed": 4.976418733596802,
+  "csv_path": "data/experiments/comparative_test/T4_negative/wpsSimulator.csv",
+  "params": {
+    "agents": 5,
+    "years": 1,
+    "speed": 0.0,
+    "personality": -0.5,
+    "money": 1500000,
+    "land": 6,
+    "seeds": 10,
+    "water": 10,
+    "tools": 10,
+    "description": "Negative personality (-0.5)"
+  }
+}

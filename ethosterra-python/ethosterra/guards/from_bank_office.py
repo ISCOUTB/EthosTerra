@@ -15,7 +15,7 @@ class FromBankOfficeGuard(GuardBESA):
             believes.money += msg.amount
             believes.to_pay = msg.amount
             believes.have_loan = True
-            believes.loan_denied = True
+            believes.loan_denied = False
 
         elif msg.message_type == FromBankOfficeMessageType.APPROBED_INFORMAL_LOAN:
             believes.money += msg.amount

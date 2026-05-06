@@ -1,0 +1,16 @@
+{
+  "treatment": "E420",
+  "params": {
+    "money": 3000000,
+    "land": 2,
+    "personality": -0.5,
+    "tools": 999999,
+    "seeds": 999999,
+    "water": 0
+  },
+  "status": "success",
+  "returncode": 0,
+  "elapsed_sec": 18.4,
+  "csv_path": "/home/jairo/Projects/EthosTerra/data/experiments/E5/E420/wpsSimulator.csv",
+  "csv_rows": 26101
+}

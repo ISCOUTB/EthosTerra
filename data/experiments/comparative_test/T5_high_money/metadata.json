@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "elapsed": 4.929371118545532,
+  "csv_path": "data/experiments/comparative_test/T5_high_money/wpsSimulator.csv",
+  "params": {
+    "agents": 5,
+    "years": 1,
+    "speed": 0.0,
+    "personality": 0.3,
+    "money": 3000000,
+    "land": 6,
+    "seeds": 10,
+    "water": 10,
+    "tools": 10,
+    "description": "High initial money (3M)"
+  }
+}

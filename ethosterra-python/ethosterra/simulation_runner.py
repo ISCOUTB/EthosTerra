@@ -14,6 +14,7 @@ from ethosterra.agents.simulation_control import SimulationControlGuard
 from ethosterra.agents.viewer_lens import ViewerLensGuard
 from ethosterra.agents.simulation_control_messages import ControlMessage
 from ethosterra.simulation_clock import SimulationClock
+from ethosterra.guards.heart_beat import HeartBeatGuard, HeartBeatData
 
 
 CSV_COLUMNS = [
@@ -84,6 +85,7 @@ class SimulationRunner(threading.Thread):
         peasants = [a for a in all_agents if isinstance(a, PeasantFamily)]
         agro = next((a for a in all_agents if hasattr(a, 'rng') and 'AgroEcosystem' in a.alias), None)
         viewer = next((a for a in all_agents if 'ViewerLens' in a.alias), None)
+        perturbation_gen = next((a for a in all_agents if 'PerturbationGenerator' in a.alias), None)
 
         while self._running:
             current = clock.current_date
@@ -98,85 +100,33 @@ class SimulationRunner(threading.Thread):
                 import json as _json
                 viewer.send_to(EventBESA(guard_type=ViewerLensGuard, data={"current_date": current, "active_agents": len(peasants)}))
 
-            if agro and hasattr(agro.state, 'update_for_date'):
-                agro.state.update_for_date(clock.get_current_date())
+            if agro:
+                from ethosterra.agents.agro_ecosystem import AgroEcosystemMessage, AgroEcosystemMessageType, AgroEcosystemGuard
+                agro.send_to(EventBESA(
+                    guard_type=AgroEcosystemGuard,
+                    data=AgroEcosystemMessage(
+                        message_type=AgroEcosystemMessageType.DAILY_TICK,
+                        date=current
+                    )
+                ))
+            
+            if perturbation_gen:
+                from ethosterra.agents.perturbation_generator import PerturbationGeneratorGuard
+                perturbation_gen.send_to(EventBESA(guard_type=PerturbationGeneratorGuard, data={"action": "tick"}))
 
             for p in peasants:
                 b = p.state
                 if not b:
                     continue
 
-                b.new_day = True
-                b.current_date = clock.get_current_date()
-                b.current_day = elapsed + 1
-                b.time_left_on_day = 1440.0
-
-                daily_cost = 5000 + int(b.food_security * 3000)
-                b.money = max(0.0, b.money - daily_cost)
-                b.food_security = max(0, b.food_security - 0.005)
-                b.happiness = max(0, b.happiness - 0.003)
-                if b.food_security < 0.3 or b.money < b.minimum_vital:
-                    b.health = max(0, b.health - 0.002)
-                    b.days_in_crisis += 1
-                elif b.food_security > 0.7 and b.money > b.minimum_vital * 2:
-                    b.health = min(1, b.health + 0.001)
-                    b.days_in_crisis = max(0, b.days_in_crisis - 1)
-
-                if b.money <= 0 and b.seeds > 0:
-                    b.money += b.seeds * 2000
-                    b.seeds = 0
-                    b.task_log.append("Vendí semillas para sobrevivir")
-
-                if b.money <= 0 and b.tools > 0:
-                    b.money += b.tools * 5000
-                    b.tools = 0
-                    b.task_log.append("Vendí herramientas para sobrevivir")
-
-                if b.lands and agro:
-                    stage = b.lands[0].stage
-                    crop_id = f"{b.alias}_crop"
-
-                    if stage == "NONE":
-                        from ethosterra.agents.agro_ecosystem import MaizCell
-                        if not agro.state.crops.get_crop(crop_id):
-                            agro.state.crops.add_crop(MaizCell(crop_id, b.alias))
-                        b.lands[0].stage = "GROWING"
-                        b.task_log.append("Iniciando cultivo de maíz (FAO-56)")
-
-                    elif stage == "GROWING":
-                        cell = agro.state.crops.get_crop(crop_id)
-                        if cell:
-                            if cell.harvest_ready:
-                                b.lands[0].stage = "HARVEST_READY"
-                                b.task_log.append("Cultivo listo para cosechar (GDD completo)")
-                            elif cell.state.water_stress and b.current_day % 3 == 0:
-                                agro.state.crops.apply_irrigation_to_all(10.0)
-                                b.task_log.append("Aplicando riego al cultivo")
-                            elif cell.infected and b.current_day % 3 == 0:
-                                b.lands[0].stage = "DISEASED"
-                                b.task_log.append("Aplicando pesticida al cultivo")
-                                cell.infected = False
-                                b.lands[0].stage = "GROWING"
-
-                    elif stage == "HARVEST_READY" and b.current_day % 2 == 0:
-                        cell = agro.state.crops.get_crop(crop_id)
-                        if cell:
-                            harvest = cell.state.above_ground_biomass * 0.4
-                            b.harvested_weight += harvest
-                            income = harvest * 3000
-                            b.money += income
-                            b.task_log.append(f"Coseché {harvest:.0f} kg (biomasa: {cell.state.above_ground_biomass:.0f}), gané ${income:.0f}")
-                            if cell.is_perennial():
-                                cell.reset_harvest_cycle()
-                                b.lands[0].stage = "GROWING"
-                            else:
-                                agro.state.crops.remove_crop(crop_id)
-                                b.lands[0].stage = "FALLOW"
-
-                    elif stage == "FALLOW" and b.current_day % 7 == 0:
-                        b.lands[0].stage = "NONE"
-
-                p.tick_bdi()
+                p.send_to(EventBESA(
+                    guard_type=HeartBeatGuard,
+                    data=HeartBeatData(
+                        current_date=clock.get_current_date(),
+                        current_day=elapsed + 1,
+                        elapsed=elapsed
+                    )
+                ))
 
                 if viewer and elapsed % 2 == 0:
                     import json as _json
@@ -186,8 +136,6 @@ class SimulationRunner(threading.Thread):
                         'task_log': b.task_log[-5:],
                     }
                     viewer.send_to(EventBESA(guard_type=ViewerLensGuard, data=b_data))
-
-                b.money = max(0.0, b.money)
 
                 if clock.is_first_day_of_week(clock.get_current_date()):
                     self._send_control_ping(p)
