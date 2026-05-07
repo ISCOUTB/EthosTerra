@@ -11,7 +11,6 @@ from ethosterra.believes.peasant_family_believes import PeasantFamilyBelieves, L
 from ethosterra.plan_executor import PlanExecutor
 from ethosterra.simulation_params import SimulationParams
 from ethosterra.agents.simulation_control_messages import ControlMessage
-from ethosterra.agents.simulation_control import SimulationControlGuard
 
 
 class PeasantFamily(AgentBDI):
@@ -41,21 +40,33 @@ class PeasantFamily(AgentBDI):
             training_enabled=params.training == 1,
             personality=params.personality,
         )
+        if not believes.training_enabled:
+            believes.training_level = 0.4
         if params.land > 0:
             for i in range(params.land):
                 land = Land(
                     id=f"{alias}_land-{i}",
                     area=1.0,
-                    stage="FALLOW",
+                    stage="NONE",
                     crop_type="land",
                 )
                 believes.lands.append(land)
             believes.farm_name = True
         super().__init__(alias, state=believes)
         self._guard_map: dict[str, type] = {}
+        self._heartbeat_guard: Any = None
         self._register_all_guards()
         self._load_goals()
         self._bdi_state.plan_executor = self._run_goal_plan
+
+    def start_periodic(self, steptime: int | None = None) -> None:
+        if steptime is None:
+            import os
+            steptime = int(os.getenv("ETHOSTERRA_STEPTIME", "5"))
+        if self._heartbeat_guard is not None:
+            self._heartbeat_guard._period = steptime / 1000.0
+            self._heartbeat_guard.start_periodic()
+            self._send_alive_to_control()
 
     def _register_all_guards(self) -> None:
         from ethosterra.guards.from_simulation_control import FromSimulationControlGuard
@@ -80,8 +91,13 @@ class PeasantFamily(AgentBDI):
         from ethosterra.guards.market_info_guard import MarketPlaceInfoAgentGuard
         from ethosterra.guards.natural_phenomena import NaturalPhenomena
 
+        steptime = 40
+        heartbeat = HeartBeatGuard(agent=self, period_ms=steptime)
+        self._guard_instances[HeartBeatGuard.__name__] = heartbeat
+        self._struct.add_guard(HeartBeatGuard)
+        self._heartbeat_guard = heartbeat
+
         guards = [
-            HeartBeatGuard,
             FromSimulationControlGuard,
             FromBankOfficeGuard,
             FromMarketPlaceGuard,
@@ -101,6 +117,17 @@ class PeasantFamily(AgentBDI):
         ]
         for guard in guards:
             self.register_guard(guard)
+
+    def _send_alive_to_control(self) -> None:
+        from ethosterra.agents.simulation_control import AliveAgentGuard
+        control_alias = f"{self.alias.rsplit('PeasantFamily', 1)[0]}SimulationControl"
+        self.send(
+            control_alias,
+            EventBESA(
+                guard_type=AliveAgentGuard,
+                data=ControlMessage(alias=self.alias, current_day=0),
+            ),
+        )
 
     def _load_goals(self) -> None:
         goal_ids = [

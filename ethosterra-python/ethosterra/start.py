@@ -14,7 +14,6 @@ from besa.bdi.declarative.plan_registry import PlanRegistry
 
 from ethosterra.simulation_params import SimulationParams
 from ethosterra.simulation_clock import SimulationClock
-from ethosterra.simulation_runner import SimulationRunner
 from ethosterra.agents.simulation_control import SimulationControlAgent
 from ethosterra.agents.viewer_lens import ViewerLensAgent, set_ws_server
 from ethosterra.agents.bank_office import BankOfficeAgent
@@ -119,6 +118,7 @@ def create_peasants(adm: LocalAdmBESA, sim_params: SimulationParams) -> None:
         )
         adm.register_agent(peasant)
         peasant.start()
+        peasant.start_periodic()
 
 
 def print_header() -> None:
@@ -199,17 +199,7 @@ def start_simulation(config: dict) -> bool:
         adm = ControlHandler.global_adm
         if adm:
             create_peasants(adm, p)
-
-        csv_path = os.getenv("ETHOSTERRA_LOGS_PATH", "data/logs/wpsSimulator.csv")
-        _runner = SimulationRunner(
-            adm=adm,
-            years=p.years,
-            agents_count=p.agents,
-            tick_seconds=p.speed,
-            csv_path=csv_path,
-        )
-        _runner.start()
-        ControlHandler.global_runner = _runner
+        ControlHandler.global_runner = None
         return True
 
 
@@ -246,6 +236,9 @@ def main(argv: list[str] | None = None) -> None:
         PlanRegistry.get_instance()
 
         if not getattr(params, '_wait', False):
+            from ethosterra.guards.heart_beat import init_csv_writer
+            csv_path = os.getenv("ETHOSTERRA_LOGS_PATH", "data/logs/wpsSimulator.csv")
+            init_csv_writer(csv_path)
             create_peasants(adm, params)
 
         ws_server = ViewerWSServer(host="0.0.0.0", port=8000)
@@ -259,28 +252,27 @@ def main(argv: list[str] | None = None) -> None:
         print("Control API started on http://0.0.0.0:8001 (POST /start, GET /status)")
 
         if not getattr(params, '_wait', False):
-            csv_path = os.getenv("ETHOSTERRA_LOGS_PATH", "data/logs/wpsSimulator.csv")
-            runner = SimulationRunner(
-                adm=adm,
-                years=params.years,
-                agents_count=params.agents,
-                tick_seconds=params.speed,
-                csv_path=csv_path,
-            )
-            runner.start()
-            setattr(sys.modules[__name__], '_runner', runner)
-
-            print("Simulation running in auto mode...")
+            print("Simulation running with decentralized agents...")
+            target_days = params.years * 365
             try:
-                while runner.is_alive():
-                    runner.join(timeout=1.0)
+                import time as _time
+                while True:
+                    _time.sleep(1)
+                    all_agents = adm.get_agents()
+                    peasants_done = all(
+                        hasattr(a, 'state') and getattr(a.state, 'current_day', 0) >= target_days
+                        for a in all_agents
+                        if 'PeasantFamily' in getattr(a, 'alias', '')
+                    )
+                    if peasants_done:
+                        print("All agents completed their simulation cycles.")
+                        break
             except KeyboardInterrupt:
                 print("\nShutting down...")
-                runner.stop()
-                adm.shutdown(timeout=5.0)
-                elapsed = time.time() - start_time
-                print(f"Simulation finished in {elapsed:.0f} seconds.")
-                sys.exit(0)
+            adm.shutdown(timeout=5.0)
+            elapsed = time.time() - start_time
+            print(f"Simulation finished in {elapsed:.0f} seconds.")
+            sys.exit(0)
         else:
             print("WAIT MODE: Send POST /start to http://localhost:8001 to begin simulation")
             try:

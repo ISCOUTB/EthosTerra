@@ -1,0 +1,46 @@
+services:
+  python-coherence:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    restart: "no"
+    environment:
+      PYTHONPATH: /app
+      ETHOSTERRA_ROOT: /app
+      ETHOSTERRA_LOGS_PATH: /app/data/logs/wpsSimulator.csv
+    command:
+      - --agents
+      - "${AGENTS:-5}"
+      - --years
+      - "${YEARS:-5}"
+      - --money
+      - "${MONEY:-1500000}"
+      - --land
+      - "${LAND:-6}"
+      - --world
+      - "${WORLD:-world.400.json}"
+      - --world-lands
+      - "${WORLD_LANDS:-400}"
+      - --tools
+      - "${TOOLS:-20}"
+      - --seeds
+      - "${SEEDS:-50}"
+      - --water
+      - "${WATER:-10}"
+      - --variance
+      - "${VARIANCE:-0.4}"
+      - --personality
+      - "${PERSONALITY:-0.0}"
+      - --emotions
+      - "${EMOTIONS:-1}"
+      - --training
+      - "${TRAINING:-1}"
+      - --irrigation
+      - "${IRRIGATION:-1}"
+      - --speed
+      - "0.0"
+    volumes:
+      - ./data/ebdi:/app/data/ebdi
+      - ./data/worlds:/app/data/worlds
+      - ./data/logs/coherence-python:/app/data/logs
+    ports: []

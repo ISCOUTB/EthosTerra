@@ -63,6 +63,15 @@ class EmotionalEvaluator:
         except Exception:
             return 0.5
 
+    def evaluate_single_emotion(self, axis_name: str, value: float) -> float:
+        if axis_name == "happiness":
+            return self.evaluate(happiness=value)
+        elif axis_name == "hopeful":
+            return self.evaluate(hopeful=value)
+        elif axis_name == "secure":
+            return self.evaluate(secure=value)
+        return self.evaluate(happiness=value)
+
     def emotional_factor(self, value: float) -> float:
         if value >= 0.7:
             return 1.4
@@ -92,11 +101,28 @@ EMOTIONAL_EVENT_INFLUENCES: dict[str, dict[str, float]] = {
 
 
 def process_emotional_event(believes: Any, event_type: str) -> None:
-    personality = getattr(believes, 'personality', 0.3)
+    from besa.ebdi.semantic_dictionary import SemanticDictionary
+    sd = SemanticDictionary.get_instance()
+    intensity = sd.estimate_intensity("stranger", event_type.lower(), "neutral")
+    intensity_abs = abs(intensity) if intensity != 0 else 0.3
+
+    personality = getattr(believes, 'personality', 0.0)
     p_mod = 0.8 + personality * 0.67
+
     for axis, influences in EMOTIONAL_EVENT_INFLUENCES.items():
         influence = influences.get(event_type, 0)
         if influence > 0:
             current = getattr(believes, axis, 0.5)
-            delta = influence * 0.05 * p_mod
-            setattr(believes, axis, max(0.0, min(1.0, current + delta)))
+            delta = influence * intensity_abs * 0.05 * p_mod
+            new_val = current + delta
+            setattr(believes, axis, max(-1.0, min(1.0, new_val)))
+
+
+def apply_forget_factor(current: float, base: float, forget_factor: float, time_delta_seconds: float) -> float:
+    sign = 1 if base > current else -1
+    slope = sign * forget_factor / 1000.0
+    new_value = slope * time_delta_seconds + current
+    if sign > 0:
+        return min(new_value, base)
+    else:
+        return max(new_value, base)

@@ -29,23 +29,26 @@ class PeasantFamilyBelieves(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
     alias: str = ""
-    money: float = Field(default=1000000.0, ge=0)
-    initial_money: float = 1000000.0
-    health: float = Field(default=0.8, ge=0, le=1)
-    initial_health: float = 0.8
+    money: float = Field(default=3000000.0, ge=0)
+    initial_money: float = 3000000.0
+    health: float = Field(default=1.0, ge=0, le=1)
+    initial_health: float = 1.0
     time_left_on_day: float = 1440.0
     harvested_weight: float = 0.0
     total_harvested_weight: float = 0.0
+    last_crop_type: str = "maiz"
     days_to_work_for_other: int = 0
     days_in_crisis: int = 0
     social_capital: float = 0.5
     food_security: float = 1.0
-    happiness: float = 0.5
+    happiness: float = 0.0
+    hopeful: float = 0.0
+    secure: float = 0.0
     emotion: str = "neutral"
 
     tools: int = 10
-    seeds: int = 10
-    water_available: int = 10
+    seeds: int = 0
+    water_available: int = 9999999
     pesticides: int = 0
     livestock: int = 0
     supplies: int = 0
@@ -67,15 +70,15 @@ class PeasantFamilyBelieves(BaseModel):
     emotions_enabled: bool = False
     training_enabled: bool = False
     training_available: bool = False
-    training_level: float = 0.4
-    personality: float = 0.3
+    training_level: float = 0.1
+    personality: float = 0.0
 
     peasant_family_affinity: float = 0.5
     peasant_friends_affinity: float = 0.5
     peasant_leisure_affinity: float = 0.5
     social_affinity: float = 0.5
     criminality_affinity: bool = False
-    minimum_vital: float = 50000.0
+    minimum_vital: float = 12000.0
     purpose: str = "farmer"
 
     have_loan: bool = False
@@ -92,6 +95,10 @@ class PeasantFamilyBelieves(BaseModel):
     farm_name: bool = False
     price_list_empty: bool = True
     loan_amount_to_pay: float = 0.0
+    current_activity: str = ""
+    resources_acquired: bool = False
+    work: str = ""
+    work_done_today: bool = False
 
     def _get(self, key: str, default: Any = None) -> Any:
         return getattr(self, key, default)
@@ -109,7 +116,19 @@ class PeasantFamilyBelieves(BaseModel):
         return self.days_in_crisis > 90
 
     def has_land_with_crop_care(self, care_type: str) -> bool:
-        return any(l.stage == care_type for l in self.lands)
+        stage_map = {
+            "CHECK": "GROWING",
+            "HARVEST": "HARVEST_READY",
+            "HARVESTABLE": "HARVEST_READY",
+            "PREPARE": "NONE",
+            "PLANT": "PLANTING",
+            "GROWING": "GROWING",
+            "WATER": "GROWING",
+            "PEST": "GROWING",
+            "IRRIGATE": "GROWING",
+        }
+        target = stage_map.get(care_type.upper(), care_type)
+        return any(l.stage == target for l in self.lands)
 
     def hasLandWithCropCare(self, care_type: str) -> bool:
         return self.has_land_with_crop_care(care_type)
@@ -121,7 +140,17 @@ class PeasantFamilyBelieves(BaseModel):
         return self.has_land_with_kind(kind)
 
     def has_land_with_season(self, season: str) -> bool:
-        return any(l.stage == season for l in self.lands)
+        season_map = {
+            "HARVEST": "HARVEST_READY",
+            "HARVESTABLE": "HARVEST_READY",
+            "PLANT": "PLANTING",
+            "NONE": "NONE",
+            "GROWING": "GROWING",
+            "PLANTING": "PLANTING",
+            "FALLOW": "FALLOW",
+        }
+        target = season_map.get(season.upper(), season)
+        return any(l.stage == target for l in self.lands)
 
     def hasLandWithSeason(self, season: str) -> bool:
         return self.has_land_with_season(season)
@@ -209,6 +238,18 @@ class PeasantFamilyBelieves(BaseModel):
 
     def isWorker(self) -> bool:
         return self.is_worker()
+
+    def get_training_bonus(self) -> float:
+        return self.training_level * 0.1
+
+    def getTrainingBonus(self) -> float:
+        return self.get_training_bonus()
+
+    def get_efficiency_factor(self) -> float:
+        return 1.0 - (self.training_level * 0.2)
+
+    def getEfficiencyFactor(self) -> float:
+        return self.get_efficiency_factor()
 
     def is_task_executed_today(self, task_id: str) -> bool:
         _ = task_id

@@ -15,6 +15,12 @@ class MarketPlaceMessageType:
     PRICE_LIST = "PRICE_LIST"
     TRANSACTION_COMPLETE = "TRANSACTION_COMPLETE"
     TRANSACTION_FAILED = "TRANSACTION_FAILED"
+    INCREASE_TOOLS_PRICE = "INCREASE_TOOLS_PRICE"
+    DECREASE_TOOLS_PRICE = "DECREASE_TOOLS_PRICE"
+    INCREASE_SEEDS_PRICE = "INCREASE_SEEDS_PRICE"
+    DECREASE_SEEDS_PRICE = "DECREASE_SEEDS_PRICE"
+    INCREASE_CROP_PRICE = "INCREASE_CROP_PRICE"
+    DECREASE_CROP_PRICE = "DECREASE_CROP_PRICE"
 
 
 class MarketPlaceMessage:
@@ -36,10 +42,10 @@ class MarketPlaceMessage:
 @dataclass
 class MarketPlaceState:
     prices: dict[str, float] = field(default_factory=lambda: {
-        "water": 5000, "seeds": 15000, "pesticides": 20000,
-        "tools": 50000, "livestock": 200000,
-        "rice": 3000, "roots": 2500, "maiz": 2000,
-        "frijol": 4000, "cafe": 8000, "platano": 3000,
+        "water": 3, "seeds": 50000, "pesticides": 9300,
+        "tools": 50000, "livestock": 2400, "supplies": 40000,
+        "rice": 1100, "roots": 1000, "maiz": 700,
+        "frijol": 2200, "cafe": 2800, "platano": 900,
     })
     inventory: dict[str, float] = field(default_factory=lambda: {
         "water": 10000, "seeds": 5000, "pesticides": 2000,
@@ -104,6 +110,32 @@ class MarketPlaceGuard(GuardBESA):
                     data=MarketPlaceMessage(MarketPlaceMessageType.TRANSACTION_COMPLETE, price=value),
                 ),
             )
+
+        elif msg.message_type in (
+            MarketPlaceMessageType.INCREASE_TOOLS_PRICE,
+            MarketPlaceMessageType.DECREASE_TOOLS_PRICE,
+        ):
+            pct = msg.price / 100.0
+            direction = 1 if "INCREASE" in msg.message_type else -1
+            state.prices["tools"] = max(1, state.prices["tools"] * (1 + direction * pct))
+
+        elif msg.message_type in (
+            MarketPlaceMessageType.INCREASE_SEEDS_PRICE,
+            MarketPlaceMessageType.DECREASE_SEEDS_PRICE,
+        ):
+            pct = msg.price / 100.0
+            direction = 1 if "INCREASE" in msg.message_type else -1
+            state.prices["seeds"] = max(1, state.prices["seeds"] * (1 + direction * pct))
+
+        elif msg.message_type in (
+            MarketPlaceMessageType.INCREASE_CROP_PRICE,
+            MarketPlaceMessageType.DECREASE_CROP_PRICE,
+        ):
+            pct = msg.price / 100.0
+            direction = 1 if "INCREASE" in msg.message_type else -1
+            crops = ["rice", "roots", "maiz", "frijol", "cafe", "platano"]
+            for crop in crops:
+                state.prices[crop] = max(1, state.prices[crop] * (1 + direction * pct))
 
 
 class FromMarketPlaceGuard(GuardBESA):

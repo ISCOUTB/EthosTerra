@@ -45,12 +45,16 @@ class BDIMachine:
         viable = [
             g
             for g in detectable
-            if g.evaluate_plausibility(state.believes) > 0
-            and g.evaluate_viability(state.believes) > 0
+            if g.evaluate_plausibility(state.believes) > state.threshold
+            and g.evaluate_viability(state.believes) > state.threshold
         ]
 
         for goal in viable:
-            score = goal.evaluate_contribution(state)
+            emotions_enabled = getattr(state.believes, 'emotions_enabled', False)
+            if emotions_enabled and hasattr(goal, 'evaluate_emotional_contribution'):
+                score = goal.evaluate_emotional_contribution(state)
+            else:
+                score = goal.evaluate_contribution(state)
             level = self._infer_level(goal)
             state.pyramid.insert(goal, score, level)
             pass
@@ -70,7 +74,7 @@ class BDIMachine:
                 state.pyramid.remove(intention)
                 last_goal = intention.goal_id
             else:
-                break
+                state.pyramid.remove(intention)
         if last_goal:
             state.believes.current_goal = last_goal
 

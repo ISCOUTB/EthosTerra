@@ -10,11 +10,7 @@ from pathlib import Path
 from besa.local.local_adm import LocalAdmBESA
 from besa.kernel.event import EventBESA
 from ethosterra.agents.peasant_family import PeasantFamily
-from ethosterra.agents.simulation_control import SimulationControlGuard
-from ethosterra.agents.viewer_lens import ViewerLensGuard
-from ethosterra.agents.simulation_control_messages import ControlMessage
 from ethosterra.simulation_clock import SimulationClock
-from ethosterra.guards.heart_beat import HeartBeatGuard, HeartBeatData
 
 
 CSV_COLUMNS = [
@@ -42,6 +38,7 @@ class SimulationRunner(threading.Thread):
         self._csv_path = csv_path
         self._csv_file = None
         self._csv_writer = None
+        self._last_csv_day = -1
 
     def _init_csv(self) -> None:
         if self._csv_path:
@@ -51,27 +48,33 @@ class SimulationRunner(threading.Thread):
             self._csv_writer = csv.DictWriter(self._csv_file, fieldnames=CSV_COLUMNS)
             self._csv_writer.writeheader()
 
-    def _write_csv(self, peasant: PeasantFamily) -> None:
+    def _write_csv_rows(self) -> None:
         if not self._csv_writer:
             return
-        b = peasant.state
-        self._csv_writer.writerow({
-            "date": b.current_date,
-            "agent": b.alias,
-            "money": str(int(b.money)),
-            "health": f"{b.health:.2f}",
-            "happiness": f"{b.happiness:.2f}",
-            "emotion": b.emotion,
-            "current_goal": b.current_goal or "",
-            "harvested_weight": f"{b.harvested_weight:.2f}",
-            "lands_count": str(len(b.lands)),
-            "loans_active": "1" if b.have_loan else "0",
-            "days_in_crisis": str(b.days_in_crisis),
-            "social_capital": f"{b.social_capital:.2f}",
-            "food_security": f"{b.food_security:.2f}",
-            "task_log": ";".join(b.task_log[-10:]),
-        })
-        self._csv_file.flush()
+        all_agents = self.adm.get_agents()
+        peasants = [a for a in all_agents if isinstance(a, PeasantFamily)]
+        for p in peasants:
+            b = p.state
+            if not b:
+                continue
+            self._csv_writer.writerow({
+                "date": b.current_date,
+                "agent": b.alias,
+                "money": str(int(b.money)),
+                "health": f"{b.health:.2f}",
+                "happiness": f"{b.happiness:.2f}",
+                "emotion": b.emotion,
+                "current_goal": b.current_goal or "",
+                "harvested_weight": f"{b.harvested_weight:.2f}",
+                "lands_count": str(len(b.lands)),
+                "loans_active": "1" if b.have_loan else "0",
+                "days_in_crisis": str(b.days_in_crisis),
+                "social_capital": f"{b.social_capital:.2f}",
+                "food_security": f"{b.food_security:.2f}",
+                "task_log": ";".join(b.task_log[-10:]),
+            })
+        if self._csv_file:
+            self._csv_file.flush()
 
     def run(self) -> None:
         self._running = True
@@ -82,9 +85,7 @@ class SimulationRunner(threading.Thread):
         total_days = (end - start).days
 
         all_agents = self.adm.get_agents()
-        peasants = [a for a in all_agents if isinstance(a, PeasantFamily)]
         agro = next((a for a in all_agents if hasattr(a, 'rng') and 'AgroEcosystem' in a.alias), None)
-        viewer = next((a for a in all_agents if 'ViewerLens' in a.alias), None)
         perturbation_gen = next((a for a in all_agents if 'PerturbationGenerator' in a.alias), None)
 
         while self._running:
@@ -92,13 +93,7 @@ class SimulationRunner(threading.Thread):
             elapsed = (current - start).days
             if elapsed >= total_days:
                 print(f"Simulation finished after {elapsed} days")
-                if viewer:
-                    viewer.send_to(EventBESA(guard_type=ViewerLensGuard, data={"end": True}))
                 break
-
-            if viewer and elapsed % 7 == 0:
-                import json as _json
-                viewer.send_to(EventBESA(guard_type=ViewerLensGuard, data={"current_date": current, "active_agents": len(peasants)}))
 
             if agro:
                 from ethosterra.agents.agro_ecosystem import AgroEcosystemMessage, AgroEcosystemMessageType, AgroEcosystemGuard
@@ -109,67 +104,25 @@ class SimulationRunner(threading.Thread):
                         date=current
                     )
                 ))
-            
+
             if perturbation_gen:
                 from ethosterra.agents.perturbation_generator import PerturbationGeneratorGuard
                 perturbation_gen.send_to(EventBESA(guard_type=PerturbationGeneratorGuard, data={"action": "tick"}))
 
-            for p in peasants:
-                b = p.state
-                if not b:
-                    continue
-
-                p.send_to(EventBESA(
-                    guard_type=HeartBeatGuard,
-                    data=HeartBeatData(
-                        current_date=clock.get_current_date(),
-                        current_day=elapsed + 1,
-                        elapsed=elapsed
-                    )
-                ))
-
-                if viewer and elapsed % 2 == 0:
-                    import json as _json
-                    b_data = {
-                        'agent_name': b.alias,
-                        'state': _json.dumps(b.to_summary()),
-                        'task_log': b.task_log[-5:],
-                    }
-                    viewer.send_to(EventBESA(guard_type=ViewerLensGuard, data=b_data))
-
-                if clock.is_first_day_of_week(clock.get_current_date()):
-                    self._send_control_ping(p)
-                    self._write_csv(p)
+            if clock.is_first_day_of_week(clock.get_current_date()):
+                self._write_csv_rows()
 
             clock.advance_one_day()
 
             if clock.is_first_day_of_week(clock.get_current_date()):
                 progress = (elapsed / total_days) * 100
-                print(f"UPDATE: {clock.get_current_date()} — {progress:.1f}%")
+                print(f"UPDATE: {clock.get_current_date()} -- {progress:.1f}%")
 
             time.sleep(self.tick_seconds)
 
-        print(f"Simulation ended at {clock.get_current_date()}")
         if self._csv_file:
             self._csv_file.close()
         self._running = False
 
-    def _send_control_ping(self, peasant: PeasantFamily) -> None:
-        b = peasant.state
-        control_name = f"{peasant.alias.rsplit('PeasantFamily', 1)[0]}SimulationControl"
-        control = self.adm.lookup(control_name)
-        if control:
-            control.send_to(
-                EventBESA(
-                    guard_type=SimulationControlGuard,
-                    data=ControlMessage(
-                        peasant_family_alias=peasant.alias,
-                        current_date=b.current_date,
-                        current_day=b.current_day,
-                    ),
-                )
-            )
-
     def stop(self) -> None:
         self._running = False
-

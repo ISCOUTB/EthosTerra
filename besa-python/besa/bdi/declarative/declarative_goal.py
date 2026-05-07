@@ -62,6 +62,23 @@ class DeclarativeGoal(GoalBDI):
             return rules.fixed_value
         return 0.5
 
+    def evaluate_emotional_contribution(self, state: Any) -> float:
+        believes = state.believes if hasattr(state, 'believes') else state
+        try:
+            from ethosterra.emotional_evaluator import EmotionalEvaluator
+            evaluator = EmotionalEvaluator()
+            happiness = getattr(believes, 'happiness', 0.0)
+            hopeful = getattr(believes, 'hopeful', 0.0)
+            secure = getattr(believes, 'secure', 0.0)
+            emotional = evaluator.evaluate(happiness, hopeful, secure)
+            numeric = self.evaluate_contribution(state)
+            return (emotional + numeric) / 2.0
+        except ImportError:
+            return self.evaluate_contribution(state)
+
+    def evaluate_inverted_emotional_contribution(self, state: Any) -> float:
+        return 1.0 - self.evaluate_emotional_contribution(state)
+
     def _check_effects(self, believes: Any) -> bool:
         effects = getattr(self.spec, "effects", None)
         if not effects:

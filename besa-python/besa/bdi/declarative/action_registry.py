@@ -21,8 +21,14 @@ class UpdateBeliefAction:
         key = p.get("key", "")
         value = p.get("value", p.get("new_value", True))
         if key:
-            setattr(believes, key, value)
-            setattr(believes, f"_{key}_set", True)
+            try:
+                setattr(believes, key, value)
+            except (ValueError, AttributeError):
+                pass
+            try:
+                setattr(believes, f"_{key}_set", True)
+            except (ValueError, AttributeError):
+                pass
             if key == "new_day":
                 believes.new_day = bool(str(value).lower() == "true" if isinstance(value, str) else value)
         return True
@@ -116,16 +122,26 @@ class EmitEmotionAction:
         p = params or {}
         axis = p.get("axis", "happiness")
         delta = float(p.get("delta", 0))
-        current = getattr(believes, axis, believes.happiness)
-        setattr(believes, axis, max(0.0, min(1.0, current + delta)))
+        try:
+            current = getattr(believes, axis, believes.happiness)
+        except AttributeError:
+            current = 0.5
+        try:
+            setattr(believes, axis, max(0.0, min(1.0, current + delta)))
+        except (ValueError, AttributeError):
+            pass
         return True
 
 
 class IncreaseHealthAction:
     def execute(self, believes: Any, params: dict[str, Any] | None = None) -> bool:
+        import random
         p = params or {}
-        amount = float(p.get("amount", 0.05))
-        believes.health = min(1.0, believes.health + amount)
+        factor = 1.0
+        if getattr(believes, 'emotions_enabled', False):
+            factor = 0.5 + getattr(believes, 'happiness', 0.0)
+        heal = random.random() * 0.21 * factor
+        believes.health = min(1.0, believes.health + heal)
         return True
 
 
@@ -145,13 +161,22 @@ class IncrementBeliefAction:
         key = p.get("key", "")
         amount = float(p.get("amount", 1))
         if key:
-            v = getattr(believes, key, 0)
+            try:
+                v = getattr(believes, key, 0)
+            except AttributeError:
+                v = 0
             if isinstance(v, (int, float)):
                 new_val = v + amount
                 if key == "money":
                     new_val = max(0.0, new_val)
-                setattr(believes, key, new_val)
-                setattr(believes, f'_{key}_incremented', True)
+                try:
+                    setattr(believes, key, new_val)
+                except (ValueError, AttributeError):
+                    pass
+                try:
+                    setattr(believes, f'_{key}_incremented', True)
+                except (ValueError, AttributeError):
+                    pass
         return True
 
 
@@ -211,11 +236,31 @@ class AgroEcosystemAction:
         "SELL": None,
     }
 
+    _CROP_PRICES = {
+        "water": 3, "seeds": 50000, "pesticides": 9300,
+        "tools": 50000, "livestock": 2400, "supplies": 40000,
+        "rice": 1100, "roots": 1000, "maiz": 700,
+        "frijol": 2200, "cafe": 2800, "platano": 900,
+    }
+
     def execute(self, believes: Any, params: dict[str, Any] | None = None) -> bool:
         p = params or {}
         send_guard = p.get("_send_guard_event")
         agent = p.get("_agent_alias", "")
         op = p.get("operation", "")
+
+        if op == "SELL":
+            hw = getattr(believes, 'harvested_weight', 0)
+            if hw > 0:
+                crop = getattr(believes, 'last_crop_type', 'maiz') or 'maiz'
+                price_per_unit = self._CROP_PRICES.get(crop, 700)
+                revenue = hw * price_per_unit
+                believes.money += revenue
+                believes.harvested_weight = 0
+                believes.food_security = min(1.0, getattr(believes, 'food_security', 0) + 0.3)
+                believes.task_log.append(f"Vendí {hw:.0f} de {crop} por ${revenue:.0f}")
+            return True
+
         if send_guard and op:
             from ethosterra.agents.agro_ecosystem import AgroEcosystemMessage, AgroEcosystemMessageType
             op_map = {
@@ -242,9 +287,29 @@ class AgroEcosystemAction:
             new_stage = self._STAGE_AFTER.get(op)
             if believes.lands:
                 if new_stage:
-                    believes.lands[0].stage = new_stage
+                    target_land = None
+                    if op == "PREPARE":
+                        target_land = next((l for l in believes.lands if l.stage in ("NONE", "FALLOW")), None)
+                    elif op == "PLANT":
+                        target_land = next((l for l in believes.lands if l.stage == "PLANTING" and l.crop_type), None)
+                    elif op == "CHECK":
+                        target_land = next((l for l in believes.lands if l.stage == "GROWING" and l.crop_type), None)
+                    elif op == "HARVEST":
+                        target_land = next((l for l in believes.lands if l.stage == "HARVEST_READY" and l.crop_type), None)
+                        if not target_land:
+                            target_land = next((l for l in believes.lands if l.stage == "GROWING" and l.crop_type), None)
+                        if target_land and target_land.stage != "FALLOW":
+                            pass  # harvested_weight set by FromAgroEcosystemGuard with actual biomass
+                    elif op == "DEFOREST":
+                        target_land = next((l for l in believes.lands if l.stage in ("GROWING", "HARVEST_READY") and l.crop_type), None)
+                    if target_land:
+                        target_land.stage = new_stage
                 if op in ("PREPARE", "PLANT") and crop_type and believes.lands:
-                    believes.lands[0].crop_type = crop_type
+                    if op == "PREPARE":
+                        target = next((l for l in believes.lands if l.stage == new_stage), believes.lands[0])
+                    else:
+                        target = next((l for l in believes.lands if l.stage == new_stage), believes.lands[0])
+                    target.crop_type = crop_type
         return True
 
 
@@ -253,7 +318,8 @@ class SetLandCropTypeAction:
         p = params or {}
         crop_type = p.get("crop_type", "maiz")
         if hasattr(believes, 'lands') and believes.lands:
-            believes.lands[0].crop_type = crop_type
+            target = next((l for l in believes.lands if l.stage in ("NONE", "FALLOW", "PLANTING")), believes.lands[0])
+            target.crop_type = crop_type
         return True
 
 

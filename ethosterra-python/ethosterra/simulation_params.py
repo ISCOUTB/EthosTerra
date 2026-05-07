@@ -10,7 +10,7 @@ class SimulationParams:
     role: str | None = None
     env: str = ""
     agents: int = 5
-    money: int = 1500000
+    money: int = 3000000
     land: int = -1
     personality: float = -1.0
     tools: int = -1

@@ -66,6 +66,7 @@ tmp/
 *.swp
 *.bak
 dump.rdb
-*.pyc
-pycache/
-__pycache__/
+*.pyc*
+pycache/*
+__pycache__/*
+.pyc

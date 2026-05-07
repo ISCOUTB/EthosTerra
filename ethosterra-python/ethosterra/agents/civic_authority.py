@@ -19,8 +19,8 @@ class LandInfo:
 @dataclass
 class CivicAuthorityState:
     available_lands: list[LandInfo] = field(default_factory=list)
-    training_slots: int = 10
-    training_slots_per_year: int = 10
+    training_slots: int = 50
+    training_slots_per_year: int = 50
     total_lands_assigned: int = 0
 
     def assign_land(self, peasant_alias: str) -> LandInfo | None:

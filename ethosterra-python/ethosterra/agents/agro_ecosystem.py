@@ -18,7 +18,6 @@ class AgroEcosystemMessageType(Enum):
     CROP_PESTICIDE = auto()
     CROP_OBSERVE = auto()
     CROP_HARVEST = auto()
-    DAILY_TICK = auto()
 
 
 class FromAgroEcosystemMessageType(Enum):
@@ -33,10 +32,15 @@ class FromAgroEcosystemMessageType(Enum):
 
 
 class Soil(Enum):
-    SAND = (0.05, 0.25, 0.01)
-    LOAM = (0.11, 0.30, 0.05)
-    CLAY = (0.40, 0.55, 0.15)
-    SILT = (0.15, 0.35, 0.08)
+    SAND = (0.17, 0.07)
+    LOAMY_SAND = (0.19, 0.10)
+    SANDY_LOAM = (0.28, 0.16)
+    LOAM = (0.30, 0.17)
+    SILT_LOAM = (0.36, 0.21)
+    SILT = (0.36, 0.22)
+    SILT_CLAY_LOAM = (0.37, 0.24)
+    SILT_CLAY = (0.42, 0.29)
+    CLAY = (0.40, 0.24)
 
     @property
     def fc(self) -> float:
@@ -45,10 +49,6 @@ class Soil(Enum):
     @property
     def wp(self) -> float:
         return self.value[1]
-
-    @property
-    def delta(self) -> float:
-        return self.value[2]
 
 
 class AgroEcosystemMessage:
@@ -127,8 +127,8 @@ class CropCell:
         self.harvest_ready = False
         self.is_active = True
         self.infected = False
-        self.irrigation_events: list[float] = field(default_factory=list)
-        self.pesticide_events: list[float] = field(default_factory=list)
+        self.irrigation_events: list[float] = []
+        self.pesticide_events: list[float] = []
 
     def is_perennial(self) -> bool:
         return self._is_perennial
@@ -136,7 +136,7 @@ class CropCell:
     def grow(self, temp: float, rad: float, et0: float, rainfall: float) -> None:
         if not self.is_active:
             return
-        self.state.growing_degree_days += max(0, temp - 10)
+        self.state.growing_degree_days += temp
         gdd = self.state.growing_degree_days
 
         if gdd < self.degree_days_mid:
@@ -155,9 +155,11 @@ class CropCell:
             0.8, max(0.1, self.depletion_fraction + 0.04 * (5 - etc))
         )
 
-        self.state.root_zone_depletion = max(
-            0, self.state.root_zone_depletion + etc - rainfall
-        )
+        if rainfall > self.state.root_zone_depletion:
+            self.state.root_zone_depletion = self.readily_available_water
+        else:
+            irrigation_amount = sum(self.irrigation_events) if self.irrigation_events else 0.0
+            self.state.root_zone_depletion = self.state.root_zone_depletion - rainfall - irrigation_amount + etc
         if self.state.root_zone_depletion > self.readily_available_water:
             self.state.water_stress = True
             ks = max(
@@ -169,10 +171,8 @@ class CropCell:
         else:
             self.state.water_stress = False
 
-        wue = 5.0
-        hi = 0.4
-        self.state.above_ground_biomass += wue * rad * etc / max(et0, 0.01)
-        self.state.above_ground_biomass *= 1 - self.state.depletion_fraction_adjusted * 0.1
+        epsilon_max_kconv = 3.024
+        self.state.above_ground_biomass += epsilon_max_kconv * rad * etc / max(et0, 0.01)
 
     def apply_irrigation(self, amount: float) -> None:
         self.state.root_zone_depletion = max(0, self.state.root_zone_depletion - amount)
@@ -357,8 +357,17 @@ class AgroEcosystemState:
         month = dt.month
         md = self.monthly_data.get(month, MonthData())
         temp = (md.tmax + md.tmin) / 2
+
+        from ethosterra.world_config import WorldConfiguration
+        from ethosterra.radiation import ExtraterrestrialRadiation, Hemisphere
+        wc = WorldConfiguration.get_instance()
+        lat = wc.get("latitude", 4.0)
+        hemi = wc.get("hemisphere", "northern")
+        hem = Hemisphere.NORTHERN if hemi.lower() == "northern" else Hemisphere.SOUTHERN
+        ra = ExtraterrestrialRadiation.get_ra(lat, month, hem)
+        et0 = 0.0023 * ra * (temp + 17.8) * (md.tmax - md.tmin) ** 0.5
+
         rad = md.solar_radiation
-        et0 = 0.0023 * md.solar_radiation * (temp + 17.8) * (temp - md.tmin) ** 0.5
         rainfall = md.rainfall / 30.0
 
         for crop in self.crops.get_all_crops():
@@ -385,21 +394,18 @@ class AgroEcosystemGuard(GuardBESA):
             state.update_for_date(msg.date)
             self._reply(msg.peasant_alias, FromAgroEcosystemMessageType.CROP_INIT, "CROP_INIT", msg.date)
 
-        elif msg.message_type == AgroEcosystemMessageType.DAILY_TICK:
-            state.update_for_date(msg.date)
-            for crop in state.crops.get_all_crops():
-                if crop.state.water_stress:
-                    self._notify(crop.peasant_alias, FromAgroEcosystemMessageType.NOTIFY_CROP_WATER_STRESS, msg.date)
-                if crop.infected:
-                    self._notify(crop.peasant_alias, FromAgroEcosystemMessageType.NOTIFY_CROP_DISEASE, msg.date)
-                if crop.harvest_ready:
-                    self._notify(crop.peasant_alias, FromAgroEcosystemMessageType.NOTIFY_CROP_READY_HARVEST, msg.date)
-
         elif msg.message_type == AgroEcosystemMessageType.CROP_INFORMATION:
+            state.update_for_date(msg.date)
             cell = state.crops.get_crop(msg.crop_id)
             if cell:
                 self._reply(msg.peasant_alias, FromAgroEcosystemMessageType.CROP_INFORMATION_NOTIFICATION,
                             str(cell.to_dict()), msg.date)
+                if cell.harvest_ready:
+                    self._notify(msg.peasant_alias, FromAgroEcosystemMessageType.NOTIFY_CROP_READY_HARVEST, msg.date)
+                if cell.infected:
+                    self._notify(msg.peasant_alias, FromAgroEcosystemMessageType.NOTIFY_CROP_DISEASE, msg.date)
+                if cell.state.water_stress:
+                    self._notify(msg.peasant_alias, FromAgroEcosystemMessageType.NOTIFY_CROP_WATER_STRESS, msg.date)
 
         elif msg.message_type == AgroEcosystemMessageType.CROP_IRRIGATION:
             state.crops.apply_irrigation_to_all(10.0)
@@ -437,3 +443,23 @@ class AgroEcosystemAgent(AgentBESA):
         super().__init__(alias, state)
         state.rng = self.rng
         self.register_guard(AgroEcosystemGuard)
+
+        from besa.kernel.periodic_guard import PeriodicGuardBESA
+        from datetime import datetime, timedelta
+
+        class AgroDailyTick(PeriodicGuardBESA):
+            def __init__(inner_self, agent):
+                super().__init__(agent=agent, period_ms=40)
+                inner_self._eco_date = datetime.strptime("01/01/2024", "%d/%m/%Y")
+
+            def func_exec_guard(inner_self, event):
+                pass
+
+            def func_periodic_exec_guard(inner_self):
+                eco_state: AgroEcosystemState = inner_self.get_state()
+                date_str = inner_self._eco_date.strftime("%d/%m/%Y")
+                eco_state.update_for_date(date_str)
+                inner_self._eco_date += timedelta(days=1)
+
+        self._daily_guard = AgroDailyTick(agent=self)
+        self._daily_guard.start_periodic()

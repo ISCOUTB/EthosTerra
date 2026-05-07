@@ -60,10 +60,10 @@ class LoanTable:
         self.max_term = max_term
         self.paid_term = paid_term
         self.loan_type = loan_type
-        self.interest_rate = 0.02
+        self.interest_rate = 0.0
 
     def money_to_pay(self) -> float:
-        return (self.amount / self.max_term) * (1 + self.interest_rate)
+        return self.amount / self.max_term
 
     def increase_paid_term(self) -> None:
         self.paid_term += 1
@@ -73,7 +73,7 @@ class LoanTable:
 
 
 class BankOfficeState:
-    def __init__(self, available_money: float = 100000000):
+    def __init__(self, available_money: float = 1000000000):
         self.available_money = available_money
         self.loans: dict[str, LoanTable] = {}
 
