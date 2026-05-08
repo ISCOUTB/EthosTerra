@@ -86,16 +86,17 @@ EMOTIONAL_EVENT_INFLUENCES: dict[str, dict[str, float]] = {
     "happiness": {
         "LEISURE": 0.7, "DOVITALS": 0.3, "STARVING": 0.6,
         "CROPDISEASES": 0.2, "HARVESTING": 0.5, "UNPAYINGDEBTS": 0.1,
-        "HELPED": 0.3, "THIEVING": 0.8,
+        "HELPED": 0.3, "THIEVING": 0.8, "CRIME_NEARBY": 0.3,
     },
     "hopeful": {
         "PLANTING": 1.0, "SELLING": 0.8, "DOVITALS": 0.4,
         "CHECKCROPS": 0.2, "PLANTINGFAILED": 0.3, "THIEVING": 1.0,
         "UNPAYINGDEBTS": 0.1, "HELPED": 0.3, "WORK": 0.4, "HARVESTING": 0.5,
+        "CRIME_NEARBY": 0.4,
     },
     "secure": {
         "HOUSEHOLDING": 0.5, "THIEVING": 1.0, "DOVITALS": 0.4,
-        "PLANTING": 0.5, "HARVESTING": 0.5,
+        "PLANTING": 0.5, "HARVESTING": 0.5, "CRIME_NEARBY": 0.6,
     },
 }
 

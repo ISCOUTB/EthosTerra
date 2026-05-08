@@ -56,6 +56,8 @@ class FromCommunityDynamicsMessageType:
     CONTRACT_OFFERED = "CONTRACT_OFFERED"
     CONTRACT_ACCEPTED = "CONTRACT_ACCEPTED"
     CONTRACT_FINISHED = "CONTRACT_FINISHED"
+    CRIME_ALERT = "CRIME_ALERT"
+    CRIME_NEARBY = "CRIME_NEARBY"
 
 
 class CommunityDynamicsMessage:
@@ -66,12 +68,26 @@ class CommunityDynamicsMessage:
         contractor_alias: str = "",
         days: int = 0,
         wage: float = 50000,
+        victim_alias: str = "",
+        victim_land: str = "",
+        severity: float = 0.0,
+        money_lost: float = 0.0,
+        harvest_lost: float = 0.0,
+        date: str = "",
+        distance: int = 0,
     ):
         self.message_type = message_type
         self.worker_alias = worker_alias
         self.contractor_alias = contractor_alias
         self.days = days
         self.wage = wage
+        self.victim_alias = victim_alias
+        self.victim_land = victim_land
+        self.severity = severity
+        self.money_lost = money_lost
+        self.harvest_lost = harvest_lost
+        self.date = date
+        self.distance = distance
 
 
 class CommunityDynamicsGuard(GuardBESA):

@@ -57,3 +57,40 @@ class ViewerWSServer(threading.Thread):
             self._server.close()
         if self._loop:
             self._loop.stop()
+
+    def broadcast_map_data(self) -> None:
+        try:
+            from ethosterra.world_loader import get_world_loader
+            loader = get_world_loader()
+            if loader.get_parcel_count() == 0:
+                return
+
+            from besa.kernel.adm import AdmBESA
+            adm = AdmBESA.get_instance()
+            if not adm:
+                return
+
+            parcel_states: dict[str, dict] = {}
+            for agent in adm.get_agents():
+                if "PeasantFamily" in type(agent).__name__:
+                    b = agent.state
+                    for land in getattr(b, "lands", []):
+                        parcel_states[land.id] = {
+                            "id": land.id,
+                            "x": getattr(land, "x", 0),
+                            "y": getattr(land, "y", 0),
+                            "stage": getattr(land, "stage", "NONE"),
+                            "crop_type": getattr(land, "crop_type", ""),
+                            "owner": b.alias,
+                            "secure": getattr(b, "secure", 0),
+                            "money": getattr(b, "money", 0),
+                        }
+
+            world_data = {
+                "type": "map",
+                "parcels": loader.to_dict(),
+                "states": parcel_states,
+            }
+            self.broadcast(f"m={json.dumps(world_data)}")
+        except Exception:
+            pass

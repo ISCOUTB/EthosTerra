@@ -43,15 +43,36 @@ class PeasantFamily(AgentBDI):
         if not believes.training_enabled:
             believes.training_level = 0.4
         if params.land > 0:
-            for i in range(params.land):
-                land = Land(
-                    id=f"{alias}_land-{i}",
-                    area=1.0,
-                    stage="NONE",
-                    crop_type="land",
-                )
-                believes.lands.append(land)
-            believes.farm_name = True
+            from ethosterra.world_loader import get_world_loader
+            loader = get_world_loader()
+            if loader.get_parcel_count() > 0:
+                block = loader.find_contiguous_block(params.land)
+                if block:
+                    for bid in block:
+                        parcel = loader.get_parcel(bid)
+                        if parcel:
+                            land = Land(
+                                id=f"{alias}_{bid}",
+                                area=1.0,
+                                stage="NONE",
+                                crop_type="land",
+                                x=parcel.x,
+                                y=parcel.y,
+                                kind=parcel.kind,
+                                neighbors=[f"{alias}_{n}" for n in parcel.neighbors],
+                            )
+                            believes.lands.append(land)
+                    believes.farm_name = True
+            if not believes.lands:
+                for i in range(params.land):
+                    land = Land(
+                        id=f"{alias}_land-{i}",
+                        area=1.0,
+                        stage="NONE",
+                        crop_type="land",
+                    )
+                    believes.lands.append(land)
+                believes.farm_name = True
         super().__init__(alias, state=believes)
         self._guard_map: dict[str, type] = {}
         self._heartbeat_guard: Any = None
@@ -120,7 +141,7 @@ class PeasantFamily(AgentBDI):
 
     def _send_alive_to_control(self) -> None:
         from ethosterra.agents.simulation_control import AliveAgentGuard
-        control_alias = f"{self.alias.rsplit('PeasantFamily', 1)[0]}SimulationControl"
+        control_alias = f"{self.alias.rsplit('PeasantFamily', 1)[0]}_SimulationControl"
         self.send(
             control_alias,
             EventBESA(
@@ -197,7 +218,7 @@ class PeasantFamily(AgentBDI):
     def _send_alive_ping(self) -> None:
         believes: PeasantFamilyBelieves = self.state
         self.send(
-            f"{self.alias.rsplit('PeasantFamily', 1)[0]}SimulationControl",
+            f"{self.alias.rsplit('PeasantFamily', 1)[0]}_SimulationControl",
             EventBESA(
                 guard_type=SimulationControlGuard,
                 data=ControlMessage(

@@ -164,7 +164,7 @@ class HeartBeatGuard(PeriodicGuardBESA):
     def _send_progress_to_control(self, b: PeasantFamilyBelieves) -> None:
         agent = self._agent
         try:
-            control_alias = f"{agent.alias.rsplit('PeasantFamily', 1)[0]}SimulationControl"
+            control_alias = f"{agent.alias.rsplit('PeasantFamily', 1)[0]}_SimulationControl"
             from ethosterra.agents.simulation_control_messages import ControlMessage
             from ethosterra.agents.simulation_control import SimulationControlGuard
             agent.send(
@@ -187,7 +187,7 @@ class HeartBeatGuard(PeriodicGuardBESA):
     def _notify_death(self, b: PeasantFamilyBelieves) -> None:
         agent = self._agent
         try:
-            control_alias = f"{agent.alias.rsplit('PeasantFamily', 1)[0]}SimulationControl"
+            control_alias = f"{agent.alias.rsplit('PeasantFamily', 1)[0]}_SimulationControl"
             from ethosterra.agents.simulation_control_messages import ControlMessage
             from ethosterra.agents.simulation_control import DeadAgentGuard
             agent.send(

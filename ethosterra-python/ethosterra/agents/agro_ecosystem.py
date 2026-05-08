@@ -350,8 +350,15 @@ class AgroEcosystemState:
     current_temp: Temperatures = field(default_factory=Temperatures)
     disease_pressure: float = 0.1
     grid_size: int = 100
+    last_update_date: str = ""
+    adjacency_graph: dict[str, list[str]] = field(default_factory=dict)
+    disease_base_rate: float = 0.01
+    disease_neighbor_increment: float = 0.15
 
     def update_for_date(self, date_str: str) -> None:
+        if not date_str or date_str == self.last_update_date:
+            return
+        self.last_update_date = date_str
         from datetime import datetime
         dt = datetime.strptime(date_str, "%d/%m/%Y")
         month = dt.month
@@ -370,10 +377,28 @@ class AgroEcosystemState:
         rad = md.solar_radiation
         rainfall = md.rainfall / 30.0
 
-        for crop in self.crops.get_all_crops():
-            if crop.is_active:
-                crop.grow(temp, rad, et0, rainfall)
-                crop.infected = self.rng.random() < self.disease_pressure / 100
+        all_crops = self.crops.get_all_crops()
+        crop_ids = {c.crop_id for c in all_crops}
+
+        for crop in all_crops:
+            if not crop.is_active:
+                continue
+
+            infected_neighbors = 0
+            if self.adjacency_graph:
+                neighbors = self.adjacency_graph.get(crop.crop_id, [])
+                for nb_id in neighbors:
+                    nb_crop = self.crops.get_crop(nb_id)
+                    if nb_crop and nb_crop.is_active and nb_crop.infected:
+                        infected_neighbors += 1
+
+            infection_prob = self.disease_base_rate + infected_neighbors * self.disease_neighbor_increment
+            infection_prob = min(infection_prob, 0.95)
+
+            crop.grow(temp, rad, et0, rainfall)
+
+            if not crop.infected:
+                crop.infected = self.rng.random() < infection_prob
 
     def set_rng(self, rng: Any) -> None:
         self.rng = rng
@@ -387,12 +412,17 @@ class AgroEcosystemGuard(GuardBESA):
         state: AgroEcosystemState = self.get_state()
 
         if msg.message_type == AgroEcosystemMessageType.CROP_INIT:
-            if not state.crops.get_crop(msg.crop_id):
+            cell = state.crops.get_crop(msg.crop_id)
+            if cell is None or not cell.is_active:
                 cell_cls = CROP_CELL_MAP.get(msg.crop_type.lower(), MaizCell)
                 crop = cell_cls(msg.crop_id, msg.peasant_alias)
+                if cell is not None:
+                    state.crops.remove_crop(msg.crop_id)
                 state.crops.add_crop(crop)
+                cell = crop
             state.update_for_date(msg.date)
-            self._reply(msg.peasant_alias, FromAgroEcosystemMessageType.CROP_INIT, "CROP_INIT", msg.date)
+            if cell:
+                self._reply(msg.peasant_alias, FromAgroEcosystemMessageType.CROP_INIT, str(cell.to_dict()), msg.date)
 
         elif msg.message_type == AgroEcosystemMessageType.CROP_INFORMATION:
             state.update_for_date(msg.date)
@@ -444,22 +474,45 @@ class AgroEcosystemAgent(AgentBESA):
         state.rng = self.rng
         self.register_guard(AgroEcosystemGuard)
 
+        from ethosterra.world_loader import get_world_loader
+        loader = get_world_loader()
+        if loader.get_parcel_count() > 0:
+            state.adjacency_graph = loader.get_graph()
+
         from besa.kernel.periodic_guard import PeriodicGuardBESA
-        from datetime import datetime, timedelta
 
         class AgroDailyTick(PeriodicGuardBESA):
             def __init__(inner_self, agent):
-                super().__init__(agent=agent, period_ms=40)
-                inner_self._eco_date = datetime.strptime("01/01/2024", "%d/%m/%Y")
+                super().__init__(agent=agent, period_ms=1)
+                inner_self._last_notified_gdd = {}
 
             def func_exec_guard(inner_self, event):
                 pass
 
             def func_periodic_exec_guard(inner_self):
                 eco_state: AgroEcosystemState = inner_self.get_state()
-                date_str = inner_self._eco_date.strftime("%d/%m/%Y")
-                eco_state.update_for_date(date_str)
-                inner_self._eco_date += timedelta(days=1)
+                from ethosterra.simulation_clock import SimulationClock
+                clock = SimulationClock.get_instance()
+                date_str = clock.get_current_date()
+                if date_str:
+                    eco_state.update_for_date(date_str)
+                    for crop in eco_state.crops.get_all_crops():
+                        if not crop.is_active:
+                            inner_self._last_notified_gdd.pop(crop.crop_id, None)
+                            continue
+                        if crop.harvest_ready:
+                            last_gdd = inner_self._last_notified_gdd.get(crop.crop_id, -1)
+                            if crop.state.growing_degree_days > last_gdd:
+                                inner_self._last_notified_gdd[crop.crop_id] = crop.state.growing_degree_days
+                                from ethosterra.agents.agro_ecosystem import FromAgroEcosystemMessage, FromAgroEcosystemMessageType
+                                msg = FromAgroEcosystemMessage(
+                                    message_type=FromAgroEcosystemMessageType.NOTIFY_CROP_READY_HARVEST,
+                                    peasant_alias=crop.peasant_alias,
+                                    payload="",
+                                )
+                                msg.date = date_str
+                                from ethosterra.guards.from_agro_ecosystem import FromAgroEcosystemGuard
+                                inner_self._agent.send(crop.peasant_alias, EventBESA(guard_type=FromAgroEcosystemGuard, data=msg))
 
         self._daily_guard = AgroDailyTick(agent=self)
         self._daily_guard.start_periodic()

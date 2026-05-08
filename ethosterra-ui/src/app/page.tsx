@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { WorldMap } from '@/components/simulation/WorldMap';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/wpsViewer';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
@@ -241,6 +242,9 @@ export default function SimulatorPage() {
             <MetricTile label="Dinero total" value={fmtCOP(totalM)} color="#E6B84C" />
             <MetricTile label="Salud promedio" value={`${pct(avgH)}%`} color={+pct(avgH) > 50 ? '#2D6A4F' : '#E07A5F'} />
             <MetricTile label="Fecha actual" value={currentDate || '—'} color="#F4F1DE" />
+          </div>
+          <div className="mb-6">
+            <WorldMap />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {farms.map((f: any) => <FarmCard key={f.name} f={f} />)}

@@ -28,4 +28,6 @@ class SimulationParams:
     training_slots: int = -1
     world: str = "100"
     world_lands: int = 800
+    world_file: str = ""
     speed: float = 0.001
+    crime_rate: float = 0.0

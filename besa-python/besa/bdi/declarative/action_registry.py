@@ -125,9 +125,9 @@ class EmitEmotionAction:
         try:
             current = getattr(believes, axis, believes.happiness)
         except AttributeError:
-            current = 0.5
+            current = 0.0
         try:
-            setattr(believes, axis, max(0.0, min(1.0, current + delta)))
+            setattr(believes, axis, max(-1.0, min(1.0, current + delta)))
         except (ValueError, AttributeError):
             pass
         return True
@@ -239,8 +239,8 @@ class AgroEcosystemAction:
     _CROP_PRICES = {
         "water": 3, "seeds": 50000, "pesticides": 9300,
         "tools": 50000, "livestock": 2400, "supplies": 40000,
-        "rice": 1100, "roots": 1000, "maiz": 700,
-        "frijol": 2200, "cafe": 2800, "platano": 900,
+        "rice": 1100, "roots": 1000, "maiz": 1100,
+        "frijol": 1100, "cafe": 1100, "platano": 1100,
     }
 
     def execute(self, believes: Any, params: dict[str, Any] | None = None) -> bool:
@@ -276,18 +276,10 @@ class AgroEcosystemAction:
             crop_type = p.get("crop_type", "")
             if not crop_type and hasattr(believes, 'lands') and believes.lands:
                 crop_type = believes.lands[0].crop_type or ""
-            msg = AgroEcosystemMessage(
-                message_type=op_map.get(op, AgroEcosystemMessageType.CROP_INFORMATION),
-                crop_id=f"{agent}_crop",
-                peasant_alias=agent,
-                date=believes.current_date,
-                crop_type=crop_type,
-            )
-            send_guard("AgroEcosystem", op, msg)
             new_stage = self._STAGE_AFTER.get(op)
+            target_land = None
             if believes.lands:
                 if new_stage:
-                    target_land = None
                     if op == "PREPARE":
                         target_land = next((l for l in believes.lands if l.stage in ("NONE", "FALLOW")), None)
                     elif op == "PLANT":
@@ -298,8 +290,8 @@ class AgroEcosystemAction:
                         target_land = next((l for l in believes.lands if l.stage == "HARVEST_READY" and l.crop_type), None)
                         if not target_land:
                             target_land = next((l for l in believes.lands if l.stage == "GROWING" and l.crop_type), None)
-                        if target_land and target_land.stage != "FALLOW":
-                            pass  # harvested_weight set by FromAgroEcosystemGuard with actual biomass
+                        if target_land and target_land.stage != "FOLLOW":
+                            pass
                     elif op == "DEFOREST":
                         target_land = next((l for l in believes.lands if l.stage in ("GROWING", "HARVEST_READY") and l.crop_type), None)
                     if target_land:
@@ -310,7 +302,18 @@ class AgroEcosystemAction:
                     else:
                         target = next((l for l in believes.lands if l.stage == new_stage), believes.lands[0])
                     target.crop_type = crop_type
-        return True
+
+            crop_id = f"{agent}_crop"
+            if target_land and hasattr(target_land, 'id') and target_land.id:
+                crop_id = target_land.id
+            msg = AgroEcosystemMessage(
+                message_type=op_map.get(op, AgroEcosystemMessageType.CROP_INFORMATION),
+                crop_id=crop_id,
+                peasant_alias=agent,
+                date=believes.current_date,
+                crop_type=crop_type,
+            )
+            send_guard("AgroEcosystem", op, msg)
 
 
 class SetLandCropTypeAction:

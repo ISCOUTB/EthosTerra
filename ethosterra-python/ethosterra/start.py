@@ -52,6 +52,8 @@ def parse_args(argv: list[str] | None = None) -> SimulationParams:
     parser.add_argument("--perturbation", default="", help="Perturbation type")
     parser.add_argument("--trainingslots", type=int, default=-1, help="Training slots")
     parser.add_argument("--world-lands", type=int, default=800, help="Total world parcels in CivicAuthority pool")
+    parser.add_argument("--world-file", default="", help="GeoJSON world file (e.g., land_world.origin.json)")
+    parser.add_argument("--crime-rate", type=float, default=0.0, help="Crime probability per day (0.0-1.0)")
     parser.add_argument("--speed", type=float, default=0.001, help="Tick speed (seconds per day)")
     parser.add_argument("--wait", action="store_true", help="Start in wait mode (API-controlled)")
 
@@ -76,6 +78,8 @@ def parse_args(argv: list[str] | None = None) -> SimulationParams:
     p.training_slots = args.trainingslots
     p.speed = args.speed
     p.world_lands = args.world_lands
+    p.world_file = args.world_file
+    p.crime_rate = args.crime_rate
     p.agents = max(1, args.agents)
     p._wait = args.wait
     return p
@@ -83,14 +87,27 @@ def parse_args(argv: list[str] | None = None) -> SimulationParams:
 
 def create_services(adm: LocalAdmBESA, sim_params: SimulationParams | None = None) -> None:
     world_lands = sim_params.world_lands if sim_params else 800
+    world_file = sim_params.world_file if sim_params else ""
+    crime_rate = sim_params.crime_rate if sim_params else 0.0
+
+    if world_file:
+        from ethosterra.world_loader import get_world_loader
+        loader = get_world_loader()
+        loader.load(world_file)
+        print(f"World loaded: {loader.get_parcel_count()} parcels from {world_file}")
+
     agents = [
         CommunityDynamicsAgent("CommunityDynamics"),
         MarketPlaceAgent("MarketPlace"),
-        CivicAuthorityAgent("CivicAuthority", num_lands=world_lands, training_slots=10),
+        CivicAuthorityAgent("CivicAuthority", num_lands=world_lands, training_slots=10, world_file=world_file),
         BankOfficeAgent("BankOffice"),
         PerturbationGeneratorAgent("PerturbationGenerator"),
         AgroEcosystemAgent("AgroEcosystem"),
     ]
+    if crime_rate > 0:
+        from ethosterra.agents.crime_generator import CrimeGeneratorAgent
+        agents.append(CrimeGeneratorAgent("CrimeGenerator", base_rate=crime_rate, period_ms=500))
+
     for agent in agents:
         adm.register_agent(agent)
     for agent in agents:

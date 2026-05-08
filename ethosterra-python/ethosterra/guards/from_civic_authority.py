@@ -13,7 +13,12 @@ class FromCivicAuthorityGuard(GuardBESA):
 
         if msg.message_type == FromCivicAuthorityMessageType.LAND_APPROVED:
             from ethosterra.believes.peasant_family_believes import Land
-            land = Land(id=msg.land_id, area=msg.area, stage="NONE", crop_type="land")
+            land = Land(
+                id=msg.land_id, area=msg.area, stage="NONE", crop_type="land",
+                x=getattr(msg, 'x', 0.0), y=getattr(msg, 'y', 0.0),
+                kind=getattr(msg, 'kind', 'land'),
+                neighbors=getattr(msg, 'neighbors', []),
+            )
             believes.lands.append(land)
             believes.farm_name = True
             believes.task_log.append(f"Recibí tierra {msg.land_id} ({msg.area} ha) - lista para preparar")

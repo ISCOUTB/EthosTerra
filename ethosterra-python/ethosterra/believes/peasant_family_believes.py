@@ -23,6 +23,14 @@ class Land:
     pest_pressure: float = 0.0
     days_until_harvest: int = 0
     irrigated: bool = False
+    x: float = 0.0
+    y: float = 0.0
+    kind: str = "land"
+    neighbors: list[str] = field(default_factory=list)
+
+    def get_neighbor_lands(self, all_lands: list["Land"]) -> list["Land"]:
+        ids = {l.id for l in all_lands}
+        return [l for l in all_lands if l.id in set(self.neighbors) and l.id != self.id]
 
 
 class PeasantFamilyBelieves(BaseModel):
