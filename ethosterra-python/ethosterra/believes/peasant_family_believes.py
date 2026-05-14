@@ -27,6 +27,7 @@ class Land:
     y: float = 0.0
     kind: str = "land"
     neighbors: list[str] = field(default_factory=list)
+    parcel_name: str = ""
 
     def get_neighbor_lands(self, all_lands: list["Land"]) -> list["Land"]:
         ids = {l.id for l in all_lands}

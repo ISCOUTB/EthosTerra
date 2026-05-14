@@ -5,7 +5,7 @@ import ast
 import math
 
 _STAGE_MAP = {
-    "CROP_INIT": "GROWING",
+    "CROP_INIT": None,
     "CROP_INFORMATION_NOTIFICATION": None,
     "CROP_IRRIGATION": "IRRIGATED",
     "CROP_PESTICIDE": "TREATED",

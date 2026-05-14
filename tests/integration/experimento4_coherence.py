@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Experimento 4 Coherence Test — 18 treatments, 5 agents, 5 years."""
+"""Experimento 4 Coherence Test — 18 treatments, 5 agents, 5 years.
+   Runs simulation directly (no subprocess)."""
 import csv, json, os, sys, time
 from pathlib import Path
 
@@ -13,31 +14,134 @@ E4_REF = {
 }
 
 ROOT = Path("/home/jairo/Projects/EthosTerra")
+sys.path.insert(0, str(ROOT / "besa-python"))
+sys.path.insert(0, str(ROOT / "ethosterra-python"))
+os.environ["ETHOSTERRA_ROOT"] = str(ROOT)
+os.environ["PYTHONPATH"] = f"{ROOT}/besa-python:{ROOT}/ethosterra-python"
+os.environ["ETHOSTERRA_STEPTIME"] = "1"
+
+_IMPORTS_DONE = False
+
+def _do_imports():
+    global _IMPORTS_DONE
+    if _IMPORTS_DONE:
+        return
+    for mod in [
+        "besa.local.local_adm",
+        "besa.bdi.declarative.goal_registry",
+        "besa.bdi.declarative.plan_registry",
+        "ethosterra.simulation_clock",
+        "ethosterra.simulation_params",
+        "ethosterra.agents.peasant_family",
+        "ethosterra.agents.bank_office",
+        "ethosterra.agents.market_place",
+        "ethosterra.agents.simulation_control",
+        "ethosterra.agents.civic_authority",
+        "ethosterra.agents.agro_ecosystem",
+        "ethosterra.agents.community_dynamics",
+        "ethosterra.agents.perturbation_generator",
+        "ethosterra.guards.heart_beat",
+    ]:
+        __import__(mod)
+    _IMPORTS_DONE = True
 
 
 def run_treatment(tid, money, land, emotions):
-    import subprocess
+    _do_imports()
+    from besa.local.local_adm import LocalAdmBESA
+    from besa.bdi.declarative.goal_registry import GoalRegistry
+    from besa.bdi.declarative.plan_registry import PlanRegistry
+    from ethosterra.simulation_clock import SimulationClock
+    from ethosterra.simulation_params import SimulationParams
+    from ethosterra.agents.peasant_family import PeasantFamily
+    from ethosterra.agents.simulation_control import SimulationControlAgent
+    from ethosterra.agents.civic_authority import CivicAuthorityAgent
+    from ethosterra.agents.agro_ecosystem import AgroEcosystemAgent
+    from ethosterra.agents.bank_office import BankOfficeAgent
+    from ethosterra.agents.market_place import MarketPlaceAgent
+    from ethosterra.agents.community_dynamics import CommunityDynamicsAgent
+    from ethosterra.agents.perturbation_generator import PerturbationGeneratorAgent
+    from ethosterra.guards.heart_beat import init_csv_writer
+
     log_dir = ROOT / "data/experiments/E4_coherence/python" / tid
     log_dir.mkdir(parents=True, exist_ok=True)
     csv_path = log_dir / "wpsSimulator.csv"
 
-    args = [
-        sys.executable, str(ROOT / "ethosterra-python/ethosterra/start.py"),
-        "--agents", "5", "--years", "5",
-        "--money", str(money), "--land", str(land),
-        "--world", "world.400.json", "--world-lands", "400",
-        "--tools", "20", "--seeds", "50", "--water", "10",
-        "--variance", "0.4", "--personality", "0.0",
-        "--emotions", str(emotions), "--training", "1", "--irrigation", "1",
-        "--speed", "0.0",
-    ]
-    env = os.environ.copy()
-    env["PYTHONPATH"] = f"{ROOT}/besa-python:{ROOT}/ethosterra-python"
-    env["ETHOSTERRA_ROOT"] = str(ROOT)
-    env["ETHOSTERRA_LOGS_PATH"] = str(csv_path)
-    env["ETHOSTERRA_STEPTIME"] = "1"
+    try:
+        GoalRegistry.get_instance()
+        PlanRegistry.get_instance()
+        SimulationClock.get_instance().set_current_date("01/01/2024")
+        init_csv_writer(str(csv_path))
 
-    subprocess.run(args, cwd=ROOT, env=env, capture_output=True, timeout=900)
+        mode = f"E4_{tid}"
+        adm = LocalAdmBESA(alias=mode)
+
+        years = 5
+        world_lands = 400
+        total_agents = 5
+        training_slots = 10
+
+        services = [
+            CommunityDynamicsAgent("CommunityDynamics"),
+            MarketPlaceAgent("MarketPlace"),
+            CivicAuthorityAgent("CivicAuthority", num_lands=world_lands, training_slots=training_slots),
+            BankOfficeAgent("BankOffice"),
+            PerturbationGeneratorAgent("PerturbationGenerator"),
+            AgroEcosystemAgent("AgroEcosystem"),
+        ]
+        for agent in services:
+            adm.register_agent(agent)
+            agent.start()
+
+        control = SimulationControlAgent(
+            f"{mode}_SimulationControl",
+            total_agents=total_agents,
+            years=years,
+        )
+        adm.register_agent(control)
+        control.start()
+
+        peasants = []
+        for i in range(total_agents):
+            params = SimulationParams()
+            params.money = money
+            params.land = land
+            params.variance = 0.4
+            params.tools = 20
+            params.seeds = 50
+            params.water = 10
+            params.emotions = emotions
+            params.training = 1
+            params.irrigation = 1
+            params.personality = 0.0
+
+            p = PeasantFamily(f"{mode}PeasantFamily{i + 1}", params)
+            adm.register_agent(p)
+            p.start()
+            p.start_periodic()
+            peasants.append(p)
+
+        target_days = years * 365
+        deadline = time.time() + 120
+        while True:
+            time.sleep(0.2)
+            all_done = all(
+                getattr(p.state, "current_day", 0) >= target_days
+                for p in peasants
+            )
+            if all_done:
+                break
+            if time.time() > deadline:
+                break
+
+        for p in peasants:
+            p.state._goal_selected_today = None
+        adm.shutdown(timeout=2)
+
+    except Exception as e:
+        print(f"  ERROR: {e}")
+        return None
+
     return csv_path if csv_path.exists() else None
 
 

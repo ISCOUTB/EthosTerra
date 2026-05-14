@@ -91,6 +91,7 @@ services:
       ETHOSTERRA_LOGS_PATH: /app/data/logs/wpsSimulator.csv
     volumes:
       - ./data/logs:/app/data/logs
+      - ./data/experiments:/app/data/experiments
       - ./data/ebdi:/app/data/ebdi
       - ./data/worlds:/app/data/worlds
     depends_on:

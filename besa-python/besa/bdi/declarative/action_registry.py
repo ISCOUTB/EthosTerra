@@ -290,12 +290,16 @@ class AgroEcosystemAction:
                         target_land = next((l for l in believes.lands if l.stage == "HARVEST_READY" and l.crop_type), None)
                         if not target_land:
                             target_land = next((l for l in believes.lands if l.stage == "GROWING" and l.crop_type), None)
-                        if target_land and target_land.stage != "FOLLOW":
-                            pass
                     elif op == "DEFOREST":
                         target_land = next((l for l in believes.lands if l.stage in ("GROWING", "HARVEST_READY") and l.crop_type), None)
                     if target_land:
                         target_land.stage = new_stage
+                        if op == "PLANT" and hasattr(believes, 'seeds'):
+                            believes.seeds = max(0, believes.seeds - 1)
+                        elif op == "PREPARE" and hasattr(believes, 'tools'):
+                            believes.tools = max(0, believes.tools - 1)
+                        elif op == "IRRIGATE" and hasattr(believes, 'water_available'):
+                            believes.water_available = max(0, believes.water_available - 1)
                 if op in ("PREPARE", "PLANT") and crop_type and believes.lands:
                     if op == "PREPARE":
                         target = next((l for l in believes.lands if l.stage == new_stage), believes.lands[0])
@@ -304,14 +308,18 @@ class AgroEcosystemAction:
                     target.crop_type = crop_type
 
             crop_id = f"{agent}_crop"
+            parcel_id = ""
             if target_land and hasattr(target_land, 'id') and target_land.id:
                 crop_id = target_land.id
+            if target_land and hasattr(target_land, 'parcel_name') and target_land.parcel_name:
+                parcel_id = target_land.parcel_name
             msg = AgroEcosystemMessage(
                 message_type=op_map.get(op, AgroEcosystemMessageType.CROP_INFORMATION),
                 crop_id=crop_id,
                 peasant_alias=agent,
                 date=believes.current_date,
                 crop_type=crop_type,
+                parcel_id=parcel_id,
             )
             send_guard("AgroEcosystem", op, msg)
 

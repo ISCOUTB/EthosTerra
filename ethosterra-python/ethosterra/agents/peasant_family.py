@@ -60,6 +60,7 @@ class PeasantFamily(AgentBDI):
                                 y=parcel.y,
                                 kind=parcel.kind,
                                 neighbors=[f"{alias}_{n}" for n in parcel.neighbors],
+                                parcel_name=bid,
                             )
                             believes.lands.append(land)
                     believes.farm_name = True

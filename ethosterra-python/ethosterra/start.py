@@ -154,12 +154,16 @@ def print_header() -> None:
 class ControlHandler(BaseHTTPRequestHandler):
     global_runner: SimulationRunner | None = None
     global_adm: LocalAdmBESA | None = None
+    experiment_state: dict | None = None
+    experiment_thread: threading.Thread | None = None
 
     def do_GET(self) -> None:
         if self.path == "/status":
             self._json({"running": self.global_runner is not None and self.global_runner.is_alive()})
         elif self.path == "/health":
             self._json({"status": "ok"})
+        elif self.path == "/experiment/status":
+            self._experiment_status()
         else:
             self._json({"error": "not found"}, 404)
 
@@ -177,8 +181,82 @@ class ControlHandler(BaseHTTPRequestHandler):
         elif self.path == "/stop":
             ok = stop_simulation()
             self._json({"stopped": ok})
+        elif self.path == "/experiment/start":
+            content_len = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_len)
+            try:
+                data = json.loads(body)
+            except json.JSONDecodeError:
+                self._json({"error": "invalid json"}, 400)
+                return
+            ok = self._start_experiment(data)
+            self._json({"started": ok})
+        elif self.path == "/experiment/stop":
+            ok = self._stop_experiment()
+            self._json({"stopped": ok})
         else:
             self._json({"error": "not found"}, 404)
+
+    def _start_experiment(self, data: dict) -> bool:
+        if self.experiment_thread and self.experiment_thread.is_alive():
+            return False
+
+        treatments = data.get("treatments", [])
+        agents = int(data.get("agents", 5))
+        years = int(data.get("years", 5))
+
+        if not treatments:
+            money_levels = data.get("money_levels", [750000, 1500000, 3000000])
+            land_levels = data.get("land_levels", [2, 6, 12])
+            emo_levels = data.get("emotion_levels", [1, 0])
+            world_file = data.get("world_file", "")
+            crime_rate = float(data.get("crime_rate", 0))
+
+            tid = 1
+            for m in money_levels:
+                for ld in land_levels:
+                    for ev in emo_levels:
+                        treatments.append({
+                            "id": f"E4T{tid:02d}",
+                            "money": m,
+                            "land": ld,
+                            "emotions": ev,
+                        })
+                        tid += 1
+
+        self.experiment_state = {
+            "treatments": treatments,
+            "total": len(treatments),
+            "completed": 0,
+            "current": None,
+            "results": [],
+            "running": True,
+            "agents": agents,
+            "years": years,
+            "started_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+
+        world_file = data.get("world_file", "")
+        crime_rate = float(data.get("crime_rate", 0))
+
+        self.experiment_thread = threading.Thread(
+            target=_run_experiment,
+            args=(self, treatments, agents, years, world_file, crime_rate),
+            daemon=True,
+        )
+        self.experiment_thread.start()
+        return True
+
+    def _stop_experiment(self) -> bool:
+        if self.experiment_state:
+            self.experiment_state["running"] = False
+        return True
+
+    def _experiment_status(self) -> None:
+        if self.experiment_state:
+            self._json(self.experiment_state)
+        else:
+            self._json({"treatments": [], "total": 0, "completed": 0, "running": False})
 
     def _json(self, data: dict, status: int = 200) -> None:
         self.send_response(status)
@@ -204,6 +282,7 @@ def start_simulation(config: dict) -> bool:
         p.agents = int(config.get("agents", params.agents))
         p.years = int(config.get("years", params.years))
         p.money = int(config.get("money", params.money))
+        p.land = int(config.get("land", params.land if params.land > 0 else 6))
         p.tools = int(config.get("tools", params.tools))
         p.seeds = int(config.get("seeds", params.seeds))
         p.water = int(config.get("water", params.water))
@@ -218,6 +297,107 @@ def start_simulation(config: dict) -> bool:
             create_peasants(adm, p)
         ControlHandler.global_runner = None
         return True
+
+
+def _run_experiment(
+    handler: type,
+    treatments: list[dict],
+    agents: int,
+    years: int,
+    world_file: str,
+    crime_rate: float,
+) -> None:
+    import subprocess, os as _os
+    state = handler.experiment_state
+    root = _os.environ.get("ETHOSTERRA_ROOT", "/app")
+
+    runner_script = _os.path.join(root, "ethosterra-python", "ethosterra", "run_treatment.py")
+
+    for t in treatments:
+        if not state["running"]:
+            break
+
+        tid = t["id"]
+        state["current"] = tid
+
+        log_dir = f"{root}/data/experiments/E4_coherence/python/{tid}"
+        _os.makedirs(log_dir, exist_ok=True)
+        csv_path = f"{log_dir}/wpsSimulator.csv"
+
+        env = _os.environ.copy()
+        env["EXP_AGENTS"] = str(agents)
+        env["EXP_YEARS"] = str(years)
+        env["EXP_MONEY"] = str(t["money"])
+        env["EXP_LAND"] = str(t["land"])
+        env["EXP_EMOTIONS"] = str(t["emotions"])
+        env["EXP_TID"] = tid
+        env["EXP_CSV"] = csv_path
+        env["ETHOSTERRA_STEPTIME"] = "1"
+        env.setdefault("PYTHONPATH", f"{root}/besa-python:{root}/ethosterra-python")
+
+        try:
+            result = subprocess.run(
+                ["python", runner_script],
+                cwd=root, env=env,
+                capture_output=True, text=True, timeout=300,
+            )
+
+            total_cult = 0.0
+            avg_health = 0.0
+            for line in result.stdout.splitlines():
+                if line.startswith("TREATMENT_RESULT:"):
+                    parts = line.split()
+                    for part in parts[1:]:
+                        if part.startswith("cultivado="):
+                            total_cult = float(part.split("=")[1])
+                        elif part.startswith("salud="):
+                            avg_health = float(part.split("=")[1])
+
+            if total_cult == 0.0 and _os.path.exists(csv_path):
+                import csv
+                agent_data = {}
+                with open(csv_path) as f:
+                    for row in csv.DictReader(f):
+                        a = row.get("agent", "")
+                        try:
+                            tw = float(row.get("total_harvested_weight", row.get("harvested_weight", 0)))
+                            hl = float(row.get("health", 0))
+                        except (ValueError, TypeError):
+                            continue
+                        agent_data[a] = {"harvested": tw, "health": hl}
+                if agent_data:
+                    total_cult = sum(d["harvested"] for d in agent_data.values())
+                    avg_health = sum(d["health"] for d in agent_data.values()) / len(agent_data)
+                    if avg_health <= 1.0:
+                        avg_health *= 100.0
+
+            state["results"].append({
+                "id": tid,
+                "money": t["money"],
+                "land": t["land"],
+                "emotions": bool(t["emotions"]),
+                "cultivado": round(total_cult, 2),
+                "salud": round(avg_health, 2),
+                "status": "done",
+            })
+        except subprocess.TimeoutExpired:
+            state["results"].append({
+                "id": tid, "money": t["money"], "land": t["land"],
+                "emotions": bool(t["emotions"]),
+                "cultivado": 0, "salud": 0, "status": "timeout",
+            })
+        except Exception as e:
+            state["results"].append({
+                "id": tid, "money": t["money"], "land": t["land"],
+                "emotions": bool(t["emotions"]),
+                "cultivado": 0, "salud": 0, "status": f"error: {e}",
+            })
+
+        state["completed"] = len(state["results"])
+        state["current"] = None
+
+    state["running"] = False
+    state["finished_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def stop_simulation() -> bool:

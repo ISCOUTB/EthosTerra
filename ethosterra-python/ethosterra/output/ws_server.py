@@ -44,6 +44,18 @@ class ViewerWSServer(threading.Thread):
         asyncio.set_event_loop(self._loop)
         self._loop.run_until_complete(self._run_server())
 
+    def start(self) -> None:
+        super().start()
+        import threading
+        self._map_timer = threading.Thread(target=self._map_broadcast_loop, daemon=True)
+        self._map_timer.start()
+
+    def _map_broadcast_loop(self) -> None:
+        import time
+        while True:
+            time.sleep(5)
+            self.broadcast_map_data()
+
     def broadcast(self, message: str) -> None:
         if not self._connections or not self._loop:
             return

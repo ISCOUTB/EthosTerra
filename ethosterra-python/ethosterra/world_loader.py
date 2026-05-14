@@ -100,6 +100,7 @@ class WorldLoader:
         self.parcels: dict[str, Parcel] = {}
         self.graph: dict[str, list[str]] = {}
         self._loaded = False
+        self._assigned: set[str] = set()
 
     def load(self, world_file: str | None = None) -> bool:
         if self._loaded:
@@ -175,6 +176,7 @@ class WorldLoader:
     ) -> list[str] | None:
         if exclude is None:
             exclude = set()
+        exclude = exclude | self._assigned
         if kind_filter is None:
             kind_filter = {"land", "forest"}
 
@@ -199,9 +201,23 @@ class WorldLoader:
                         seen.add(nb)
                         queue.append(nb)
             if len(visited) >= size:
-                return visited[:size]
+                result = visited[:size]
+                self._assigned.update(result)
+                return result
 
         return None
+
+    def claim_parcels(self, parcel_ids: list[str]) -> None:
+        self._assigned.update(parcel_ids)
+
+    def release_parcels(self, parcel_ids: list[str]) -> None:
+        self._assigned.difference_update(parcel_ids)
+
+    def is_assigned(self, parcel_id: str) -> bool:
+        return parcel_id in self._assigned
+
+    def get_assigned_count(self) -> int:
+        return len(self._assigned)
 
     def to_dict(self) -> dict[str, Any]:
         return {

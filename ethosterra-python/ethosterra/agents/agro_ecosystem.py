@@ -60,6 +60,7 @@ class AgroEcosystemMessage:
         payload: str = "",
         date: str = "",
         crop_type: str = "",
+        parcel_id: str = "",
     ):
         self.message_type = message_type
         self.crop_id = crop_id
@@ -67,6 +68,7 @@ class AgroEcosystemMessage:
         self.payload = payload
         self.date = date
         self.crop_type = crop_type
+        self.parcel_id = parcel_id
 
 
 class FromAgroEcosystemMessage:
@@ -107,6 +109,7 @@ class CropCell:
         soil: Soil,
         crop_id: str,
         peasant_alias: str,
+        parcel_id: str = "",
     ):
         self.crop_factor_ini = crop_factor_ini
         self.crop_factor_mid = crop_factor_mid
@@ -119,6 +122,7 @@ class CropCell:
         self.soil = soil
         self.crop_id = crop_id
         self.peasant_alias = peasant_alias
+        self.parcel_id = parcel_id or crop_id
 
         self.state = CropCellState()
         self.total_available_water = 1000 * (soil.fc - soil.wp) * max_root_depth
@@ -323,18 +327,27 @@ class Temperatures:
 @dataclass
 class CropLayerState:
     crops: dict[str, CropCell] = field(default_factory=dict)
+    _parcel_index: dict[str, str] = field(default_factory=dict)
 
     def add_crop(self, cell: CropCell) -> None:
         self.crops[cell.crop_id] = cell
+        if cell.parcel_id and cell.parcel_id != cell.crop_id:
+            self._parcel_index[cell.parcel_id] = cell.crop_id
 
     def get_crop(self, crop_id: str) -> CropCell | None:
+        return self.crops.get(crop_id)
+
+    def get_crop_by_parcel(self, parcel_id: str) -> CropCell | None:
+        crop_id = self._parcel_index.get(parcel_id, parcel_id)
         return self.crops.get(crop_id)
 
     def get_all_crops(self) -> list[CropCell]:
         return list(self.crops.values())
 
     def remove_crop(self, crop_id: str) -> None:
-        self.crops.pop(crop_id, None)
+        cell = self.crops.pop(crop_id, None)
+        if cell and cell.parcel_id and cell.parcel_id in self._parcel_index:
+            del self._parcel_index[cell.parcel_id]
 
     def apply_irrigation_to_all(self, amount: float) -> None:
         for crop in self.crops.values():
@@ -386,9 +399,10 @@ class AgroEcosystemState:
 
             infected_neighbors = 0
             if self.adjacency_graph:
-                neighbors = self.adjacency_graph.get(crop.crop_id, [])
+                parcel = crop.parcel_id or crop.crop_id
+                neighbors = self.adjacency_graph.get(parcel, [])
                 for nb_id in neighbors:
-                    nb_crop = self.crops.get_crop(nb_id)
+                    nb_crop = self.crops.get_crop_by_parcel(nb_id)
                     if nb_crop and nb_crop.is_active and nb_crop.infected:
                         infected_neighbors += 1
 
@@ -416,6 +430,7 @@ class AgroEcosystemGuard(GuardBESA):
             if cell is None or not cell.is_active:
                 cell_cls = CROP_CELL_MAP.get(msg.crop_type.lower(), MaizCell)
                 crop = cell_cls(msg.crop_id, msg.peasant_alias)
+                crop.parcel_id = getattr(msg, 'parcel_id', '') or msg.parcel_id
                 if cell is not None:
                     state.crops.remove_crop(msg.crop_id)
                 state.crops.add_crop(crop)

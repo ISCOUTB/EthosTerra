@@ -3,18 +3,19 @@
 import { useState } from 'react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { WorldMap } from '@/components/simulation/WorldMap';
+import { ExperimentLauncher } from '@/components/simulation/ExperimentLauncher';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/wpsViewer';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
 /* ─── PRESETS ─── */
 const PRESETS = [
-  { label: 'Custom', agents: 5, years: 1, money: 1500000, tools: 10, seeds: 10, water: 10 },
-  { label: 'Estrés', agents: 40, years: 1, money: 1500000, tools: 5, seeds: 5, water: 2 },
-  { label: 'Pobreza', agents: 60, years: 2, money: 100000, tools: 2, seeds: 2, water: 0 },
-  { label: 'Tecnología', agents: 30, years: 2, money: 2000000, tools: 20, seeds: 20, water: 30 },
-  { label: 'Latifundio', agents: 15, years: 3, money: 5000000, tools: 30, seeds: 50, water: 50 },
-  { label: 'Solidaridad', agents: 80, years: 1, money: 200000, tools: 5, seeds: 5, water: 5 },
+  { label: 'Custom', agents: 5, years: 1, money: 1500000, land: 6, tools: 10, seeds: 10, water: 10 },
+  { label: 'Estrés', agents: 40, years: 1, money: 1500000, land: 2, tools: 5, seeds: 5, water: 2 },
+  { label: 'Pobreza', agents: 60, years: 2, money: 100000, land: 1, tools: 2, seeds: 2, water: 0 },
+  { label: 'Tecnología', agents: 30, years: 2, money: 2000000, land: 6, tools: 20, seeds: 20, water: 30 },
+  { label: 'Latifundio', agents: 15, years: 3, money: 5000000, land: 12, tools: 30, seeds: 50, water: 50 },
+  { label: 'Solidaridad', agents: 80, years: 1, money: 200000, land: 2, tools: 5, seeds: 5, water: 5 },
 ];
 
 /* ─── HELPERS ─── */
@@ -106,15 +107,19 @@ function ConfigForm({ loading, error, onStart }: any) {
   const [agents, setAgents] = useState(5);
   const [years, setYears] = useState(1);
   const [money, setMoney] = useState(1500000);
+  const [land, setLand] = useState(6);
   const [tools, setTools] = useState(10);
   const [seeds, setSeeds] = useState(10);
   const [water, setWater] = useState(10);
   const [speed, setSpeed] = useState(0.001);
+  const [emotions, setEmotions] = useState(1);
+  const [training, setTraining] = useState(1);
+  const [irrigation, setIrrigation] = useState(1);
 
   function apply(name: string) {
     const p = PRESETS.find(x => x.label === name); if (!p) return;
     setPreset(name); setAgents(p.agents); setYears(p.years);
-    setMoney(p.money); setTools(p.tools); setSeeds(p.seeds); setWater(p.water);
+    setMoney(p.money); setLand(p.land); setTools(p.tools); setSeeds(p.seeds); setWater(p.water);
   }
 
   return (
@@ -157,6 +162,11 @@ function ConfigForm({ loading, error, onStart }: any) {
               onChange={e => { setPreset('Custom'); setYears(+e.target.value); }} min={1} max={10} />
           </div>
           <div>
+            <div className="metric-label">Tierras</div>
+            <input type="number" className="input-field" value={land}
+              onChange={e => { setPreset('Custom'); setLand(+e.target.value); }} min={1} max={100} />
+          </div>
+          <div>
             <div className="metric-label">Dinero (COP)</div>
             <input type="number" className="input-field" value={money}
               onChange={e => { setPreset('Custom'); setMoney(+e.target.value); }} step={100000} />
@@ -176,15 +186,25 @@ function ConfigForm({ loading, error, onStart }: any) {
             <input type="number" className="input-field" value={water}
               onChange={e => { setPreset('Custom'); setWater(+e.target.value); }} min={0} />
           </div>
+          <div>
+            <div className="metric-label">Emociones</div>
+            <select className="input-field" value={emotions}
+              onChange={e => { setPreset('Custom'); setEmotions(+e.target.value); }}>
+              <option value={1}>Activadas</option>
+              <option value={0}>Desactivadas</option>
+            </select>
+          </div>
+          <div>
+            <div className="metric-label">Capacitación</div>
+            <select className="input-field" value={training}
+              onChange={e => { setPreset('Custom'); setTraining(+e.target.value); }}>
+              <option value={1}>Activada</option>
+              <option value={0}>Desactivada</option>
+            </select>
+          </div>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-[#D95D39]/10 border border-[#D95D39]/20 text-[#E07A5F] font-mono text-[11px]">
-            {error}
-          </div>
-        )}
-
-        <button onClick={() => onStart({ agents, years, money, tools, seeds, water, speed })}
+        <button onClick={() => onStart({ agents, years, money, land, tools, seeds, water, speed, emotions, training, irrigation })}
           disabled={loading} className="btn-start w-full">
           {loading ? 'Iniciando...' : 'Iniciar simulación'}
         </button>
@@ -232,8 +252,11 @@ export default function SimulatorPage() {
       <TopBar date={currentDate} count={agentCount || farms.length} running={isRunning} onStop={handleStop} />
 
       {!isRunning && farms.length === 0 && !started ? (
-        <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-45px)] p-6">
+        <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-45px)] p-6 gap-8">
           <ConfigForm loading={loading} error={error} onStart={handleStart} />
+          <div className="w-full max-w-2xl">
+            <ExperimentLauncher />
+          </div>
         </main>
       ) : (
         <main className="relative z-10 p-6">
@@ -245,6 +268,9 @@ export default function SimulatorPage() {
           </div>
           <div className="mb-6">
             <WorldMap />
+          </div>
+          <div className="mb-6">
+            <ExperimentLauncher />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {farms.map((f: any) => <FarmCard key={f.name} f={f} />)}

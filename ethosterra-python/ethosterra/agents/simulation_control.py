@@ -100,9 +100,9 @@ class SimulationControlGuard(GuardBESA):
 
     def _print_progress(self, current_date_str: str, years: int) -> None:
         clock = SimulationClock.get_instance()
-        start = datetime.strptime("01/01/" + str(datetime.now().year), "%d/%m/%Y")
-        end = datetime.strptime("01/01/" + str(datetime.now().year + years), "%d/%m/%Y")
         current = datetime.strptime(current_date_str, "%d/%m/%Y")
+        start = datetime(current.year, 1, 1)
+        end = datetime(current.year + years, 1, 1)
         total = (end - start).days
         elapsed = (current - start).days
         pct = (100.0 * elapsed) / total if total > 0 else 0

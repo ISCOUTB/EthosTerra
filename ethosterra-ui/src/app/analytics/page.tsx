@@ -21,7 +21,23 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetch('/api/csv').then(r => r.json()).then(j => {
-      if (j.data) Papa.parse(j.data, { header: true, complete: r => setData(r.data as any) });
+      if (!j.data || typeof j.data !== 'string') {
+        setData([]);
+        return;
+      }
+      try {
+        const result = Papa.parse(j.data, { header: true, skipEmptyLines: true, dynamicTyping: false });
+        if (result.errors && result.errors.length > 0) {
+          console.warn('CSV parse warnings:', result.errors.slice(0, 3));
+        }
+        setData(result.data as any[]);
+      } catch (err) {
+        console.error('CSV parse error:', err);
+        setData([]);
+      }
+    }).catch(err => {
+      console.error('CSV fetch error:', err);
+      setData([]);
     }).finally(() => setLoading(false));
   }, []);
 
