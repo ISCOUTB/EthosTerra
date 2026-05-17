@@ -42,6 +42,7 @@ class PeasantFamily(AgentBDI):
         )
         if not believes.training_enabled:
             believes.training_level = 0.4
+        believes.simulation_years = params.years
         if params.land > 0:
             from ethosterra.world_loader import get_world_loader
             loader = get_world_loader()

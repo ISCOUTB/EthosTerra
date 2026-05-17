@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 import sys
 import time
 import threading
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from pathlib import Path
 
 from besa.local.local_adm import LocalAdmBESA
 from besa.bdi.declarative.goal_registry import GoalRegistry
@@ -29,6 +31,8 @@ params = SimulationParams()
 start_time = time.time()
 _runner: SimulationRunner | None = None
 _run_lock = threading.Lock()
+_last_sim_mode: str = ""
+_last_sim_agents: int = 0
 
 
 def parse_args(argv: list[str] | None = None) -> SimulationParams:
@@ -117,10 +121,12 @@ def create_services(adm: LocalAdmBESA, sim_params: SimulationParams | None = Non
 def create_peasants(adm: LocalAdmBESA, sim_params: SimulationParams) -> None:
     from ethosterra.agents.peasant_family import PeasantFamily
 
+    from ethosterra.agents.simulation_control import _SIM_START_YEAR
     control = SimulationControlAgent(
         f"{sim_params.mode}_SimulationControl",
         total_agents=sim_params.agents,
         years=sim_params.years,
+        start_year=_SIM_START_YEAR,
     )
     viewer = ViewerLensAgent(f"{sim_params.mode}_ViewerLens")
     adm.register_agent(control)
@@ -128,6 +134,7 @@ def create_peasants(adm: LocalAdmBESA, sim_params: SimulationParams) -> None:
     control.start()
     viewer.start()
 
+    steptime_ms = max(1, int(sim_params.speed * 1000))
     for i in range(sim_params.agents):
         peasant = PeasantFamily(
             f"{sim_params.mode}PeasantFamily{i + 1}",
@@ -135,7 +142,7 @@ def create_peasants(adm: LocalAdmBESA, sim_params: SimulationParams) -> None:
         )
         adm.register_agent(peasant)
         peasant.start()
-        peasant.start_periodic()
+        peasant.start_periodic(steptime_ms)
 
 
 def print_header() -> None:
@@ -157,6 +164,8 @@ class ControlHandler(BaseHTTPRequestHandler):
     experiment_state: dict | None = None
     experiment_thread: threading.Thread | None = None
 
+    report_proc: subprocess.Popen | None = None
+
     def do_GET(self) -> None:
         if self.path == "/status":
             self._json({"running": self.global_runner is not None and self.global_runner.is_alive()})
@@ -164,6 +173,8 @@ class ControlHandler(BaseHTTPRequestHandler):
             self._json({"status": "ok"})
         elif self.path == "/experiment/status":
             self._experiment_status()
+        elif self.path == "/report/status":
+            self._report_status()
         else:
             self._json({"error": "not found"}, 404)
 
@@ -194,12 +205,86 @@ class ControlHandler(BaseHTTPRequestHandler):
         elif self.path == "/experiment/stop":
             ok = self._stop_experiment()
             self._json({"stopped": ok})
+        elif self.path == "/report/generate":
+            content_len = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_len)
+            try:
+                data = json.loads(body) if content_len else {}
+            except json.JSONDecodeError:
+                data = {}
+            self._generate_report(data)
         else:
             self._json({"error": "not found"}, 404)
+
+    def _report_status(self) -> None:
+        root = Path(os.environ.get("ETHOSTERRA_ROOT", "."))
+        html_dir = root / "reports" / "analysis" / "html"
+        generating = bool(
+            ControlHandler.report_proc and ControlHandler.report_proc.poll() is None
+        )
+        if not html_dir.exists():
+            self._json({"exists": False, "generating": generating})
+            return
+        files = sorted(html_dir.glob("analysis_*.html"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if not files:
+            self._json({"exists": False, "generating": generating})
+            return
+        latest = files[0]
+        stat = latest.stat()
+        self._json({
+            "exists": True,
+            "generating": generating,
+            "filename": latest.name,
+            "sizeKb": round(stat.st_size / 1024),
+            "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(stat.st_mtime)),
+        })
+
+    def _generate_report(self, data: dict) -> None:
+        if ControlHandler.report_proc and ControlHandler.report_proc.poll() is None:
+            self._json({"started": False, "reason": "already running"})
+            return
+        root = Path(os.environ.get("ETHOSTERRA_ROOT", "."))
+        venv_python = root / ".venv" / "bin" / "python"
+        python_bin = str(venv_python) if venv_python.exists() else sys.executable
+        max_episodes = int(data.get("max_episodes", 5))
+        model = data.get("model", "gemma3:4b")
+        mode = data.get("mode", "episodes")
+        default_ollama = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+        ollama_url = data.get("ollama_url") or default_ollama
+        treatment = data.get("treatment")
+        cmd = [
+            python_bin,
+            str(root / "experiments" / "analysis" / "orchestrator.py"),
+            "--mode", mode,
+            "--max-episodes", str(max_episodes),
+            "--model", model,
+            "--ollama-url", ollama_url,
+        ]
+        if treatment:
+            cmd += ["--treatment", treatment]
+        else:
+            cmd += ["--all"]
+        env = os.environ.copy()
+        besa_src = root / "besa-python"
+        if besa_src.exists():
+            env["PYTHONPATH"] = f"{besa_src}:{root / 'ethosterra-python'}:{root}"
+        else:
+            env["PYTHONPATH"] = str(root)  # Docker: besa/ y ethosterra/ están directamente en /app
+        env["ETHOSTERRA_ROOT"] = str(root)
+        log_path = root / "reports" / "analysis" / "orchestrator.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_file = open(log_path, "w")
+        ControlHandler.report_proc = subprocess.Popen(
+            cmd, cwd=str(root), env=env,
+            stdout=log_file, stderr=log_file,
+        )
+        self._json({"started": True, "pid": ControlHandler.report_proc.pid})
 
     def _start_experiment(self, data: dict) -> bool:
         if self.experiment_thread and self.experiment_thread.is_alive():
             return False
+        # Stop any running BDI simulation before launching the experiment
+        stop_simulation()
 
         treatments = data.get("treatments", [])
         agents = int(data.get("agents", 5))
@@ -274,9 +359,13 @@ class ControlHandler(BaseHTTPRequestHandler):
 
 
 def start_simulation(config: dict) -> bool:
-    global _runner, params
+    global _runner, params, _last_sim_mode, _last_sim_agents
     with _run_lock:
         if _runner and _runner.is_alive():
+            return False
+        # Don't start a BDI simulation while an experiment is running
+        handler = ControlHandler
+        if handler.experiment_thread and handler.experiment_thread.is_alive():
             return False
         p = SimulationParams()
         p.agents = int(config.get("agents", params.agents))
@@ -293,7 +382,20 @@ def start_simulation(config: dict) -> bool:
         p.mode = config.get("mode", "single")
 
         adm = ControlHandler.global_adm
+
+        # Unregister agents from previous simulation to prevent stale death messages
+        if adm and _last_sim_mode:
+            for i in range(1, _last_sim_agents + 1):
+                adm.unregister_agent(f"{_last_sim_mode}PeasantFamily{i}")
+            adm.unregister_agent(f"{_last_sim_mode}_SimulationControl")
+            adm.unregister_agent(f"{_last_sim_mode}_ViewerLens")
+
+        clock = SimulationClock.get_instance()
+        clock.set_current_date("01/01/2024")
+
         if adm:
+            _last_sim_mode = p.mode
+            _last_sim_agents = p.agents
             create_peasants(adm, p)
         ControlHandler.global_runner = None
         return True

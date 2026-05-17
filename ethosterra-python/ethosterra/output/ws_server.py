@@ -20,6 +20,7 @@ class ViewerWSServer(threading.Thread):
     async def _handler(self, websocket: Any) -> None:
         self._connections.add(websocket)
         try:
+            asyncio.ensure_future(self._send_initial_map(websocket))
             async for msg in websocket:
                 if msg == "setup":
                     adm = AdmBESA.get_instance()
@@ -28,6 +29,14 @@ class ViewerWSServer(threading.Thread):
                         await websocket.send(f"q={len(agents)}")
         finally:
             self._connections.discard(websocket)
+
+    async def _send_initial_map(self, websocket: Any) -> None:
+        try:
+            msg = self._build_map_message()
+            if msg:
+                await websocket.send(msg)
+        except Exception:
+            pass
 
     async def _run_server(self) -> None:
         try:
@@ -53,7 +62,7 @@ class ViewerWSServer(threading.Thread):
     def _map_broadcast_loop(self) -> None:
         import time
         while True:
-            time.sleep(5)
+            time.sleep(2)
             self.broadcast_map_data()
 
     def broadcast(self, message: str) -> None:
@@ -70,39 +79,44 @@ class ViewerWSServer(threading.Thread):
         if self._loop:
             self._loop.stop()
 
-    def broadcast_map_data(self) -> None:
+    def _build_map_message(self) -> str | None:
         try:
             from ethosterra.world_loader import get_world_loader
             loader = get_world_loader()
             if loader.get_parcel_count() == 0:
-                return
+                return None
 
             from besa.kernel.adm import AdmBESA
             adm = AdmBESA.get_instance()
-            if not adm:
-                return
 
             parcel_states: dict[str, dict] = {}
-            for agent in adm.get_agents():
-                if "PeasantFamily" in type(agent).__name__:
-                    b = agent.state
-                    for land in getattr(b, "lands", []):
-                        parcel_states[land.id] = {
-                            "id": land.id,
-                            "x": getattr(land, "x", 0),
-                            "y": getattr(land, "y", 0),
-                            "stage": getattr(land, "stage", "NONE"),
-                            "crop_type": getattr(land, "crop_type", ""),
-                            "owner": b.alias,
-                            "secure": getattr(b, "secure", 0),
-                            "money": getattr(b, "money", 0),
-                        }
+            if adm:
+                for agent in adm.get_agents():
+                    if "PeasantFamily" in type(agent).__name__:
+                        b = agent.state
+                        for land in getattr(b, "lands", []):
+                            key = getattr(land, "parcel_name", "") or land.id
+                            parcel_states[key] = {
+                                "id": key,
+                                "x": getattr(land, "x", 0),
+                                "y": getattr(land, "y", 0),
+                                "stage": getattr(land, "stage", "NONE"),
+                                "crop_type": getattr(land, "crop_type", ""),
+                                "owner": getattr(b, "alias", ""),
+                                "secure": getattr(b, "secure", 0),
+                                "money": getattr(b, "money", 0),
+                            }
 
             world_data = {
                 "type": "map",
                 "parcels": loader.to_dict(),
                 "states": parcel_states,
             }
-            self.broadcast(f"m={json.dumps(world_data)}")
+            return f"m={json.dumps(world_data)}"
         except Exception:
-            pass
+            return None
+
+    def broadcast_map_data(self) -> None:
+        msg = self._build_map_message()
+        if msg:
+            self.broadcast(msg)

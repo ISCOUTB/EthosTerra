@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { WorldMap } from '@/components/simulation/WorldMap';
 import { ExperimentLauncher } from '@/components/simulation/ExperimentLauncher';
@@ -72,7 +73,190 @@ function FarmCard({ f }: { f: any }) {
   );
 }
 
-function TopBar({ date, count, running, onStop }: any) {
+const TREATMENT_IDS = [
+  'E401','E402','E403','E404','E405','E406','E407','E408','E409',
+  'E410','E411','E412','E413','E414','E415','E416','E417','E418',
+  'E419','E420','E421','E422','E423','E424','E425','E426','E427',
+];
+
+function useReportStatus() {
+  const [fileStatus, setFileStatus] = useState<{
+    exists: boolean; filename?: string; sizeKb?: number; generatedAt?: string;
+  } | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const [fr, sr] = await Promise.all([
+        fetch('/api/report', { cache: 'no-store' }).then(r => r.json()),
+        fetch('/api/report/status', { cache: 'no-store' }).then(r => r.json()),
+      ]);
+      setFileStatus(fr);
+      setGenerating(sr.generating ?? false);
+    } catch {}
+  }, []);
+
+  const generate = async (opts: {
+    ollama_url: string; model: string; max_episodes: number; treatment?: string; mode?: string;
+  }) => {
+    setGenerating(true);
+    setShowConfig(false);
+    try {
+      await fetch('/api/report/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(opts),
+      });
+    } catch {
+      setGenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, 6000);
+    return () => clearInterval(id);
+  }, [refresh]);
+
+  return { fileStatus, generating, showConfig, setShowConfig, generate };
+}
+
+function ReportConfigPanel({ onClose, onGenerate }: {
+  onClose: () => void;
+  onGenerate: (opts: { ollama_url: string; model: string; max_episodes: number; treatment?: string; mode: string }) => void;
+}) {
+  const [ollamaUrl, setOllamaUrl] = useState('http://ollama:11434');
+  const [model, setModel] = useState('gemma3:4b');
+  const [maxEpisodes, setMaxEpisodes] = useState(5);
+  const [treatment, setTreatment] = useState('');
+  const [mode, setMode] = useState('episodes');
+
+  return (
+    <div className="fixed top-12 right-6 w-80 bg-[#1A2327] border border-white/10 shadow-2xl" style={{ zIndex: 9999, animation: 'fadeUp 0.15s ease-out' }}>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+        <span className="font-mono text-[10px] text-[#6B7C7A] tracking-[0.2em] uppercase">Generar informe</span>
+        <button onClick={onClose} className="text-[#6B7C7A] hover:text-[#F4F1DE] text-sm leading-none">✕</button>
+      </div>
+      <div className="p-4 space-y-4">
+        <div>
+          <div className="metric-label mb-1">Modo de análisis</div>
+          <select className="input-field" value={mode} onChange={e => setMode(e.target.value)}>
+            <option value="episodes">Por episodios (eventos clave)</option>
+            <option value="monthly">Mensual (todos los años, 1 llamada)</option>
+          </select>
+          <p className="text-[9px] text-[#6B7C7A]/60 font-mono mt-1">
+            {mode === 'monthly'
+              ? 'Agrega datos mes a mes — más rápido, cubre toda la simulación'
+              : 'Detecta crisis, cosechas y cambios emocionales en detalle'}
+          </p>
+        </div>
+        <div>
+          <div className="metric-label mb-1">Modelo LLM</div>
+          <input className="input-field" value={model} onChange={e => setModel(e.target.value)} placeholder="gemma3:4b" />
+        </div>
+        <div>
+          <div className="metric-label mb-1">URL Ollama</div>
+          <input className="input-field" value={ollamaUrl} onChange={e => setOllamaUrl(e.target.value)} placeholder="http://localhost:11434" />
+          <p className="text-[9px] text-[#6B7C7A]/60 font-mono mt-1">
+            Servicio ollama del compose, o localhost:11434 local
+          </p>
+        </div>
+        {mode === 'episodes' && (
+          <div>
+            <div className="metric-label mb-1">Episodios máx por tratamiento</div>
+            <input type="number" className="input-field" value={maxEpisodes}
+              onChange={e => setMaxEpisodes(+e.target.value)} min={1} max={50} />
+          </div>
+        )}
+        <div>
+          <div className="metric-label mb-1">Tratamiento</div>
+          <select className="input-field" value={treatment} onChange={e => setTreatment(e.target.value)}>
+            <option value="">Todos (E401–E427)</option>
+            {TREATMENT_IDS.map(id => <option key={id} value={id}>{id}</option>)}
+          </select>
+        </div>
+        <button
+          onClick={() => onGenerate({
+            ollama_url: ollamaUrl,
+            model,
+            max_episodes: maxEpisodes,
+            treatment: treatment || undefined,
+            mode,
+          })}
+          className="btn-start w-full"
+        >
+          Generar
+        </button>
+        <p className="text-[9px] text-[#6B7C7A]/40 font-mono text-center">
+          {mode === 'monthly'
+            ? 'Modo mensual: ~1–3 min por tratamiento'
+            : 'Modo episodios: ~2–10 min según cantidad'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ReportButton({ highlight }: { highlight: boolean }) {
+  const { fileStatus, generating, showConfig, setShowConfig, generate } = useReportStatus();
+
+  return (
+    <>
+      {showConfig && createPortal(
+        <ReportConfigPanel onClose={() => setShowConfig(false)} onGenerate={generate} />,
+        document.body
+      )}
+      {generating ? (
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[10px] text-[#E6B84C] tracking-[0.15em] uppercase animate-pulse">
+            Generando informe…
+          </span>
+          <a
+            href="/api/report/log"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[9px] text-[#6B7C7A] hover:text-[#F4F1DE] tracking-[0.1em] no-underline transition-colors"
+          >
+            ver log ↗
+          </a>
+        </div>
+      ) : fileStatus?.exists ? (
+        <div className="flex items-center gap-3">
+          {highlight && (
+            <span className="font-mono text-[9px] text-[#2D6A4F] bg-[#2D6A4F]/20 px-2 py-0.5 rounded-full tracking-widest uppercase animate-pulse">
+              Nuevo
+            </span>
+          )}
+          <button
+            onClick={() => setShowConfig(true)}
+            className="font-mono text-[10px] text-[#6B7C7A] hover:text-[#E6B84C] tracking-[0.15em] uppercase transition-colors"
+          >
+            Regenerar
+          </button>
+          <a
+            href="/api/report/file"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[10px] text-[#E6B84C] hover:text-[#F4A261] tracking-[0.15em] uppercase no-underline transition-colors"
+            title={`${fileStatus.filename} · ${fileStatus.sizeKb} KB`}
+          >
+            Ver Informe →
+          </a>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowConfig(true)}
+          className="font-mono text-[10px] text-[#6B7C7A] hover:text-[#E6B84C] tracking-[0.15em] uppercase transition-colors"
+        >
+          Generar Informe
+        </button>
+      )}
+    </>
+  );
+}
+
+function TopBar({ date, count, running, onStop, reportHighlight }: any) {
   return (
     <header className="flex items-center gap-6 px-6 py-3 border-b border-white/5 bg-black/20 backdrop-blur-sm">
       <div className="flex items-center gap-3">
@@ -85,6 +269,8 @@ function TopBar({ date, count, running, onStop }: any) {
       <span className="font-mono text-[11px] text-[#F4F1DE] tracking-wider">{date || '—'}</span>
       <span className="font-mono text-[10px] text-[#6B7C7A] tracking-wider">{count} agentes</span>
       <div className="flex-1" />
+      <ReportButton highlight={reportHighlight} />
+      <div className="w-px h-4 bg-white/10" />
       <a href="/analytics" className="font-mono text-[10px] text-[#E6B84C] hover:text-[#F4A261] tracking-[0.15em] uppercase no-underline transition-colors">
         Analytics →
       </a>
@@ -111,7 +297,7 @@ function ConfigForm({ loading, error, onStart }: any) {
   const [tools, setTools] = useState(10);
   const [seeds, setSeeds] = useState(10);
   const [water, setWater] = useState(10);
-  const [speed, setSpeed] = useState(0.001);
+  const [speed, setSpeed] = useState(0.1);
   const [emotions, setEmotions] = useState(1);
   const [training, setTraining] = useState(1);
   const [irrigation, setIrrigation] = useState(1);
@@ -187,6 +373,16 @@ function ConfigForm({ loading, error, onStart }: any) {
               onChange={e => { setPreset('Custom'); setWater(+e.target.value); }} min={0} />
           </div>
           <div>
+            <div className="metric-label">Velocidad</div>
+            <select className="input-field" value={speed}
+              onChange={e => setSpeed(+e.target.value)}>
+              <option value={0.5}>Lenta (0.5s/día)</option>
+              <option value={0.1}>Normal (0.1s/día)</option>
+              <option value={0.02}>Rápida (20ms/día)</option>
+              <option value={0.005}>Turbo (5ms/día)</option>
+            </select>
+          </div>
+          <div>
             <div className="metric-label">Emociones</div>
             <select className="input-field" value={emotions}
               onChange={e => { setPreset('Custom'); setEmotions(+e.target.value); }}>
@@ -215,7 +411,7 @@ function ConfigForm({ loading, error, onStart }: any) {
 
 /* ─── PAGE ─── */
 export default function SimulatorPage() {
-  const { farms, currentDate, agentCount, isRunning, connected } = useWebSocket();
+  const { farms, currentDate, agentCount, isRunning, connected, simulationJustEnded, mapData, progress, clearEndedFlag } = useWebSocket();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [started, setStarted] = useState(false);
@@ -249,42 +445,58 @@ export default function SimulatorPage() {
       <div className="noise-overlay" />
       <div className="geo-pattern" />
 
-      <TopBar date={currentDate} count={agentCount || farms.length} running={isRunning} onStop={handleStop} />
+      <TopBar date={currentDate} count={agentCount || farms.length} running={isRunning} onStop={handleStop} reportHighlight={simulationJustEnded} />
 
-      {!isRunning && farms.length === 0 && !started ? (
-        <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-45px)] p-6 gap-8">
-          <ConfigForm loading={loading} error={error} onStart={handleStart} />
-          <div className="w-full max-w-2xl">
-            <ExperimentLauncher />
-          </div>
-        </main>
-      ) : (
-        <main className="relative z-10 p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <MetricTile label="Agentes activos" value={`${activeC}/${agentCount || farms.length}`} color="#E07A5F" />
-            <MetricTile label="Dinero total" value={fmtCOP(totalM)} color="#E6B84C" />
-            <MetricTile label="Salud promedio" value={`${pct(avgH)}%`} color={+pct(avgH) > 50 ? '#2D6A4F' : '#E07A5F'} />
-            <MetricTile label="Fecha actual" value={currentDate || '—'} color="#F4F1DE" />
-          </div>
-          <div className="mb-6">
-            <WorldMap />
-          </div>
-          <div className="mb-6">
-            <ExperimentLauncher />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {farms.map((f: any) => <FarmCard key={f.name} f={f} />)}
-          </div>
-          {farms.length === 0 && !loading && (
-            <div className="text-center py-24">
-              <div className="font-mono text-[11px] text-[#6B7C7A] tracking-[0.2em] uppercase">
-                Esperando datos de simulación...
-              </div>
-              <div className="mt-4 text-[#6B7C7A]/30 text-sm">ws://localhost:8000/wpsViewer</div>
+      <main className="relative z-10 p-6">
+        {/* World map — always visible */}
+        <div className="mb-6">
+          <WorldMap data={mapData} />
+        </div>
+
+        {!isRunning && farms.length === 0 && !started ? (
+          /* Pre-simulation: config form */
+          <div className="flex flex-col items-center gap-8">
+            <ConfigForm loading={loading} error={error} onStart={handleStart} />
+            <div className="w-full max-w-2xl">
+              <ExperimentLauncher />
             </div>
-          )}
-        </main>
-      )}
+          </div>
+        ) : (
+          /* Simulation running or finished */
+          <>
+            {progress && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-mono text-[10px] text-[#6B7C7A] tracking-widest uppercase">Simulación — {progress.date}</span>
+                  <span className="font-mono text-[11px] text-[#E6B84C]">{progress.pct.toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-[#0A1217] h-1.5 rounded">
+                  <div className="h-1.5 bg-[#E6B84C] rounded transition-all duration-500" style={{ width: `${progress.pct}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <MetricTile label="Agentes activos" value={`${activeC}/${agentCount || farms.length}`} color="#E07A5F" />
+              <MetricTile label="Dinero total" value={fmtCOP(totalM)} color="#E6B84C" />
+              <MetricTile label="Salud promedio" value={`${pct(avgH)}%`} color={+pct(avgH) > 50 ? '#2D6A4F' : '#E07A5F'} />
+              <MetricTile label="Fecha actual" value={currentDate || '—'} color="#F4F1DE" />
+            </div>
+            <div className="mb-6">
+              <ExperimentLauncher />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {farms.map((f: any) => <FarmCard key={f.name} f={f} />)}
+            </div>
+            {farms.length === 0 && !loading && (
+              <div className="text-center py-16">
+                <div className="font-mono text-[11px] text-[#6B7C7A] tracking-[0.2em] uppercase">
+                  Esperando datos de simulación...
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }

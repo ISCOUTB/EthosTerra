@@ -1,32 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-
-interface ParcelData {
-  id: string;
-  x: number;
-  y: number;
-  kind: string;
-  neighbors: string[];
-  is_cultivable: boolean;
-}
-
-interface ParcelState {
-  id: string;
-  x: number;
-  y: number;
-  stage: string;
-  crop_type: string;
-  owner: string;
-  secure: number;
-  money: number;
-}
-
-interface WorldMapData {
-  type: "map";
-  parcels: Record<string, ParcelData>;
-  states: Record<string, ParcelState>;
-}
+import type { WorldMapData } from "@/hooks/useWebSocket";
 
 const STAGE_COLORS: Record<string, string> = {
   NONE: "#8B7355",
@@ -46,12 +21,14 @@ function getSecureColor(secure: number): string {
   return SECURE_COLORS[idx];
 }
 
-export function WorldMap() {
+interface Props {
+  data: WorldMapData | null;
+}
+
+export function WorldMap({ data }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [data, setData] = useState<WorldMapData | null>(null);
-  const [hoveredParcel, setHoveredParcel] = useState<ParcelState | null>(null);
+  const [hoveredParcel, setHoveredParcel] = useState<WorldMapData["states"][string] | null>(null);
   const [showSecurity, setShowSecurity] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
   const parcelPositionsRef = useRef<Map<string, { x: number; y: number; w: number; h: number }>>(new Map());
 
   const drawMap = useCallback(() => {
@@ -71,12 +48,16 @@ export function WorldMap() {
     const minY = Math.min(...allY);
     const maxY = Math.max(...allY);
 
-    const padding = 40;
+    const padding = 20;
     const w = canvas.width - padding * 2;
     const h = canvas.height - padding * 2;
     const rangeX = maxX - minX || 1;
     const rangeY = maxY - minY || 1;
     const scale = Math.min(w / rangeX, h / rangeY);
+
+    const n = parcels.length;
+    const avgSpacing = Math.sqrt((rangeX * rangeY) / n);
+    const size = Math.max(3, Math.min(scale * avgSpacing * 0.85, 40));
 
     ctx.fillStyle = "#1a1a2e";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -86,7 +67,6 @@ export function WorldMap() {
     for (const [id, parcel] of parcels) {
       const px = padding + (parcel.x - minX) * scale;
       const py = padding + (parcel.y - minY) * scale;
-      const size = Math.max(8, scale * 0.8);
 
       const state = data.states[id];
       let color = parcel.is_cultivable ? "#3a3a4e" : "#2a2a3e";
@@ -112,30 +92,6 @@ export function WorldMap() {
   }, [data, showSecurity]);
 
   useEffect(() => {
-    const wsUrl = `ws://${window.location.hostname}:8000/wpsViewer`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onmessage = (event) => {
-      const msg = event.data;
-      if (msg.startsWith("m=")) {
-        try {
-          const mapData = JSON.parse(msg.slice(2));
-          if (mapData.type === "map") {
-            setData(mapData);
-          }
-        } catch {
-          // ignore parse errors
-        }
-      }
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, []);
-
-  useEffect(() => {
     drawMap();
   }, [drawMap]);
 
@@ -147,7 +103,7 @@ export function WorldMap() {
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
 
-    let found: ParcelState | null = null;
+    let found: WorldMapData["states"][string] | null = null;
     for (const [id, pos] of parcelPositionsRef.current.entries()) {
       if (mx >= pos.x && mx <= pos.x + pos.w && my >= pos.y && my <= pos.y + pos.h) {
         found = data?.states[id] || null;
@@ -159,8 +115,8 @@ export function WorldMap() {
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-400">
-        <p>Conectando al mapa del mundo...</p>
+      <div className="flex items-center justify-center h-48 text-gray-500 border border-white/5 rounded bg-[#0a1015]">
+        <p className="font-mono text-[11px] tracking-widest uppercase">Cargando mapa del mundo…</p>
       </div>
     );
   }
@@ -206,21 +162,12 @@ export function WorldMap() {
         )}
       </div>
       <div className="flex gap-3 text-xs text-gray-500">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 inline-block bg-[#8B7355] rounded-sm"></span> NONE
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 inline-block bg-[#90EE90] rounded-sm"></span> PLANTING
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 inline-block bg-[#228B22] rounded-sm"></span> GROWING
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 inline-block bg-[#DAA520] rounded-sm"></span> HARVEST
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 inline-block bg-[#A0826D] rounded-sm"></span> FALLOW
-        </span>
+        {Object.entries(STAGE_COLORS).map(([stage, color]) => (
+          <span key={stage} className="flex items-center gap-1">
+            <span className="w-3 h-3 inline-block rounded-sm" style={{ backgroundColor: color }}></span>
+            {stage}
+          </span>
+        ))}
       </div>
     </div>
   );

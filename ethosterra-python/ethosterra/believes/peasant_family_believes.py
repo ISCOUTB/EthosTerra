@@ -108,6 +108,7 @@ class PeasantFamilyBelieves(BaseModel):
     resources_acquired: bool = False
     work: str = ""
     work_done_today: bool = False
+    simulation_years: int = 1
 
     def _get(self, key: str, default: Any = None) -> Any:
         return getattr(self, key, default)

@@ -28,9 +28,10 @@ ENV PYTHONUNBUFFERED=1 \
 
 COPY besa-python/besa/ ./besa/
 COPY ethosterra-python/ethosterra/ ./ethosterra/
+COPY experiments/ ./experiments/
 COPY data/ebdi/ ./data/ebdi/
 COPY data/worlds/ ./data/worlds/
 
-RUN mkdir -p /app/data/logs
+RUN mkdir -p /app/data/logs /app/reports/analysis/html /app/reports/analysis/latex /app/reports/analysis/charts
 
 ENTRYPOINT ["python", "/app/ethosterra/start.py"]

@@ -15,12 +15,26 @@ interface FarmData {
   state: string;
 }
 
+export interface SimProgress {
+  date: string;
+  pct: number;
+}
+
+export interface WorldMapData {
+  type: 'map';
+  parcels: Record<string, { id: string; x: number; y: number; kind: string; neighbors: string[]; is_cultivable: boolean }>;
+  states: Record<string, { id: string; x: number; y: number; stage: string; crop_type: string; owner: string; secure: number; money: number }>;
+}
+
 export function useWebSocket() {
   const [farms, setFarms] = useState<FarmData[]>([]);
   const [currentDate, setCurrentDate] = useState('');
   const [agentCount, setAgentCount] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [simulationJustEnded, setSimulationJustEnded] = useState(false);
+  const [mapData, setMapData] = useState<WorldMapData | null>(null);
+  const [progress, setProgress] = useState<SimProgress | null>(null);
   const startedRef = useRef(false);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -42,6 +56,13 @@ export function useWebSocket() {
           setAgentCount(count);
         } else if (msg.startsWith('d=')) {
           setCurrentDate(msg.slice(2));
+        } else if (msg.startsWith('m=')) {
+          try {
+            const data = JSON.parse(msg.slice(2));
+            if (data.type === 'map') setMapData(data);
+          } catch {}
+        } else if (msg.startsWith('p=')) {
+          try { setProgress(JSON.parse(msg.slice(2))); } catch {}
         } else if (msg.startsWith('j=')) {
           if (!startedRef.current) {
             startedRef.current = true;
@@ -69,6 +90,8 @@ export function useWebSocket() {
           } catch {}
         } else if (msg.startsWith('e=')) {
           setIsRunning(false);
+          setSimulationJustEnded(true);
+          setProgress(null);
           startedRef.current = false;
         }
       };
@@ -86,5 +109,5 @@ export function useWebSocket() {
     return () => { wsRef.current?.close(); };
   }, []);
 
-  return { farms, currentDate, agentCount, isRunning, connected };
+  return { farms, currentDate, agentCount, isRunning, connected, simulationJustEnded, mapData, progress, clearEndedFlag: () => setSimulationJustEnded(false) };
 }

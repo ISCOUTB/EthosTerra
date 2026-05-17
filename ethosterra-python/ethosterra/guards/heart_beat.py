@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 import os
-import random
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -57,15 +56,28 @@ def _is_first_day_of_week(date_str: str) -> bool:
         return False
 
 
+def _compute_target_days(simulation_years: int, start_year: int = 2024) -> int:
+    """Compute exact target days accounting for leap years."""
+    start = datetime(start_year, 1, 1)
+    end = datetime(start_year + simulation_years, 1, 1)
+    return (end - start).days
+
+
 class HeartBeatGuard(PeriodicGuardBESA):
     def __init__(self, agent=None, period_ms: int = 40):
         super().__init__(agent=agent, period_ms=period_ms)
 
     def func_exec_guard(self, event: EventBESA) -> None:
+        """Handles non-periodic events — applies same lifecycle guards as periodic."""
         b: PeasantFamilyBelieves = self.get_state()
         if not hasattr(b, 'current_date') or not b.current_date:
             b.current_date = "01/01/2024"
             b.current_day = 0
+        target_days = _compute_target_days(b.simulation_years)
+        if b.current_day >= target_days:
+            self.stop_periodic()
+            self._notify_death(b)
+            return
         self._process_daily_cycle(b)
         self._send_progress_to_control(b)
         if self._check_dead(b):
@@ -79,23 +91,25 @@ class HeartBeatGuard(PeriodicGuardBESA):
         if not b.current_date:
             b.current_date = "01/01/2024"
             b.current_day = 0
+        target_days = _compute_target_days(b.simulation_years)
+        if b.current_day >= target_days:
+            self.stop_periodic()
+            self._notify_death(b)
+            return
         self._process_daily_cycle(b)
         self._send_progress_to_control(b)
+        self._send_state_to_viewer(b)
         self._maybe_write_csv(b)
         if self._check_dead(b):
             self.stop_periodic()
             self._notify_death(b)
 
     def _process_daily_cycle(self, b: PeasantFamilyBelieves) -> None:
-        if not hasattr(b, '_last_processed_day'):
-            b._last_processed_day = getattr(b, 'current_day', -1)
-
         b.current_day += 1
         if b.current_date:
             try:
                 dt = datetime.strptime(b.current_date, "%d/%m/%Y")
-                dt = dt + timedelta(days=1)
-                b.current_date = dt.strftime("%d/%m/%Y")
+                b.current_date = (dt + timedelta(days=1)).strftime("%d/%m/%Y")
             except ValueError:
                 pass
 
@@ -108,8 +122,7 @@ class HeartBeatGuard(PeriodicGuardBESA):
         time_delta = 40.0
         for axis, forget_factor in EMOTION_FORGET_FACTORS.items():
             current = getattr(b, axis, 0.0)
-            base = 0.0
-            new_val = apply_forget_factor(current, base, forget_factor, time_delta)
+            new_val = apply_forget_factor(current, 0.0, forget_factor, time_delta)
             setattr(b, axis, max(-1.0, min(1.0, new_val)))
 
         if b.money <= 0:
@@ -160,6 +173,35 @@ class HeartBeatGuard(PeriodicGuardBESA):
                     _csv_file.flush()
                 except Exception:
                     pass
+
+    def _send_state_to_viewer(self, b: PeasantFamilyBelieves) -> None:
+        if not _is_first_day_of_week(b.current_date):
+            return
+        agent = self._agent
+        try:
+            viewer_alias = f"{agent.alias.rsplit('PeasantFamily', 1)[0]}_ViewerLens"
+            import json
+            from ethosterra.agents.viewer_lens import ViewerLensGuard
+            state_str = json.dumps({
+                "health": round(b.health, 3),
+                "money": int(b.money),
+                "land": str(len(b.lands)),
+                "tools": b.tools,
+                "current_goal": b.current_goal or "",
+            })
+            agent.send(
+                viewer_alias,
+                EventBESA(
+                    guard_type=ViewerLensGuard,
+                    data={
+                        "agent_name": agent.alias,
+                        "state": state_str,
+                        "task_log": list(b.task_log[-10:]),
+                    },
+                ),
+            )
+        except Exception:
+            pass
 
     def _send_progress_to_control(self, b: PeasantFamilyBelieves) -> None:
         agent = self._agent

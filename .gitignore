@@ -6,6 +6,9 @@
 .env
 .env.local
 .env.*.local
+.claude
+.CLAUDE.md
+CLAUDE.md
 
 # --- Archivos de configuración de agentes IA/Copilot ---
 # Mantener localmente para desarrollo, NO commitear al repo público

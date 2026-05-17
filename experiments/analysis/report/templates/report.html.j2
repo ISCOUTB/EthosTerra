@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EthosTerra — Análisis ReAct ({{ generated_at }})</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f5f5f5; color: #333; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  h1 { background: #2e7d32; color: white; padding: 16px 24px; margin: 0 0 20px; border-radius: 6px; }
+  h2 { color: #1a5276; border-left: 4px solid #2e7d32; padding-left: 10px; margin-top: 30px; }
+  h3 { color: #2e7d32; margin-top: 20px; }
+  h4 { color: #555; margin: 12px 0 6px; }
+  .section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .executive-box { background: #e8f5e9; border-left: 5px solid #2e7d32; padding: 16px; border-radius: 4px; font-size: 1.05em; line-height: 1.6; }
+  .metrics-table, .data-table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.9em; }
+  .metrics-table th, .data-table th { background: #2e7d32; color: white; padding: 8px 12px; text-align: left; }
+  .metrics-table td, .data-table td { padding: 6px 12px; border-bottom: 1px solid #ddd; }
+  .metrics-table tr:hover td, .data-table tr:hover td { background: #f0f7f0; }
+  .data-table tr.highlight td { background: #fff3cd; font-weight: bold; }
+  .facts-table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.9em; }
+  .facts-table th { background: #1a5276; color: white; padding: 6px 12px; text-align: left; width: 40%; }
+  .facts-table td { padding: 6px 12px; border-bottom: 1px solid #ddd; background: #eaf2fb; }
+  .episode-card { border: 1px solid #ddd; border-radius: 6px; padding: 16px; margin: 12px 0; background: #fafafa; }
+  .episode-type { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; font-weight: bold; color: white; margin-bottom: 8px; }
+  .type-LEISURE { background: #FA8072; }
+  .type-CRISIS { background: #CC0000; }
+  .type-ALTERNATIVE_WORK { background: #4472C4; }
+  .type-LOAN_REQUEST { background: #ED7D31; }
+  .type-EMOTIONAL_SHIFT { background: #52BE80; }
+  .type-HARVEST { background: #D4AC0D; }
+  .step-label { font-weight: bold; color: #555; font-size: 0.9em; text-transform: uppercase; margin: 8px 0 4px; }
+  .narrative-text { background: #f8f9fa; padding: 12px; border-radius: 4px; line-height: 1.6; font-size: 0.95em; white-space: pre-wrap; }
+  .badge { color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+  .warning { background: #fff3cd; border: 1px solid #ffc107; padding: 8px 12px; border-radius: 4px; margin: 8px 0; font-size: 0.9em; }
+  img.chart { max-width: 100%; height: auto; border-radius: 4px; margin: 8px 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .param-chip { display: inline-block; background: #e3f2fd; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin: 2px; }
+  .toc { background: white; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  .toc a { text-decoration: none; color: #1a5276; }
+  .toc a:hover { text-decoration: underline; }
+  .stat-box { display: inline-block; background: #e8f5e9; border-radius: 6px; padding: 10px 16px; margin: 6px; text-align: center; }
+  .stat-num { font-size: 1.8em; font-weight: bold; color: #2e7d32; }
+  .stat-label { font-size: 0.8em; color: #666; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>EthosTerra — Análisis ReAct de Explicabilidad Natural</h1>
+<p style="color:#666; margin-top:-10px; margin-bottom:20px;">Generado: {{ generated_at }} | Arquitectura: ReAct (Reasoning + Acting) | Modelo: Gemma 3 4B</p>
+
+<!-- Estadísticas globales -->
+<div style="margin-bottom:20px;">
+  <div class="stat-box"><div class="stat-num">{{ n_treatments }}</div><div class="stat-label">Tratamientos</div></div>
+  <div class="stat-box"><div class="stat-num">{{ n_narratives }}</div><div class="stat-label">Episodios</div></div>
+  <div class="stat-box"><div class="stat-num">{{ n_hallucinations }}</div><div class="stat-label">Alucinaciones detectadas</div></div>
+</div>
+
+<!-- Tabla de contenidos -->
+<div class="toc">
+  <strong>Contenido:</strong>
+  <a href="#executive">Resumen Ejecutivo</a> |
+  <a href="#technical">Análisis Técnico por Tratamiento</a> |
+  <a href="#taguchi">Efectos Taguchi</a> |
+  {% if n_hallucinations > 0 %}<a href="#hallucinations">Alucinaciones ({{ n_hallucinations }})</a>{% endif %}
+</div>
+
+<!-- SECCIÓN EJECUTIVA -->
+<div class="section" id="executive">
+  <h2>Resumen Ejecutivo</h2>
+  {% if executive_summary %}
+  <div class="executive-box">{{ executive_summary }}</div>
+  {% else %}
+  <p><em>Resumen ejecutivo no disponible.</em></p>
+  {% endif %}
+  <h3>Métricas por Tratamiento</h3>
+  {{ metrics_table }}
+</div>
+
+<!-- SECCIÓN TÉCNICA -->
+<div class="section" id="technical">
+  <h2>Análisis Técnico por Tratamiento</h2>
+
+  {% for tr in treatments %}
+  <div style="margin-bottom:30px; border: 1px solid #ccc; border-radius:8px; padding:16px;">
+    <h3>{{ tr.treatment_id }}
+      <span style="font-size:0.7em; font-weight:normal; color:#666;">
+        Prod={{ "%.3f"|format(tr.productividad) }} | Bien={{ "%.3f"|format(tr.bienestar) }} | Crisis={{ "%.1f"|format(tr.crisis_rate * 100) }}%
+      </span>
+    </h3>
+    <div>
+      {% for factor, val in tr.params.items() %}
+        <span class="param-chip">{{ factor }}: {{ val }}</span>
+      {% endfor %}
+    </div>
+
+    {% if tr.distribution_b64 %}
+    <img class="chart" src="data:image/png;base64,{{ tr.distribution_b64 }}" alt="Distribución episodios {{ tr.treatment_id }}">
+    {% endif %}
+
+    {% for ep in tr.episodes %}
+    <div class="episode-card">
+      <span class="episode-type type-{{ ep.episode_type }}">{{ ep.episode_type }}</span>
+      <strong>Episodio {{ ep.episode_index }}</strong> —
+      {{ ep.agent }} | {{ ep.date }} | Meta: {{ ep.goal }}
+      <br><small>{{ ep.validation_badge }}</small>
+
+      <!-- Hechos clave extraídos por data_tool (sin LLM) -->
+      {% if ep.facts_table %}
+      <div style="margin-top:12px;">
+        <div class="step-label">📌 Hechos clave del episodio <small style="font-weight:normal;color:#888;">(extraídos automáticamente)</small></div>
+        {{ ep.facts_table }}
+      </div>
+      {% endif %}
+
+      <div class="two-col" style="margin-top:12px;">
+        <div>
+          <div class="step-label">📊 Historial de la ventana <small style="font-weight:normal;color:#888;">(±10 días, fila resaltada = evento)</small></div>
+          {{ ep.raw_data_table }}
+        </div>
+        <div>
+          {% if ep.timeline_b64 %}
+          <div class="step-label">📈 Evolución del capital</div>
+          <img class="chart" src="data:image/png;base64,{{ ep.timeline_b64 }}" alt="Timeline {{ ep.agent }}">
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Narrativa LLM: solo interpretación cualitativa -->
+      <div class="step-label">🔍 Paso 1 — Observación <small style="font-weight:normal;color:#888;">(narrativa LLM)</small></div>
+      <div class="narrative-text">{{ ep.description }}</div>
+
+      {% if ep.hallucinations %}
+      <div class="warning">⚠ <strong>Corrección aplicada:</strong> {{ ep.hallucinations | join("; ") }}</div>
+      {% endif %}
+
+      <div class="step-label">💡 Paso 2 — Hipótesis causal <small style="font-weight:normal;color:#888;">(narrativa LLM)</small></div>
+      <div class="narrative-text">{{ ep.hypothesis }}</div>
+
+      <div class="step-label">📋 Paso 3 — Recomendación <small style="font-weight:normal;color:#888;">(narrativa LLM)</small></div>
+      <div class="narrative-text">{{ ep.recommendation }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- SECCIÓN TAGUCHI -->
+<div class="section" id="taguchi">
+  <h2>Efectos Principales Taguchi</h2>
+  <p>Los siguientes gráficos muestran cómo cada factor experimental influye en la productividad y el bienestar de las familias campesinas.</p>
+
+  {% if taguchi_productividad_b64 %}
+  <h3>Productividad</h3>
+  <img class="chart" src="data:image/png;base64,{{ taguchi_productividad_b64 }}" alt="Efectos Taguchi — Productividad">
+  {% endif %}
+
+  {% if taguchi_bienestar_b64 %}
+  <h3>Bienestar</h3>
+  <img class="chart" src="data:image/png;base64,{{ taguchi_bienestar_b64 }}" alt="Efectos Taguchi — Bienestar">
+  {% endif %}
+
+  {% if scores_heatmap_b64 %}
+  <h3>Calidad de Narrativas</h3>
+  <img class="chart" src="data:image/png;base64,{{ scores_heatmap_b64 }}" alt="Heatmap scores">
+  {% endif %}
+</div>
+
+<!-- SECCIÓN ALUCINACIONES -->
+{% if n_hallucinations > 0 %}
+<div class="section" id="hallucinations">
+  <h2>Reporte de Alucinaciones Detectadas</h2>
+  <p>El validador programático detectó {{ n_hallucinations }} narrativa(s) con valores numéricos que no coinciden con los datos reales del CSV (tolerancia ±10%).</p>
+  {{ hallucination_rows }}
+</div>
+{% endif %}
+
+</div><!-- /container -->
+</body>
+</html>

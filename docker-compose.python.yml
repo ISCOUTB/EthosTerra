@@ -8,18 +8,49 @@ services:
         API_URL: http://localhost:8001
     container_name: ethosterra-ui
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
       NEXT_PUBLIC_WS_URL: ws://localhost:8000/wpsViewer
       NEXT_PUBLIC_API_URL: http://localhost:8001
+      SIMULATOR_API_URL: http://simulator:8001
       ETHOSTERRA_ROOT: /app
       ETHOSTERRA_START: /app/ethosterra/start.py
       PYTHON_BIN: python3
     volumes:
       - ./data/logs:/app/data/logs
+      - ./reports:/app/reports
     depends_on:
       - simulator
     profiles: ["full", "ui"]
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ethosterra-ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: 24h
+    healthcheck:
+      test: ["CMD-SHELL", "/bin/ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    profiles: ["full", "ollama"]
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ethosterra-ollama-init
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "until /bin/ollama list >/dev/null 2>&1; do sleep 3; done && (/bin/ollama list | grep -q gemma3 || /bin/ollama pull gemma3:4b) && echo 'Model ready.'"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+    profiles: ["full", "ollama"]
 
   redis:
     image: redis:7-alpine
@@ -89,11 +120,13 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       ETHOSTERRA_LOGS_PATH: /app/data/logs/wpsSimulator.csv
+      OLLAMA_URL: http://ollama:11434
     volumes:
       - ./data/logs:/app/data/logs
       - ./data/experiments:/app/data/experiments
       - ./data/ebdi:/app/data/ebdi
       - ./data/worlds:/app/data/worlds
+      - ./reports:/app/reports
     depends_on:
       redis:
         condition: service_healthy
@@ -104,7 +137,10 @@ services:
       rabbitmq:
         condition: service_healthy
         required: false
-    command: ["--wait"]
+      ollama:
+        condition: service_healthy
+        required: false
+    command: ["--wait", "--world-file", "data/worlds/land_world.origin.json"]
 
   simulator-dev:
     build:
@@ -127,3 +163,4 @@ services:
 volumes:
   redis-data:
   postgres-data:
+  ollama-data:

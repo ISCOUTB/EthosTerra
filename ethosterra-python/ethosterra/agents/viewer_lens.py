@@ -16,6 +16,10 @@ def set_ws_server(server: Any) -> None:
     _ws_instance = server
 
 
+def get_ws_server() -> Any:
+    return _ws_instance
+
+
 @dataclass
 class ViewerLensState:
     active_agents: int = 0
