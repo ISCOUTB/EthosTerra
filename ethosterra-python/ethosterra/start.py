@@ -281,7 +281,7 @@ class ControlHandler(BaseHTTPRequestHandler):
         self._json({"started": True, "pid": ControlHandler.report_proc.pid})
 
     def _start_experiment(self, data: dict) -> bool:
-        if self.experiment_thread and self.experiment_thread.is_alive():
+        if ControlHandler.experiment_thread and ControlHandler.experiment_thread.is_alive():
             return False
         # Stop any running BDI simulation before launching the experiment
         stop_simulation()
@@ -294,8 +294,6 @@ class ControlHandler(BaseHTTPRequestHandler):
             money_levels = data.get("money_levels", [750000, 1500000, 3000000])
             land_levels = data.get("land_levels", [2, 6, 12])
             emo_levels = data.get("emotion_levels", [1, 0])
-            world_file = data.get("world_file", "")
-            crime_rate = float(data.get("crime_rate", 0))
 
             tid = 1
             for m in money_levels:
@@ -309,7 +307,7 @@ class ControlHandler(BaseHTTPRequestHandler):
                         })
                         tid += 1
 
-        self.experiment_state = {
+        ControlHandler.experiment_state = {
             "treatments": treatments,
             "total": len(treatments),
             "completed": 0,
@@ -324,22 +322,22 @@ class ControlHandler(BaseHTTPRequestHandler):
         world_file = data.get("world_file", "")
         crime_rate = float(data.get("crime_rate", 0))
 
-        self.experiment_thread = threading.Thread(
+        ControlHandler.experiment_thread = threading.Thread(
             target=_run_experiment,
-            args=(self, treatments, agents, years, world_file, crime_rate),
+            args=(ControlHandler, treatments, agents, years, world_file, crime_rate),
             daemon=True,
         )
-        self.experiment_thread.start()
+        ControlHandler.experiment_thread.start()
         return True
 
     def _stop_experiment(self) -> bool:
-        if self.experiment_state:
-            self.experiment_state["running"] = False
+        if ControlHandler.experiment_state:
+            ControlHandler.experiment_state["running"] = False
         return True
 
     def _experiment_status(self) -> None:
-        if self.experiment_state:
-            self._json(self.experiment_state)
+        if ControlHandler.experiment_state:
+            self._json(ControlHandler.experiment_state)
         else:
             self._json({"treatments": [], "total": 0, "completed": 0, "running": False})
 
@@ -413,7 +411,16 @@ def _run_experiment(
     state = handler.experiment_state
     root = _os.environ.get("ETHOSTERRA_ROOT", "/app")
 
-    runner_script = _os.path.join(root, "ethosterra-python", "ethosterra", "run_treatment.py")
+    # Docker: /app/ethosterra/run_treatment.py — local dev: ethosterra-python/ethosterra/run_treatment.py
+    docker_runner = _os.path.join(root, "ethosterra", "run_treatment.py")
+    local_runner  = _os.path.join(root, "ethosterra-python", "ethosterra", "run_treatment.py")
+    runner_script = docker_runner if _os.path.exists(docker_runner) else local_runner
+
+    # PYTHONPATH: Docker tiene /app/besa y /app/ethosterra; dev tiene besa-python/ y ethosterra-python/
+    if _os.path.exists(_os.path.join(root, "besa-python")):
+        _pythonpath = f"{root}/besa-python:{root}/ethosterra-python:{root}"
+    else:
+        _pythonpath = root  # Docker: módulos directamente bajo /app
 
     for t in treatments:
         if not state["running"]:
@@ -435,7 +442,7 @@ def _run_experiment(
         env["EXP_TID"] = tid
         env["EXP_CSV"] = csv_path
         env["ETHOSTERRA_STEPTIME"] = "1"
-        env.setdefault("PYTHONPATH", f"{root}/besa-python:{root}/ethosterra-python")
+        env["PYTHONPATH"] = _pythonpath
 
         try:
             result = subprocess.run(
